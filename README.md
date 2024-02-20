@@ -1,5 +1,5 @@
 # transcendence
 
-Backend:	Django
+Backend:	Ruby
 DB:			PostgreSQL
 Frontend:	Vanilla JS

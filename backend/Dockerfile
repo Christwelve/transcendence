@@ -1,25 +1,26 @@
 
-# Use an official Ruby runtime as a parent image
-FROM ruby:3.0-slim
+# Specify the Ruby version
+FROM ruby:3.2.3
 
-# Set environment variables
-ENV RACK_ENV=production
+# Install required dependencies
+RUN apt-get update && apt-get install -y \
+    postgresql-client 
 
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy Gemfile and Gemfile.lock into the container
+# Copy the Gemfile and Gemfile.lock into the container
 COPY Gemfile Gemfile.lock ./
 
-# Install dependencies
+# Install gems with Bundler
 RUN bundle install
 
-# Copy the current directory contents into the container at /app
+# Copy the rest of the application into the container
 COPY . .
 
-# Expose port 4567 to the outside world
-EXPOSE 4567
+# Make port 3000 available to the world outside this container
+EXPOSE 3000
 
-# Command to run the Ruby application
-CMD ["bundle", "exec", "rackup", "--host", "0.0.0.0", "-p", "4567"]
+# Start the main process
+CMD [ "ruby", "main.rb"]
 

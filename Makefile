@@ -26,6 +26,6 @@ clean:
 	docker-compose down --rmi all
 
 test:
-	docker-compose run --rm web bundle exec rspec
+	docker-compose run backend
 
 .PHONY: help build up down logs clean test

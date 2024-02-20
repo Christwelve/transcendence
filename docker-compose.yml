@@ -1,29 +1,18 @@
 version: '3'
 
 services:
-  web:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    command: bundle exec rackup --host 0.0.0.0 -p 8000
-    volumes:
-      - ./backend:/app
-    ports:
-      - "8000:8000"
-    depends_on:
-      - db
-    env_file:
-      - ./.env
-  db:
-    build:
-      context: ./db
-      dockerfile: Dockerfile
-    env_file:
-      - ./.env
-    volumes:
-      - db_data:/var/lib/db/data
+  # db:
+  #   container_name: db
+  #   build:
+  #     context: ./db
+  #     dockerfile: Dockerfile
+  #   env_file:
+  #     - ./.env
+  #   volumes:
+  #     - db_data:/var/lib/db/data
 
-  ruby_backend:
+  backend:
+    container_name: backend
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -31,8 +20,8 @@ services:
       - ./backend:/app
     ports:
       - "3000:3000"
-    depends_on:
-      - db
+    # depends_on:
+    #   - db
     env_file:
       - ./.env
 
