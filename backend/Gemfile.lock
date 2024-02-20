@@ -1,0 +1,10 @@
+GEM
+  specs:
+
+PLATFORMS
+  aarch64-linux
+
+DEPENDENCIES
+
+BUNDLED WITH
+   2.4.19
