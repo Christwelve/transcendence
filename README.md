@@ -1,5 +1,3 @@
-# transcendence
-
 # Transcendence
 
 ## Access
