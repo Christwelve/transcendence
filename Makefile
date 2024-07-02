@@ -6,7 +6,6 @@ help:
 	@echo "  down           Stop Docker containers"
 	@echo "  logs           Show logs of Docker containers"
 	@echo "  clean          Remove Docker volumes and networks"
-	@echo "  test           Run tests"
 
 build:
 	docker-compose up --build -d
@@ -28,4 +27,5 @@ clean:
 test:
 	docker-compose run backend
 
-.PHONY: help build up down logs clean test
+.PHONY: help build up down logs clean
+ 
