@@ -2,13 +2,10 @@ FROM node:20.1.0
 
 WORKDIR /code/nodejs
 
-COPY package*.json ./
-COPY setup.sh ./
+COPY ./package*.json ./
+RUN npm install
 COPY ./src ./
-
-RUN chmod +x /code/nodejs/setup.sh
 
 EXPOSE 4000
 
-# CMD ["node", "app.js"]
-ENTRYPOINT [ "./setup.sh" ]
+CMD ["node", "src/app.js"]
