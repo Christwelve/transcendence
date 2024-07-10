@@ -1,60 +1,72 @@
-version: '3'
+version: '3.8'
 
 services:
-  # postgres:
-  #   container_name: postgres
-  #   image: postgres:12
-  #   volumes:
-  #     - postgres_data:/var/lib/postgresql/data
-  #     - ./init:/docker-entrypoint-initdb.d
-  #   environment:
-  #     POSTGRES_DB: ${POSTGRES_DB}
-  #     POSTGRES_USER: ${POSTGRES_USER}
-  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-  #     POSTGRES_HOST: ${POSTGRES_HOST}
-  #     POSTGRES_PORT: ${POSTGRES_PORT}
-  #   ports:
-  #     - "5432:5432"
-
-  django:
-    container_name: django
-    build:
-      context: ./backend_django/backend
-      dockerfile: Dockerfile
-    volumes:
-      - ./backend_django/backend:/app
-    ports:
-      - "8000:8000"
-    # depends_on:
-    #   - postgres
-    env_file:
-      - ./.env
-
   nodejs:
-    container_name: nodejs
-    build:
-      context: ./backend_nodejs
-      dockerfile: Dockerfile
-    volumes:
-      - ./backend_nodejs:/usr/src/app
+    build: ./nodejs
     ports:
       - "4000:4000"
-    # depends_on:
-    #   - postgres
-    env_file:
-      - ./.env
-
-  react:
-    container_name: react
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
     volumes:
-      - ./frontend:/app
-    ports:
-      - "3000:3000"
-    # depends_on:
-    #   - nodejs
+      - ./nodejs:/code/nodejs
+    # command: ["node", "app.js"]
 
-volumes:
-  postgres_data:
+
+# version: '3'
+
+# services:
+#   # postgres:
+#   #   container_name: postgres
+#   #   image: postgres:12
+#   #   volumes:
+#   #     - postgres_data:/var/lib/postgresql/data
+#   #     - ./init:/docker-entrypoint-initdb.d
+#   #   environment:
+#   #     POSTGRES_DB: ${POSTGRES_DB}
+#   #     POSTGRES_USER: ${POSTGRES_USER}
+#   #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+#   #     POSTGRES_HOST: ${POSTGRES_HOST}
+#   #     POSTGRES_PORT: ${POSTGRES_PORT}
+#   #   ports:
+#   #     - "5432:5432"
+
+#   django:
+#     container_name: django
+#     build:
+#       context: ./backend_django/backend
+#       dockerfile: Dockerfile
+#     volumes:
+#       - ./backend_django/backend:/app
+#     ports:
+#       - "8000:8000"
+#     # depends_on:
+#     #   - postgres
+#     env_file:
+#       - ./.env
+
+#   nodejs:
+#     container_name: nodejs
+#     build:
+#       context: ./backend_nodejs
+#       dockerfile: Dockerfile
+#     volumes:
+#       - ./backend_nodejs:/usr/src/app
+#     ports:
+#       - "4000:4000"
+#     # depends_on:
+#     #   - postgres
+#     env_file:
+#       - ./.env
+
+#   react:
+#     container_name: react
+#     build:
+#       context: ./frontend
+#       dockerfile: Dockerfile
+#     volumes:
+#       - ./frontend:/app
+#     ports:
+#       - "3000:3000"
+#     # depends_on:
+#     #   - nodejs
+
+# volumes:
+#   postgres_data:
