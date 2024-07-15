@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -8,7 +9,7 @@
       rel="stylesheet"
       href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
     />
-    <link rel="stylesheet" href="/login/login.css" />
+    <link rel="stylesheet" href="{% static 'css/login.css' %}" />
     <style></style>
   </head>
   <body>
@@ -68,13 +69,13 @@
             <div class="text-center mt-3">
               <button class="btn btn-login">
                 <img
-                  src="/login/google_logo.webp"
+                  src="{% static 'images/google_logo.webp' %}"
                   alt="google logo"
                   class="btn-google"
                 />
               </button>
               <button class="btn btn-login">
-                <img src="/login/42_logo.png" class="btn-intra" />
+                <img src="{% static 'images/42_logo.png' %}" class="btn-intra" />
               </button>
             </div>
             <div class="text-center mt-3">
@@ -87,6 +88,6 @@
         </div>
       </div>
     </div>
-    <script src="login.js"></script>
+    <script src="{% static 'js/login.js' %}"></script>
   </body>
 </html>
