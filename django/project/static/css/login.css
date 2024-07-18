@@ -43,10 +43,10 @@
   border-radius: 2%;
 }
 
-body {
+/* body {
   background-image: url("/static/images/green.jpg");
   background-size: cover;
-}
+} */
 
 .form-div {
   padding: 0%;
@@ -54,21 +54,20 @@ body {
 
 .btn {
   display: inline-block;
-  margin-right: 10px; /* Add some margin between the buttons */
+  margin-right: 10px; 
 }
 
-/* Optionally, you can adjust the size of the images */
 .btn-google,
 .btn-intra {
-  width: 50px; /* Adjust width as needed */
-  height: 50px; /* Adjust height as needed */
+  width: 50px; 
+  height: 50px; 
 }
 
 .hr-inline {
   display: inline-block;
-  width: 33%; /* Adjust width as needed */
-  border-top: 1px solid rgba(0, 0, 0, 0.334); /* Example border styling */
-  margin: 0 5px; /* Adjust margin as needed */
+  width: 33%; 
+  border-top: 1px solid rgba(0, 0, 0, 0.334); 
+  margin: 0 5px; 
   margin-bottom: 1%;
 }
 .btn-login {

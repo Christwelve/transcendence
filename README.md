@@ -5,8 +5,6 @@
 - **NodeJS**: [localhost:4000](http://localhost:4000)
 - **Django**: [localhost:8000](http://localhost:8000)
 - **pgAdmin**: [localhost:5050](http://localhost:5050)
-- **Postgres**: `docker exec -it <postgres_container_id> psql -U user -d postgres`
-  - Find container ID: `docker ps`
 
 ## Overview
 
