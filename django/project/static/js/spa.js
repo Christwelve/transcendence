@@ -15,10 +15,10 @@ function request(url, method, data) {
 document.addEventListener('DOMContentLoaded', async () => {
 	const pages = {
 		'/': 'main',
-		'/game1/': 'game1',
-		'/game2/': 'game2',
-		'/login/': 'login',
-		'/register/': 'register',
+		'/game1': 'game1',
+		'/game2': 'game2',
+		'/login': 'login',
+		'/register': 'register',
 	};
 
 	const [{structure, components}, error] = await request('get_components', 'GET', null);
