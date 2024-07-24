@@ -7,8 +7,13 @@ help:
 	@echo "  logs           Show logs of Docker containers"
 	@echo "  clean          Remove Docker volumes and networks"
 
+all: build up
+
+build: 
+	docker-compose build --no-cache
+
 up:
-	docker-compose up --build -d
+	docker-compose up -d
 
 down:
 	docker-compose down
@@ -24,4 +29,6 @@ delete:
 	docker-compose down --rmi all
 	docker-compose rm -f
 
-.PHONY: help up down logs clean delete
+re: delete build up
+
+.PHONY: help up down logs clean delete build all re
