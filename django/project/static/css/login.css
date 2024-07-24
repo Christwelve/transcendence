@@ -3,6 +3,8 @@
   justify-content: center;
   align-items: center;
   height: 100vh;
+  background-image: url("/static/images/green.jpg");
+  background-size: cover;
 }
 
 .login-form {
@@ -43,31 +45,26 @@
   border-radius: 2%;
 }
 
-/* body {
-  background-image: url("/static/images/green.jpg");
-  background-size: cover;
-} */
-
 .form-div {
   padding: 0%;
 }
 
 .btn {
   display: inline-block;
-  margin-right: 10px; 
+  margin-right: 10px;
 }
 
 .btn-google,
 .btn-intra {
-  width: 50px; 
-  height: 50px; 
+  width: 50px;
+  height: 50px;
 }
 
 .hr-inline {
   display: inline-block;
-  width: 33%; 
-  border-top: 1px solid rgba(0, 0, 0, 0.334); 
-  margin: 0 5px; 
+  width: 33%;
+  border-top: 1px solid rgba(0, 0, 0, 0.334);
+  margin: 0 5px;
   margin-bottom: 1%;
 }
 .btn-login {
