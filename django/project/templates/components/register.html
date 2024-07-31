@@ -37,12 +37,22 @@
               />
               <div class="input-group-append">
                 <button
-                  class="btn btn-outline-secondary"
+                  class="btn btn-outline-secondary show-password"
                   type="button"
                   id="togglePassword"
                 >
                   Show
                 </button>
+              </div>
+              <div id="message">
+                <p>Password must contain the following:</p>
+                <p id="length" class="invalid">At least 12 characters</p>
+                <p id="letter" class="invalid">At least one lowercase letter</p>
+                <p id="capital" class="invalid">At least one uppercase letter</p>
+                <p id="number" class="invalid">At least one number</p>
+                <p id="special" class="invalid">
+                  At least one special character (!@#$%^&*)
+                </p>
               </div>
             </div>
           </div>
@@ -58,9 +68,9 @@
               />
               <div class="input-group-append">
                 <button
-                  class="btn btn-outline-secondary"
+                  class="btn btn-outline-secondary show-password"
                   type="button"
-                  id="togglePassword"
+                  id="toggleVerifyPassword"
                 >
                   Show
                 </button>
