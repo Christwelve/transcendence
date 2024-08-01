@@ -2,14 +2,12 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  background-image: url("/static/images/green.jpg");
-  background-size: cover;
+  width: 75%;
 }
 
 .register-form {
   background-color: #f8f9fa;
-  padding: 40px;
+  padding: 10px 20px;
   border-radius: 8px;
 }
 
@@ -64,4 +62,18 @@
 
 .invalid {
   color: red;
+}
+
+.instructions {
+  font-size: small;
+}
+
+.invalid-input {
+	  color: red;
+	  font-size: small;
+	  margin-left: 1.1rem;
+}
+
+.hidden {
+	  display: none;
 }

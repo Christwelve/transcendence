@@ -27,6 +27,7 @@
           </div>
           <div class="form-group">
             <label for="password">Password</label>
+            <p class="instructions">Your password needs to include at least: <br /><span id="length" class="invalid">12 characters</span>, <span id="capital" class="invalid">1 capital letter</span>, <span id="letter" class="invalid">1 lowercase</span>, <span id="number" class="invalid">1 digit</span>, <span id="special" class="invalid">1 special character</span></p>
             <div class="input-group">
               <input
                 type="password"
@@ -44,20 +45,11 @@
                   Show
                 </button>
               </div>
-              <div id="message">
-                <p>Password must contain the following:</p>
-                <p id="length" class="invalid">At least 12 characters</p>
-                <p id="letter" class="invalid">At least one lowercase letter</p>
-                <p id="capital" class="invalid">At least one uppercase letter</p>
-                <p id="number" class="invalid">At least one number</p>
-                <p id="special" class="invalid">
-                  At least one special character (!@#$%^&*)
-                </p>
-              </div>
             </div>
           </div>
           <div class="form-group">
-            <label for="password-verify">Verify password</label>
+            <label for="password-verify">Verify password <span class="invalid-input hidden" id="password-validation">Passwords are not the same!</span></label>
+
             <div class="input-group">
               <input
                 type="password"

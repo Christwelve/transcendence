@@ -8,14 +8,15 @@ window.addEventListener("load", function () {
   var capital = document.getElementById("capital");
   var number = document.getElementById("number");
   var special = document.getElementById("special");
+  var validation = document.getElementById("password-validation");
 
   var hasLength = false;
   var hasLetter = false;
   var hasCapital = false;
   var hasNumber = false;
   var hasSpecial = false;
-  var password_val = password.value;
-  var confirm_password_val = confirm_password.value;
+  var password_val = null;
+  var confirm_password_val = null;
   var valid = false;
 
   console.log(password);
@@ -99,8 +100,10 @@ window.addEventListener("load", function () {
       isIdentical(password_val, confirm_password_val)
     ) {
       valid = true;
+      validation.classList.add("hidden");
     } else {
       valid = false;
+      validation.classList.remove("hidden");
     }
     console.log("Valid password:", valid);
   });
