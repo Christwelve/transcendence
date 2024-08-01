@@ -27,6 +27,7 @@
           </div>
           <div class="form-group">
             <label for="password">Password</label>
+            <p class="instructions">Your password needs to include at least: <br /><span id="length" class="invalid">12 characters</span>, <span id="capital" class="invalid">1 capital letter</span>, <span id="letter" class="invalid">1 lowercase</span>, <span id="number" class="invalid">1 digit</span>, <span id="special" class="invalid">1 special character</span></p>
             <div class="input-group">
               <input
                 type="password"
@@ -37,7 +38,7 @@
               />
               <div class="input-group-append">
                 <button
-                  class="btn btn-outline-secondary"
+                  class="btn btn-outline-secondary show-password"
                   type="button"
                   id="togglePassword"
                 >
@@ -47,7 +48,8 @@
             </div>
           </div>
           <div class="form-group">
-            <label for="password-verify">Verify password</label>
+            <label for="password-verify">Verify password <span class="invalid-input hidden" id="password-validation">Passwords are not the same!</span></label>
+
             <div class="input-group">
               <input
                 type="password"
@@ -58,9 +60,9 @@
               />
               <div class="input-group-append">
                 <button
-                  class="btn btn-outline-secondary"
+                  class="btn btn-outline-secondary show-password"
                   type="button"
-                  id="togglePassword"
+                  id="toggleVerifyPassword"
                 >
                   Show
                 </button>
