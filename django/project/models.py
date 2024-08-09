@@ -11,6 +11,9 @@ class Player(models.Model):
 	class Meta:
 		db_table = 'player'
 
+	def __str__(self):
+		return self.email
+
 class Room(models.Model):
 	room_id = models.AutoField(primary_key=True)
 	player1 = models.ForeignKey(Player, on_delete=models.CASCADE, related_name='player1')

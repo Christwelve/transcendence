@@ -5,7 +5,6 @@
   <head>
     <title>Transdoodles</title>
     <script src="{% static 'js/spa.js' %}"></script>
-    <script src="{% static 'js/register.js' %}" async></script>
     <link
       rel="stylesheet"
       href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
@@ -16,6 +15,10 @@
   </head>
   <body>
     <nav data-container="navigation"></nav>
-    <div id="content" data-container="content"></div>
+    <div id="content" data-container="content">{% csrf_token %}</div>
+    <script>
+      var registerUrl = "{% url 'register' %}";
+    </script>
+    <script src="{% static 'js/register.js' %}" async></script>
   </body>
 </html>

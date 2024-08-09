@@ -3,102 +3,106 @@
 {% block title %}Register - Transdoodles{% endblock %}
 
 {%block content %}
-<div class="container-fluid register-container">
-  <div class="row bg-white">
-    <div class="col-md-6 bg-img">
-      <div class="d-flex flex-column justify-content-center h-100">
-        <h1>Welcome to Transcendence</h1>
-        <p>A game platform!</p>
-      </div>
-    </div>
-    <div class="col-md-6 form-div">
-      <div class="register-form">
-        <h3 class="text-center mb-4">Register</h3>
-        <form>
-          <div class="form-group">
-            <label for="username">Username</label>
-            <input
-              type="text"
-              class="form-control"
-              id="username"
-              placeholder="Enter username"
-              required
-            />
-          </div>
-          <div class="form-group">
-            <label for="password">Password</label>
-            <p class="instructions">Your password needs to include at least: <br /><span id="length" class="invalid">12 characters</span>, <span id="capital" class="invalid">1 capital letter</span>, <span id="letter" class="invalid">1 lowercase</span>, <span id="number" class="invalid">1 digit</span>, <span id="special" class="invalid">1 special character</span></p>
-            <div class="input-group">
-              <input
-                type="password"
-                class="form-control"
-                id="password"
-                placeholder="Password"
-                required
-              />
-              <div class="input-group-append">
-                <button
-                  class="btn btn-outline-secondary show-password"
-                  type="button"
-                  id="togglePassword"
-                >
-                  Show
-                </button>
+        <div class="container-fluid register-container">
+            <div class="row bg-white">
+              <div class="col-md-6 bg-img">
+                <div class="d-flex flex-column justify-content-center h-100">
+                  <h1>Welcome to Transcendence</h1>
+                  <p>A game platform!</p>
+                </div>
               </div>
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="password-verify">Verify password <span class="invalid-input hidden" id="password-validation">Passwords are not the same!</span></label>
+              <div class="col-md-6 form-div">
+                <div class="register-form">
+                  <h3 class="text-center mb-4">Register</h3>
+                  <form id="registerForm">
+                      {% csrf_token %}
+                    <div class="form-group">
+                      <label for="email">Email</label>
+                      <input
+                        type="email"
+                        class="form-control"
+                        id="email"
+                        name="email"
+                        placeholder="Enter email"
+                        required="required"
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label for="password">Password</label>
+                      <p class="instructions">Your password needs to include at least: <br /><span id="length" class="invalid">12 characters</span>, <span id="capital" class="invalid">1 capital letter</span>, <span id="letter" class="invalid">1 lowercase</span>, <span id="number" class="invalid">1 digit</span>, <span id="special" class="invalid">1 special character</span></p>
+                      <div class="input-group">
+                        <input
+                          type="password"
+                          class="form-control"
+                          id="password"
+                          name="password"
+                          placeholder="Password"
+                          required="required"
+                        />
+                        <div class="input-group-append">
+                          <button
+                            class="btn btn-outline-secondary show-password"
+                            type="button"
+                            id="togglePassword"
+                          >
+                            Show
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label for="password2">Verify password <span class="invalid-input hidden" id="password-validation">Passwords are not the same!</span></label>
 
-            <div class="input-group">
-              <input
-                type="password"
-                class="form-control"
-                id="password-verify"
-                placeholder="Verify password"
-                required
-              />
-              <div class="input-group-append">
-                <button
-                  class="btn btn-outline-secondary show-password"
-                  type="button"
-                  id="toggleVerifyPassword"
-                >
-                  Show
-                </button>
+                      <div class="input-group">
+                        <input
+                          type="password"
+                          class="form-control"
+                          id="password2"
+                          name="password2"
+                          placeholder="Verify password"
+                          required="required"
+                        />
+                        <div class="input-group-append">
+                          <button
+                            class="btn btn-outline-secondary show-password"
+                            type="button"
+                            id="toggleVerifyPassword"
+                          >
+                            Show
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">
+                       Register
+                    </button>
+                  </form>
+                  <div class="text-center mt-3">
+                    <p>
+                      <span class="hr-inline-register"></span> or register with
+                      <span class="hr-inline-register"></span>
+                    </p>
+                  </div>
+                  <div class="text-center mt-3">
+                    <button class="btn btn-register">
+                      <img
+                        src="{% static 'images/google_logo.webp' %}"
+                        alt="google logo"
+                        class="btn-google"
+                      />
+                    </button>
+                    <button class="btn btn-register">
+                      <img src="{% static 'images/42_logo.png' %}" class="btn-intra" />
+                    </button>
+                  </div>
+                  <div class="text-center mt-3">
+                    <p>
+                      Do you already have an account?
+                      <a href="/login" class="login">Login now.</a>
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-          <button type="submit" class="btn btn-primary btn-block">
-            Register
-          </button>
-        </form>
-        <div class="text-center mt-3">
-          <p>
-            <span class="hr-inline-register"></span> or register with
-            <span class="hr-inline-register"></span>
-          </p>
-        </div>
-        <div class="text-center mt-3">
-          <button class="btn btn-register">
-            <img
-              src="{% static 'images/google_logo.webp' %}"
-              alt="google logo"
-              class="btn-google"
-            />
-          </button>
-          <button class="btn btn-register">
-            <img src="{% static 'images/42_logo.png' %}" class="btn-intra" />
-          </button>
-        </div>
-        <div class="text-center mt-3">
-          <p>
-            Do you already have an account?
-            <a href="/login" class="login">Login now.</a>
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
 {% endblock %}

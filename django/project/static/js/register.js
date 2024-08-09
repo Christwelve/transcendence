@@ -2,13 +2,19 @@ window.addEventListener("load", function () {
   console.log("register.js loaded");
 
   var password = document.getElementById("password");
-  var confirm_password = document.getElementById("password-verify");
+  var confirm_password = document.getElementById("password2");
   var length = document.getElementById("length");
   var letter = document.getElementById("letter");
   var capital = document.getElementById("capital");
   var number = document.getElementById("number");
   var special = document.getElementById("special");
   var validation = document.getElementById("password-validation");
+
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(";").shift();
+  }
 
   var hasLength = false;
   var hasLetter = false;
@@ -78,6 +84,7 @@ window.addEventListener("load", function () {
     }
   });
 
+
   confirm_password.addEventListener("keyup", function () {
     confirm_password_val = confirm_password.value;
 
@@ -114,7 +121,6 @@ window.addEventListener("load", function () {
   );
 
   showPasswordButton.addEventListener("click", function () {
-    var password = document.getElementById("password");
     if (password.type === "password") {
       password.type = "text";
       showPasswordButton.innerHTML = "Hide";
@@ -125,13 +131,40 @@ window.addEventListener("load", function () {
   });
 
   showVerifyPasswordButton.addEventListener("click", function () {
-    var password = document.getElementById("password-verify");
-    if (password.type === "password") {
-      password.type = "text";
+    if (confirm_password.type === "password") {
+      confirm_password.type = "text";
       showVerifyPasswordButton.innerHTML = "Hide";
     } else {
-      password.type = "password";
+      confirm_password.type = "password";
       showVerifyPasswordButton.innerHTML = "Show";
     }
+  });
+
+  const form = document.querySelector("#registerForm");
+
+  form.addEventListener("submit", function (event) {
+	  event.preventDefault();
+
+	  const formData = new FormData(form);
+	  const csrfToken = getCookie('csrftoken');  // Assuming this function fetches the CSRF token
+
+	  fetch("/register", {
+		  method: 'POST',
+		  headers: {
+			  'X-CSRFToken': csrfToken,
+			  'Accept': 'application/json',
+		  },
+		  body: formData,
+	  })
+	  .then(response => response.json())
+	  .then(data => {
+		  if (data.success) {
+			  window.location.href = data.redirect_url;
+		  } else {
+			  console.error("Errors:", data.errors);
+			  // Display errors to the user
+		  }
+	  })
+	  .catch(error => console.error("Error:", error));
   });
 });
