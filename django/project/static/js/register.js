@@ -84,7 +84,6 @@ window.addEventListener("load", function () {
     }
   });
 
-
   confirm_password.addEventListener("keyup", function () {
     confirm_password_val = confirm_password.value;
 
@@ -143,28 +142,58 @@ window.addEventListener("load", function () {
   const form = document.querySelector("#registerForm");
 
   form.addEventListener("submit", function (event) {
-	  event.preventDefault();
+    event.preventDefault();
 
-	  const formData = new FormData(form);
-	  const csrfToken = getCookie('csrftoken');  // Assuming this function fetches the CSRF token
+    const formData = new FormData(form);
+    const csrfToken = getCookie("csrftoken"); // Assuming this function fetches the CSRF token
 
-	  fetch("/register", {
-		  method: 'POST',
-		  headers: {
-			  'X-CSRFToken': csrfToken,
-			  'Accept': 'application/json',
-		  },
-		  body: formData,
-	  })
-	  .then(response => response.json())
-	  .then(data => {
-		  if (data.success) {
-			  window.location.href = data.redirect_url;
-		  } else {
-			  console.error("Errors:", data.errors);
-			  // Display errors to the user
-		  }
-	  })
-	  .catch(error => console.error("Error:", error));
+    fetch("/register", {
+      method: "POST",
+      headers: {
+        "X-CSRFToken": csrfToken,
+        Accept: "application/json",
+      },
+      body: formData,
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          window.location.href = data.redirect_url;
+        } else {
+          console.error("Errors:", data.errors);
+          displayErrors(data.errors);
+        }
+      })
+      .catch((error) => console.error("Error:", error));
   });
+
+  function displayErrors(errors) {
+	const errorsObject = JSON.parse(errors);
+	let errorMessages = [];
+	for (const error in errorsObject) {
+		errorMessages.push(errorsObject[error][0].message);
+	}
+    console.log("Displaying errors:", errorMessages);
+	const errorList = document.querySelector("#errorList");
+	const alertList = document.querySelector("#alertList");
+	for (const message of errorMessages) {
+		let index = 0;
+		const alert = document.createElement("div");
+		alert.classList.add("alert", "alert-danger", "alert-dismissible", "fade", "show");
+		alert.role = "alert";
+		alert.id = `error-alert-${index}`;
+		const strong = document.createElement("strong");
+		strong.textContent = message;
+		alert.appendChild(strong);
+		const button = document.createElement("button");
+		button.type = "button";
+		button.classList.add("btn-close");
+		button.setAttribute("data-bs-dismiss", "alert");
+		button.setAttribute("aria-label", "Close");
+		alert.appendChild(button);
+		alertList.appendChild(alert);
+		index++;
+
+	}
+  }
 });
