@@ -17,7 +17,7 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, re_path
-from .views import get_components, skeleton
+from .views import get_components, skeleton, register
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -26,8 +26,8 @@ urlpatterns = [
     path('game1', skeleton, name='game1'),
     path('game2', skeleton, name='game2'),
     path('login', skeleton, name='login'),
-    path('register', skeleton, name='register'),
+    path('register', register, name='register'),
 	path('404', skeleton, name='404'),
 	path('500', skeleton, name='500'),
-    re_path(r'^.*$', skeleton, name='404'), 
+    re_path(r'^.*$', skeleton, name='404'),
 ]
