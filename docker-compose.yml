@@ -23,6 +23,18 @@ services:
     depends_on:
       - postgres
 
+  react:
+    build:
+      context: ./react_frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./react:/code/react
+    env_file:
+      - .env
+    depends_on:
+      - django    
+
   postgres:
     image: postgres:16.0
     ports:
