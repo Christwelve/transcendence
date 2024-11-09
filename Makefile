@@ -9,7 +9,7 @@ help:
 
 all: build up
 
-build: 
+build:
 	docker-compose build --no-cache
 
 up:
@@ -18,17 +18,19 @@ up:
 down:
 	docker-compose down
 
+restart: down up
+
 logs:
 	docker-compose logs -f
 
 clean:
 	docker-compose down --rmi all
 
-delete: 
+delete:
 	docker-compose down -v --remove-orphans
 	docker-compose down --rmi all
 	docker-compose rm -f
 
 re: delete build up
 
-.PHONY: help up down logs clean delete build all re
+.PHONY: help up down restart logs clean delete build all re
