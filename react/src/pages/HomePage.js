@@ -1,11 +1,26 @@
-import React from 'react'
+import React from "react";
+import { useState } from "react";
+import Register from "../components/Register";
+import Login from "../components/Login";
 
 function HomePage() {
-	return (
-		<div>
-			<h1>Welcome Home</h1>
-		</div>
-	);
+  const [userStatus, setUserStatus] = useState("register");
+
+  const changeStatus = (status) => {
+    setUserStatus(status);
+  };
+
+  return (
+    <>
+      {userStatus === "register" ? (
+        <Register changeStatus={changeStatus} />
+      ) : userStatus === "login" ? (
+        <Login changeStatus={changeStatus} />
+      ) : (
+        <Register changeStatus={changeStatus} />
+      )}
+    </>
+  );
 }
 
 export default HomePage;
