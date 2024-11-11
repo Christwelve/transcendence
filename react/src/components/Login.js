@@ -1,5 +1,5 @@
 import React from "react";
-import "./Login.css";
+import "./genericStyles.css";
 
 const Login = ({ changeStatus }) => {
   return (
@@ -26,6 +26,14 @@ const Login = ({ changeStatus }) => {
             id="password"
             className="form-control"
           />
+        </div>
+		<div class="mb-3">
+          <button
+            type="submit"
+            class="btn btn-primary mb-3"
+          >
+            Login
+          </button>
         </div>
         <div className="mb-3">
           <p>

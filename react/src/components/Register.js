@@ -1,7 +1,33 @@
-import React from "react";
-import "./Register.css";
+import React, { useState } from "react";
+import "./genericStyles.css";
 
-const Register = ({ changeStatus }) => {
+const Register = ({ changeStatus, addUserToDatabase, errorMessage }) => {
+  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+
+  const _onEmailChange = (event) => {
+    setEmail(event.target.value);
+  };
+
+  const _onUsernameChange = (event) => {
+    setUsername(event.target.value);
+  };
+
+  const _onPasswordChange = (event) => {
+    setPassword(event.target.value);
+  };
+
+  const createUser = () => {
+    return { email, username, password };
+  };
+
+  const _onFormSubmit = (event) => {
+    event.preventDefault();
+    const user = createUser();
+    addUserToDatabase(user);
+  };
+
   return (
     <div className="container">
       <h1>Register</h1>
@@ -15,6 +41,7 @@ const Register = ({ changeStatus }) => {
             className="form-control"
             id="username"
             placeholder="example"
+            onChange={_onUsernameChange}
           />
         </div>
         <div className="mb-3">
@@ -26,6 +53,7 @@ const Register = ({ changeStatus }) => {
             className="form-control"
             id="email"
             placeholder="name@example.com"
+            onChange={_onEmailChange}
           />
         </div>
         <div className="mb-3">
@@ -37,11 +65,21 @@ const Register = ({ changeStatus }) => {
             id="password"
             className="form-control"
             aria-describedby="passwordHelpBlock"
+            onChange={_onPasswordChange}
           />
           <div id="passwordHelpBlock" className="form-text">
             Your password must be 8-20 characters long, contain letters and
             numbers, and must not contain spaces, special characters, or emoji.
           </div>
+        </div>
+        <div class="mb-3">
+          <button
+            type="submit"
+            class="btn btn-primary mb-3"
+            onClick={_onFormSubmit}
+          >
+            Register
+          </button>
         </div>
         <div className="mb-3">
           <p>
@@ -57,6 +95,7 @@ const Register = ({ changeStatus }) => {
           </p>
         </div>
       </form>
+	  <p className="error">{errorMessage}</p>
     </div>
   );
 };
