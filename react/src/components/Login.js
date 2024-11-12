@@ -1,7 +1,27 @@
-import React from "react";
+import React, { useState } from "react";
 import "./genericStyles.css";
 
-const Login = ({ changeStatus }) => {
+const Login = ({ changeStatus, userLogin, errorMessage }) => {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+
+  const _onUsernameChange = (event) => {
+    setUsername(event.target.value);
+  };
+
+  const _onPasswordChange = (event) => {
+    setPassword(event.target.value);
+  };
+
+  const createUser = () => {
+    return { username, password };
+  };
+
+  const _onFormSubmit = (event) => {
+    event.preventDefault();
+    const user = createUser();
+    userLogin(user);
+  };
   return (
     <div className="container">
       <h1>Login</h1>
@@ -15,6 +35,7 @@ const Login = ({ changeStatus }) => {
             className="form-control"
             id="username"
             placeholder="example"
+            onChange={_onUsernameChange}
           />
         </div>
         <div className="mb-3">
@@ -25,12 +46,14 @@ const Login = ({ changeStatus }) => {
             type="password"
             id="password"
             className="form-control"
+            onChange={_onPasswordChange}
           />
         </div>
-		<div class="mb-3">
+        <div class="mb-3">
           <button
             type="submit"
             class="btn btn-primary mb-3"
+            onClick={_onFormSubmit}
           >
             Login
           </button>
@@ -49,6 +72,7 @@ const Login = ({ changeStatus }) => {
           </p>
         </div>
       </form>
+      <p className="error">{errorMessage}</p>
     </div>
   );
 };

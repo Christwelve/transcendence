@@ -14,10 +14,12 @@ function App() {
 		fetchData();
 	}, []);
 
+
 	return (
 		<Router>
 			<Routes>
 				<Route path="/" element={<HomePage />} />
+				<Route path="/home" element={<HomePage />} />
 				<Route path="/pong" element={<PongPage />} />
 			</Routes>
 		</Router>

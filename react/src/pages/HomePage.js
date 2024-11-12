@@ -2,6 +2,7 @@ import React from "react";
 import { useState } from "react";
 import Register from "../components/Register";
 import Login from "../components/Login";
+import Home from "../components/Home";
 
 function HomePage() {
   const [userStatus, setUserStatus] = useState("register");
@@ -26,6 +27,22 @@ function HomePage() {
     }
   };
 
+  const userLogin = (user) => {
+    const dbUser = database[user.username];
+    if (dbUser) {
+      if (dbUser.password === user.password) {
+        setUserStatus("logged");
+        setErrorMessage(null);
+      } else {
+        setErrorMessage("Wrong credentials!");
+      }
+    } else {
+      setErrorMessage("Wrong credentials!");
+    }
+  };
+
+  console.log("state: ", userStatus);
+
   return (
     <>
       {userStatus === "register" ? (
@@ -35,9 +52,13 @@ function HomePage() {
           errorMessage={errorMessage}
         />
       ) : userStatus === "login" ? (
-        <Login changeStatus={changeStatus} />
+        <Login
+          changeStatus={changeStatus}
+          userLogin={userLogin}
+          errorMessage={errorMessage}
+        />
       ) : (
-        <Register changeStatus={changeStatus} />
+        <Home changeStatus={changeStatus}/>
       )}
     </>
   );

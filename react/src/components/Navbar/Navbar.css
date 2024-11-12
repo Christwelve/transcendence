@@ -1,0 +1,5 @@
+.dropdown-menu {
+  max-width: 200px; /* Adjust the maximum width as needed */
+  max-height: 200px; /* Adjust the maximum height as needed */
+  overflow-y: auto; /* Add a scrollbar if content exceeds height */
+}
