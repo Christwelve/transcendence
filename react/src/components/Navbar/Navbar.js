@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import "./Navbar.css";
 
-const Navbar = ({ changeStatus }) => {
+const Navbar = ({ changeStatus, changeComponent, avatar }) => {
   return (
     <nav className="navbar navbar-expand-lg bg-primary navbar-dark">
       <div className="container-fluid">
@@ -36,11 +36,16 @@ const Navbar = ({ changeStatus }) => {
               data-bs-toggle="dropdown"
               aria-expanded="false"
             >
-              Account
+              <img src={avatar} alt="profile" className="profile" />
             </button>
             <ul class="dropdown-menu">
               <li className="wd-25">
-                <button className="dropdown-item">
+                <button
+                  className="dropdown-item"
+                  onClick={() => {
+                    changeComponent("profile");
+                  }}
+                >
                   Profile
                 </button>
               </li>

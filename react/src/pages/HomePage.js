@@ -8,6 +8,7 @@ function HomePage() {
   const [userStatus, setUserStatus] = useState("register");
   const [errorMessage, setErrorMessage] = useState(null);
   const [database, setDatabase] = useState({});
+  const [avatar, setAvatar] = useState(null);
 
   const changeStatus = (status) => {
     setUserStatus(status);
@@ -32,6 +33,7 @@ function HomePage() {
     if (dbUser) {
       if (dbUser.password === user.password) {
         setUserStatus("logged");
+        setAvatar(`https://robohash.org/${user.username}?200x200`);
         setErrorMessage(null);
       } else {
         setErrorMessage("Wrong credentials!");
@@ -58,7 +60,7 @@ function HomePage() {
           errorMessage={errorMessage}
         />
       ) : (
-        <Home changeStatus={changeStatus}/>
+        <Home changeStatus={changeStatus} avatar={avatar}/>
       )}
     </>
   );

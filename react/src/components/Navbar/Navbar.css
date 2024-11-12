@@ -1,5 +1,17 @@
 .dropdown-menu {
-  max-width: 200px; /* Adjust the maximum width as needed */
-  max-height: 200px; /* Adjust the maximum height as needed */
-  overflow-y: auto; /* Add a scrollbar if content exceeds height */
+  max-width: 200px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.profile {
+  width: 50px;
+  height: 50px;
+  border: 1px solid #fff;
+  background-color: #fff;
+  border-radius: 50%;
+}
+
+.dropstart .dropdown-toggle::before {
+  display: none !important;
 }
