@@ -1,0 +1,45 @@
+import json
+import time
+
+STATE_FILE_PATH = "./game_state.json"
+LOG_FILE_PATH = "./data/game_log.json"
+
+
+class PongEnv:
+    def __init__:
+        self.state = self.load_state()
+        self.done = False
+        # Load existing log if avalable
+        self.log = self.load_log()
+
+    def load_log(self):
+        if os.path.exists(LOG_FILE_PATH):
+            with open(LOG_FILE_PATH, "r") as f:
+                return json.load(f)
+        return []
+    
+    def load_state(self):
+        with open(STATE_FILE_PATH, "r") as f:
+            return json.load(f)
+
+    def reset(self):
+        self.done = False
+        self.state = self.load_state()
+        return self.state
+
+    def step(self, action):
+        if action == "up":
+            self.state["ai_paddle"] = max(0, self.state["ai_paddle"] - 10)
+        elif action == "down":
+            self.state["ai_paddle"] = min(400, self.state["ai_paddle"] + 10)
+
+        # Calculate reward + check if game = done
+        reward = self.calc_reward()
+        self.done = self.check_done()
+
+        # Log state with time stamp
+        self.log_state(action, reward)
+        self.save_state()
+
+        return self.state, reward, self.done
+        
