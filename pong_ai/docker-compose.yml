@@ -1,0 +1,9 @@
+services:
+  pong_ai:
+    image: pong_ai
+    build: ./
+    container_name: pong_ai
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/workspace/pong_ai
