@@ -28,11 +28,14 @@ class PongEnv:
         return self.state
 
     def step(self, action):
+        # TODO: Change this to a continous spectrum with  velocity and direction
         if action == "up":
             self.state["ai_paddle"] = max(0, self.state["ai_paddle"] - 10)
         elif action == "down":
             self.state["ai_paddle"] = min(400, self.state["ai_paddle"] + 10)
 
+        # TODO: Implement a more advanced reward calculation machanism that includes
+        #       primary rewards and secondary ones
         # Calculate reward + check if game = done
         reward = self.calc_reward()
         self.done = self.check_done()
@@ -42,4 +45,14 @@ class PongEnv:
         self.save_state()
 
         return self.state, reward, self.done
+
+    def calc_reward(self):
+        return 1 if not self.state["ball_missed"] else -1
+
+    def check_done(self):
+        return self.state["ball missed"]
+
+    def save_state(self):
+        with open(STATE_FILE_PATH, "w") as f:
+            json.dump(self.state, f)
         
