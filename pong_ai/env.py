@@ -55,4 +55,20 @@ class PongEnv:
     def save_state(self):
         with open(STATE_FILE_PATH, "w") as f:
             json.dump(self.state, f)
+
+    def log_state(self, action, reward):
+        log_entry = {
+            "timestamp": time.time(),
+            "state": self.state.copy(),
+            "action": action,
+            "reward": reward
+        }
+        self.log.append(log_entry)
+
+        # Append new entry to log file
+        with open(LOG_FILE_PATH, "w") as f:
+            json.dump(self.log, f, indent=4)  # Indent for readability
+
+    # def render(self):
+    #     print(f"Paddle Y: {self.state['ai_paddle']}, Ball: {self.state['ball']}")
         
