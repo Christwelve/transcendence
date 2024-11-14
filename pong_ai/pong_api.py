@@ -30,8 +30,11 @@ def move_ai():
     new_y = data.get('y')
     if new_y is not None:
         game_state = load_game_state()
+        print("Loaded game state before update:", game_state)  # Debugging
         game_state['ai_paddle'] = new_y
+        print("Updated game state with new AI paddle position:", game_state)  # Debugging
         save_game_state(game_state)
+        print("Saved game state to file.")  # Debugging
         return jsonify({"status": "success"}), 200
     return jsonify({"error": "Invalid data"}), 400
 

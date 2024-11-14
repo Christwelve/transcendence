@@ -6,7 +6,7 @@ import json
 
 
 # Path for storing game state data
-STATE_FILE_PATH = "./data/game_state.json"
+STATE_FILE_PATH = "./game_state.json"
 
 def ensure_directory_exists():
     os.makedirs(os.path.dirname(STATE_FILE_PATH), exist_ok=True)
@@ -101,7 +101,8 @@ def update_game_state():
     }
 
 def save_game_state():
-    ensure_directory_exists()
+    if not os.path.exists(STATE_FILE_PATH):
+        update_game_state()  
     with open(STATE_FILE_PATH, "w") as f:
         json.dump(game_state, f)
 
