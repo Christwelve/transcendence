@@ -1,12 +1,13 @@
 import json
 import time
+import os
 
 STATE_FILE_PATH = "./game_state.json"
 LOG_FILE_PATH = "./data/game_log.json"
 
 
 class PongEnv:
-    def __init__:
+    def __init__(self):
         self.state = self.load_state()
         self.done = False
         # Load existing log if avalable
@@ -50,7 +51,7 @@ class PongEnv:
         return 1 if not self.state["ball_missed"] else -1
 
     def check_done(self):
-        return self.state["ball missed"]
+        return self.state["ball_missed"]
 
     def save_state(self):
         with open(STATE_FILE_PATH, "w") as f:
