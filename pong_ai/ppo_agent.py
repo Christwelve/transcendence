@@ -89,7 +89,15 @@ class PPOAgent:
   
     # Compute advantage estimates using Generalized Advantage Estimation
     def compute_advantages(self, rewards, values, dones, next_values):
-        pass
+        values = np.append(values, next_value)
+        advantages = np.zeros_like(rewards)
+        gae = 0
+        for t in reversed(range(len(rewards))):
+            delta = rewards[t] + self.gamma * values[t + 1] * (1 - dones[t]) - values[t]
+            gae = delta + self.gamma * self.lambda_gae * (1 - dones[t]) * gae
+            advantages[t] = gae
+        returns = advantages + values[:-1]
+        return advantages, returns
 
     # Update the policy and value nw usin PPO objective
     def update(self, states, actions, old_log_probs, advantages, returns):
