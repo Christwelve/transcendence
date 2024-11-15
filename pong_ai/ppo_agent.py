@@ -14,9 +14,20 @@ class PPOAgent:
                  lambda_gae=0.95, # balances bias and variance in advantage estimation
                  c1=0.5, # entropy coeff in ppo obj, balances contribution of value loss relative to policy loss
                  c2=0.01 # entropy coeff in ppo obj, encourages exploration
-                 
                  ):
-        pass
+        self.input_dim = input_dim
+        self.action_dim = action_dim
+        self.actor_lr = actor_lr
+        self.critic_lr = critic_lr
+        self.gamma = gamma
+        self.epsilon = epsilon
+        self.lambda_gae = lambda_gae
+        self.c1 = c1
+        self.c2 = c2
+
+        # Placeholders for policy(actor) and value(critic) nw
+        self.actor_model = None
+        sef.critic_model = None
 
     # Build the policy and value models
     def build_models(self):
