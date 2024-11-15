@@ -2,6 +2,7 @@ import json
 import time
 import os
 import numpy as np
+import random 
 
 
 class PongEnv:
@@ -34,7 +35,7 @@ class PongEnv:
     def step(self, action):
         # Action = continuous value ==> paddle velocity
         # Clip the action to the maximum paddle speed
-        paddle_velocity = max(-self.max_paddle_speed, min(self.max_paddle_speed, action))
+        paddle_velocity = max(-self.paddle_speed, min(self.paddle_speed, action))
 
         self.state["ai_paddle"] += paddle_velocity
         self.state["ai_paddle"] = max(0, min(self.screen_height - self.paddle_height, self.state["ai_paddle"]))
