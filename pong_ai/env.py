@@ -29,12 +29,6 @@ class PongEnv:
         }
         return self.get_normalized_state()
 
-    def load_log(self):
-        if os.path.exists(LOG_FILE_PATH):
-            with open(LOG_FILE_PATH, "r") as f:
-                return json.load(f)
-        return []
-
 
     # Step returns (state, reward, done) tuple, with state as np.array
     def step(self, action):
