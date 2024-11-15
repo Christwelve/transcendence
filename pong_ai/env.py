@@ -93,17 +93,30 @@ class PongEnv:
         paddle_bottom = paddle_top + self.paddle_height
         paddle_x = 0 # assume paddle at x = 0
 
-        if self.state["ball_x"] <= 0:
+        if self.state["ball_x"] <= paddle_x + self.ball_size:
             if paddle_top <= self.state["ball_y"] <= paddle_bottom:
-                # Ball hits the paddle
                 self.state["ball_speed_x"] *= -1
-                self.state["ball_hit"] = True
+                offset = (self.state["ball_y"] - paddle_top) - self.paddle_height / 2
+                self.state["ball_speed_y"] = offset / (self.paddle_height / 2) * self.ball_speed
+
+                # Ensure ball speed doesn't exceed max speed
+                speed_magnitude = np.sqrt(self.state["ball_speed_x"]**2 + self.state["ball_speed_y"]**2)
+                if speed_magnitude > self.ball_max_speed:
+                    scale = self.ball_max_speed / speed_magnitude
+                    self.state["ball_speed_x"] *= scale
+                    self.state["ball_speed_y"] *= scale
             else:
                 self.state["ball_missed"] = True
-                self.state["ball_hit"] = False
-        else:
-            self.state["ball_hit"] = False
+        elif self.state["ball_x"] > self.screen_width:
+            # Reset ball if it goes beyond the right boundary
+            self.reset_ball()
 
+    def reset_ball(self):
+        self.state["ball_x"] = self.screen_width / 2
+        self.state["ball_y"] = random.uniform(self.ball_size, self.screen_height - self.ball_size)
+        self.state["ball_speed_x"] = random.choice([-self.ball_speed, self.ball_speed])
+        self.state["ball_speed_y"] = random.uniform(-self.ball_speed, self.ball_speed)
+        self.state["ball_missed"] = False      
                 
     def calc_reward(self):
         if self.state["ball_missed"]:
