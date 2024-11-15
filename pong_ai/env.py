@@ -3,45 +3,38 @@ import time
 import os
 import numpy as np
 
-STATE_FILE_PATH = "./game_state.json"
-LOG_FILE_PATH = "./data/game_log.json"
-
 
 class PongEnv:
     def __init__(self):
-        self.state = self.load_state()
         self.done = False
-        # Load existing log if avalable
-        self.log = self.load_log()
-
-        # Constants for env
+        self.log = []
+        self.screen_width = 800
         self.screen_height = 400
         self.paddle_height = 80
-        self.max_paddle_speed = 10
-        
+        self.paddle_speed = 10
+        self.ball_size = 20
+        self.ball_speed = 5
+        self.ball_max_speed = 10
+        self.reset()
+
+    def reset(self):
+        self.done = False
+        self.state = {
+            "ai_paddle": self.screen_height / 2 - self.paddle_height / 2,
+            "ball_x": random.uniform(self.ball_size, self.screen_width - self.ball_size),
+            "ball_y": random.uniform(self.ball_size, self.screen_height - self.ball_size),
+            "ball_speed_x": random.choice([-self.ball_speed, self.ball_speed]),
+            "ball_speed_y": random.uniform(-self.ball_speed, self.ball_speed),
+            "ball_missed": False
+        }
+        return self.get_normalized_state()
+
     def load_log(self):
         if os.path.exists(LOG_FILE_PATH):
             with open(LOG_FILE_PATH, "r") as f:
                 return json.load(f)
         return []
-    
-    def load_state(self):
-        with open(STATE_FILE_PATH, "r") as f:
-            return json.load(f)
-        # Default state if the file doesn t exist
-        return {
-            "ai_paddle": (self.screen_height / 2 - self.paddle_height / 2),
-            "ball_x": 400,
-            "ball_y": 200,
-            "ball_speed_x": 5,
-            "ball_speed_y": 5,
-            "ball_missed": False
-        }
 
-    def reset(self):
-        self.done = False
-        self.state = self.load_state()
-        return self.get_normalized_state()
 
     # Step returns (state, reward, done) tuple, with state as np.array
     def step(self, action):
@@ -62,7 +55,6 @@ class PongEnv:
 
         # Log state with time stamp
         self.log_state(action, reward)
-        self.save_state()
 
         return self.get_normalized_state(), reward, self.done
 
@@ -127,9 +119,6 @@ class PongEnv:
     def check_done(self):
         return self.state["ball_missed"]
 
-    def save_state(self):
-        with open(STATE_FILE_PATH, "w") as f:
-            json.dump(self.state, f)
 
     def log_state(self, action, reward):
         log_entry = {
@@ -140,6 +129,3 @@ class PongEnv:
         }
         self.log.append(log_entry)
 
-        # Append new entry to log file
-        with open(LOG_FILE_PATH, "w") as f:
-            json.dump(self.log, f, indent=2)
