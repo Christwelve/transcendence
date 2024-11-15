@@ -121,8 +121,6 @@ class PongEnv:
     def calc_reward(self):
         if self.state["ball_missed"]:
             return -10
-        elif self.state["ball_hit"]:
-            return 1
         else:
             return 0.2
 
