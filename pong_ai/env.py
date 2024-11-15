@@ -50,7 +50,9 @@ class PongEnv:
         self.state["ai_paddle"] += paddle_velocity
         self.state["ai_paddle"] = max(0, min(self.screen_height - self.paddle_height, self.state["ai_paddle"]))
 
-        # TODO: Update ball position and check collisions
+        # Update ball position and check for collision
+        self.update_ball()
+        self.check_collisions()
 
         # Calculate reward + check if game = done
         reward = self.calc_reward()
@@ -62,8 +64,33 @@ class PongEnv:
 
         return self.state, reward, self.done
 
+    def update_ball(self):
+        self.state["ball_x"] += self.state["ball_speed_x"]
+        self.state["ball_y"] += self.state["ball_speed_y"]
+
+        def check_collisions(self):
+        # Check collision with top and bottom walls
+            if self.state["ball_y"] <= 0 \
+                or self.state["ball_y"] >= self.screen_height:
+                self.state["ball_speed_y"] *= -1
+
+        # Check collision with paddle
+        paddle_top = self.state["ai_paddle"]
+        paddle_bottom = paddle_top + self.paddle_height
+        paddle_x = 0 # assume paddle at x = 0
+
+        if self.state["ball_x"] <= paddle_x:
+            if paddle_top <= self.state["ball_y"] <= paddle_bottom:
+                self.state["ball_speed_x"] *= -1
+            else:
+                self.state["ball_missed"] = True
+
+                
     def calc_reward(self):
-        return 1 if not self.state["ball_missed"] else -1
+        if self.state["ball_missed"]:
+            return -10
+        else:
+            return 0.2
 
     def check_done(self):
         return self.state["ball_missed"]
