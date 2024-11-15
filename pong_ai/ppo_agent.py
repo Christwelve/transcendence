@@ -27,11 +27,30 @@ class PPOAgent:
 
         # Placeholders for policy(actor) and value(critic) nw
         self.actor_model = None
-        sef.critic_model = None
+        self.critic_model = None
 
     # Build the policy and value models
     def build_models(self):
-        pass
+        # ..::Actor (policy) NW::..
+        inputs = tf.keras.Input(shape=(self.input_dim))
+        x = layers.Dense(64, activation='relu')(inputs)
+        x = layers.Dense(64, activation='relu')(x)
+
+        # Output mean and log_std
+        mu = layers.Dense(self.action_dim, activation='tanh')(x) # Mean in [-1, 1]
+        log_std = layers.Dense(self.action_dim, activation='softplus')(x) # std > 0 
+        self.actor_model = tf.keras.Model(inputs=inputs, outputs=[mu, log_std])
+
+        # ..::Critic (value) NW::..
+        critic_inputs = tf.keras.Input(shape=(self.input_dim,))
+        v = layers.Dense(64, activation='relu')(critic_inputs)
+        v = layers.Dense(64, activation='relu')(v)
+        value = layers.Dense(1, activiation='linear')(v)
+        self.critic_model = tf.keras.Model(inputs=critic_inputs, outputs=value)
+
+        # Compile models
+        self.actor_optimizer = optimizers.Adam(learning_rate=self.actor_lr)
+        self.critic_model.compile(optimizer=optimizers.Adam(learning_rate=self.critic_lr), loss='mse')
 
     # Given a state, compute the action and log 
     # probability under the current policy
