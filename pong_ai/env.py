@@ -13,6 +13,11 @@ class PongEnv:
         # Load existing log if avalable
         self.log = self.load_log()
 
+        # Constants for env
+        self.screen_height = 400
+        self.paddle_height = 80
+        self.max_paddle_speed = 10
+        
     def load_log(self):
         if os.path.exists(LOG_FILE_PATH):
             with open(LOG_FILE_PATH, "r") as f:
@@ -22,6 +27,15 @@ class PongEnv:
     def load_state(self):
         with open(STATE_FILE_PATH, "r") as f:
             return json.load(f)
+        # Default state if the file doesn t exist
+        return {
+            "ai_paddle": self.screen_height / 2,
+            "ball_x": 400,
+            "ball_y": 200,
+            "ball_speed_x": 5,
+            "ball_speed_y": 5,
+            "ball_missed": False
+        }
 
     def reset(self):
         self.done = False
@@ -29,14 +43,15 @@ class PongEnv:
         return self.state
 
     def step(self, action):
-        # TODO: Change this to a continous spectrum with  velocity and direction
-        if action == "up":
-            self.state["ai_paddle"] = max(0, self.state["ai_paddle"] - 10)
-        elif action == "down":
-            self.state["ai_paddle"] = min(400, self.state["ai_paddle"] + 10)
+        # Action = continuous value ==> paddle velocity
+        # Clip the action to the maximum paddle speed
+        paddle_velocity = max(-self.max_paddle_speed, min(self.max_paddle_speed, action))
 
-        # TODO: Implement a more advanced reward calculation machanism that includes
-        #       primary rewards and secondary ones
+        self.state["ai_paddle"] += paddle_velocity
+        self.state["ai_paddle"] = max(0, min(self.screen_height - self.paddle_height, self.state["ai_paddle"]))
+
+        # TODO: Update ball position and check collisions
+
         # Calculate reward + check if game = done
         reward = self.calc_reward()
         self.done = self.check_done()
@@ -68,8 +83,4 @@ class PongEnv:
 
         # Append new entry to log file
         with open(LOG_FILE_PATH, "w") as f:
-            json.dump(self.log, f, indent=4)  # Indent for readability
-
-    # def render(self):
-    #     print(f"Paddle Y: {self.state['ai_paddle']}, Ball: {self.state['ball']}")
-        
+            json.dump(self.log, f, indent=2)
