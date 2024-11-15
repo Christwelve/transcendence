@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import io from "socket.io-client";
-import Navbar from "../components/Navbar/Navbar";
 
 const SOCKET_SERVER_URL = "http://localhost:4000";
 
@@ -29,7 +28,7 @@ function Box(props) {
   );
 }
 
-function PongPage() {
+const Game = () => {
   useEffect(() => {
     const socket = io(SOCKET_SERVER_URL);
 
@@ -43,23 +42,20 @@ function PongPage() {
   }, []);
 
   return (
-    <>
-      <Navbar />
-      <Canvas>
-        <ambientLight intensity={Math.PI / 2} />
-        <spotLight
-          position={[10, 10, 10]}
-          angle={0.15}
-          penumbra={1}
-          decay={0}
-          intensity={Math.PI}
-        />
-        <pointLight position={[-10, -10, -10]} decay={0} intensity={Math.PI} />
-        <Box position={[-1.2, 0, 0]} />
-        <Box position={[1.2, 0, 0]} />
-      </Canvas>
-    </>
+    <Canvas>
+      <ambientLight intensity={Math.PI / 2} />
+      <spotLight
+        position={[10, 10, 10]}
+        angle={0.15}
+        penumbra={1}
+        decay={0}
+        intensity={Math.PI}
+      />
+      <pointLight position={[-10, -10, -10]} decay={0} intensity={Math.PI} />
+      <Box position={[-1.2, 0, 0]} />
+      <Box position={[1.2, 0, 0]} />
+    </Canvas>
   );
-}
+};
 
-export default PongPage;
+export default Game;

@@ -2,51 +2,96 @@ import React, { useState } from "react";
 import "./Navbar.css";
 
 const Navbar = ({ changeStatus, changeComponent, avatar }) => {
+  const [homeIsActive, setHomeIsActive] = useState(true);
+  const [gameIsActive, setGameIsActive] = useState(false);
+  const activateTab = (tab) => {
+    console.log(tab, homeIsActive, gameIsActive);
+    if (tab === "main") {
+      setHomeIsActive(true);
+      setGameIsActive(false);
+    } else if (tab === "game") {
+      setGameIsActive(true);
+      setHomeIsActive(false);
+    } else {
+      setHomeIsActive(false);
+      setGameIsActive(false);
+    }
+    changeComponent(tab);
+  };
   return (
     <nav className="navbar navbar-expand-lg bg-primary navbar-dark">
       <div className="container-fluid">
-        <a className="navbar-brand" href="home">
+        <p
+          className="navbar-brand navbar-link"
+          onClick={() => {
+            activateTab("home");
+          }}
+        >
           <img
             src="/logo.png"
             alt="Logo"
             width="30"
             height="30"
-            class="d-inline-block align-text-top"
+            className="d-inline-block align-text-top"
           />
           Transcendence
-        </a>
+        </p>
 
         <div className="collapse navbar-collapse" id="navbarNav">
           <ul className="navbar-nav me-auto">
             <li className="nav-item">
-              <a className="nav-link active" aria-current="page" href="home">
+              <p
+                className={`nav-link navbar-link ${
+                  homeIsActive ? "active" : ""
+                }`}
+                onClick={() => {
+                  activateTab("main");
+                }}
+              >
                 Home
-              </a>
+              </p>
             </li>
             <li className="nav-item">
-              <a className="nav-link" href="pong">
+              <p
+                className={`nav-link navbar-link ${
+                  gameIsActive ? "active" : ""
+                }`}
+                onClick={() => {
+                  activateTab("game");
+                }}
+              >
                 Game
-              </a>
+              </p>
             </li>
           </ul>
-          <div class="btn-group dropstart">
+          <div className="btn-group dropstart">
             <button
               type="button"
-              class="btn btn-primary dropdown-toggle"
+              className="btn btn-primary dropdown-toggle"
               data-bs-toggle="dropdown"
               aria-expanded="false"
             >
               <img src={avatar} alt="profile" className="profile" />
             </button>
-            <ul class="dropdown-menu">
+            <ul className="dropdown-menu">
               <li className="wd-25">
                 <button
                   className="dropdown-item"
                   onClick={() => {
-                    changeComponent("profile");
+                    activateTab("profile");
                   }}
                 >
-                  Profile
+                  Settings
+                </button>
+              </li>
+              <li className="wd-25">
+                <button
+                  className="dropdown-item"
+                  onClick={() => {
+                    activateTab("stats");
+                  }}
+                >
+                  Statistics
                 </button>
               </li>
               <li>

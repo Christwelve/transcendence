@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import "./genericStyles.css";
+import "../genericStyles.css";
 
 const Login = ({ changeStatus, userLogin, errorMessage }) => {
   const [username, setUsername] = useState("");
@@ -27,7 +27,7 @@ const Login = ({ changeStatus, userLogin, errorMessage }) => {
       <h1>Login</h1>
       <form className="wd-25 pd-3">
         <div className="mb-3">
-          <label for="username" className="form-label">
+          <label htmlFor="username" className="form-label">
             Username
           </label>
           <input
@@ -39,7 +39,7 @@ const Login = ({ changeStatus, userLogin, errorMessage }) => {
           />
         </div>
         <div className="mb-3">
-          <label for="password" className="form-label">
+          <label htmlFor="password" className="form-label">
             Password
           </label>
           <input
@@ -49,10 +49,10 @@ const Login = ({ changeStatus, userLogin, errorMessage }) => {
             onChange={_onPasswordChange}
           />
         </div>
-        <div class="mb-3">
+        <div className="mb-3">
           <button
             type="submit"
-            class="btn btn-primary mb-3"
+            className="btn btn-primary mb-3"
             onClick={_onFormSubmit}
           >
             Login

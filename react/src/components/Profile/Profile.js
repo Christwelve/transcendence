@@ -1,12 +1,12 @@
 import React from "react";
 import "../genericStyles.css";
+import "./Profile.css";
 
-const Profile = ({changeComponent, avatar}) => {
+const Profile = ({ avatar }) => {
   return (
-    <div>
-      <h1>Profile</h1>
-	  <img src={avatar} alt="Avatar" width="100" height="100"/>
-      <p className="link" onClick={() => {changeComponent("stats")}}>See game statistics</p>
+    <div className="container">
+      <h1 className="page-title mb-5 mt-3">Profile</h1>
+      <img src={avatar} alt="Avatar" className="profile-img" />
     </div>
   );
 };

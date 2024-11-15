@@ -15,3 +15,11 @@
 .dropstart .dropdown-toggle::before {
   display: none !important;
 }
+
+.navbar-link {
+  display: inline !important;
+}
+
+.navbar-brand {
+  margin-bottom: 0;
+}

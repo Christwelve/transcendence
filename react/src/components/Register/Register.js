@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import "./genericStyles.css";
+import "../genericStyles.css";
 
 const Register = ({ changeStatus, addUserToDatabase, errorMessage }) => {
   const [email, setEmail] = useState("");
@@ -33,7 +33,7 @@ const Register = ({ changeStatus, addUserToDatabase, errorMessage }) => {
       <h1>Register</h1>
       <form className="wd-25 pd-3">
         <div className="mb-3">
-          <label for="username" className="form-label">
+          <label htmlFor="username" className="form-label">
             Username
           </label>
           <input
@@ -45,7 +45,7 @@ const Register = ({ changeStatus, addUserToDatabase, errorMessage }) => {
           />
         </div>
         <div className="mb-3">
-          <label for="email" className="form-label">
+          <label htmlFor="email" className="form-label">
             Email address
           </label>
           <input
@@ -57,7 +57,7 @@ const Register = ({ changeStatus, addUserToDatabase, errorMessage }) => {
           />
         </div>
         <div className="mb-3">
-          <label for="password" className="form-label">
+          <label htmlFor="password" className="form-label">
             Password
           </label>
           <input
@@ -72,10 +72,10 @@ const Register = ({ changeStatus, addUserToDatabase, errorMessage }) => {
             numbers, and must not contain spaces, special characters, or emoji.
           </div>
         </div>
-        <div class="mb-3">
+        <div className="mb-3">
           <button
             type="submit"
-            class="btn btn-primary mb-3"
+            className="btn btn-primary mb-3"
             onClick={_onFormSubmit}
           >
             Register
@@ -95,7 +95,7 @@ const Register = ({ changeStatus, addUserToDatabase, errorMessage }) => {
           </p>
         </div>
       </form>
-	  <p className="error">{errorMessage}</p>
+      <p className="error">{errorMessage}</p>
     </div>
   );
 };
