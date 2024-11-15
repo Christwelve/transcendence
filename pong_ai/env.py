@@ -54,12 +54,11 @@ class PongEnv:
 
     def get_normalized_state(self):
         normalized_state = np.array([
-            "ai_paddle": (self.state["ai_paddle"] / (self.screen_height - self.paddle_height)) * 2 - 1,
-            "ball_x": (self.state["ball_x"] / self.screen_height) * 2 - 1,
-            "ball_y": (self.state["ball_y"] / self.screen_height) * 2 - 1,
-            "ball_speed_x": self.state["ball_speed_x"] / self.max_paddle_speed,
-            "ball_speed_y": self.state["ball_speed_y"] / self.max_paddle_speed,
-            "ball_missed": self.state["ball_missed"]
+            (self.state["ai_paddle"] / (self.screen_height - self.paddle_height)) * 2 - 1,
+            (self.state["ball_x"] / self.screen_width) * 2 - 1,
+            (self.state["ball_y"] / self.screen_height) * 2 - 1,
+            self.state["ball_speed_x"] / self.ball_max_speed,
+            self.state["ball_speed_y"] / self.ball_max_speed
         ], dtype=np.float32)
         return normalized_state
 
