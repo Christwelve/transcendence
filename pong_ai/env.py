@@ -122,4 +122,3 @@ class PongEnv:
             "reward": reward
         }
         self.log.append(log_entry)
-

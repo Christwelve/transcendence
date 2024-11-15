@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+import random
 from tensorflow.keras import layers, optimizers, losses
 
 class PPOAgent:
@@ -67,8 +68,25 @@ class PPOAgent:
     # Given a state, compute the action and log 
     # probability under the current policy
     def get_action(self, state):
-        pass
+        state = np.array([state])
+        mu, log_std = self.actor_model.predict(state)
+        mu = mu[0]
+        log_std = log_std[0]
+        std = np.exp(log_std)
 
+        # Sample action from the Gaussian distro
+        action = np.random.normal(mu, std)
+
+        # Clip action to be within the action space
+        action = np.clip(action, -1, 1)
+
+        # Calculate log prob of the action
+        var = std ** 2
+        log_prob = -0.5 * ((action - mu) ** 2 / var + 2 * log_std + np.log(2 * np.pi))
+        log_prob = np.sum(log_prob)
+
+        return action, log_prob
+  
     # Compute advantage estimates using Generalized Advantage Estimation
     def compute_advantages(self, rewards, values, dones, next_values):
         pass
