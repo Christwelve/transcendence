@@ -3,7 +3,10 @@ html {
 }
 
 body {
+	position: relative;
 	margin: 0;
+	color: #fff;
+	font-family: monospace;
 }
 
 * {
@@ -15,6 +18,33 @@ a {
 	text-decoration: none;
 }
 
+button {
+	appearance: none;
+	border: none;
+	outline: none;
+}
+
 #root {
+	height: 100vh;
+}
+
+#stats {
+	position: fixed;
+	top: 0;
+	left: 0;
+}
+
+#stats > * {
+	padding: 3px;
+}
+
+.game-ui {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
 	height: 100vh;
 }
