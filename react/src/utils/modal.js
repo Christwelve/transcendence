@@ -1,6 +1,5 @@
 import React from 'react'
 import {updateModalList} from '../components/ModalPresenter';
-import randomId from './randomId';
 
 let modalIdCounter = 0;
 const modals = new Map();
