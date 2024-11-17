@@ -1,8 +1,12 @@
 import os
+# os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
 from env import PongEnv
 from ppo_agent import PPOAgent
 from collections import deque
 import numpy as np
+import tensorflow as tf
 
 # Initialize environment and agent
 env = PongEnv()
@@ -28,6 +32,32 @@ os.makedirs(save_dir, exist_ok=True)
 reward_history = deque(maxlen=100)
 
 
+def save_models(agent, save_dir, episode=None):
+    if episode:
+        actor_path = os.path.join(save_dir, f'actor_model_ep{episode}.keras')
+        critic_path = os.path.join(save_dir, f'critic_model_ep{episode}.keras')
+        log_std_path = os.path.join(save_dir, f'log_std_ep{episode}.npy')
+    else:
+        actor_path = os.path.join(save_dir, 'actor_model_final.keras')
+        critic_path = os.path.join(save_dir, 'critic_model_final.keras')
+        log_std_path = os.path.join(save_dir, 'log_std_final.npy')
+
+    agent.actor_model.save(actor_path)
+    agent.critic_model.save(critic_path)
+    np.save(log_std_path, agent.log_std.numpy())
+    print(f"Models saved{' at episode ' + str(episode) if episode else ' (final)'}.")
+
+
+@tf.function
+def train_step(agent, states, actions, old_log_probs, advantages, returns, epochs, batch_size):
+    dataset = tf.data.Dataset.from_tensor_slices((states, actions, old_log_probs, advantages, returns))
+    dataset = dataset.shuffle(buffer_size=len(states)).batch(batch_size)
+
+    for epoch in range(epochs):
+        for batch in dataset:
+            agent.update(*batch)
+
+
 # Training loop
 for episode in range(max_episodes):
     state = env.reset()
@@ -46,7 +76,7 @@ for episode in range(max_episodes):
     while not done and steps < max_steps_per_episode:
         # Get action and log probability from the policy
         action, log_prob = agent.get_action(state)
-        value = agent.critic_model.predict(np.array([state]), verbose=0)[0, 0]
+        value = agent.critic_model.predict(np.array([state], dtype=np.float32), verbose=0)[0, 0]
 
         # Extract action for the environment
         action_env = action[0]
@@ -65,7 +95,7 @@ for episode in range(max_episodes):
         steps += 1
 
     # Get last value for advantage computation
-    next_value = agent.critic_model.predict(np.array([state]), verbose=0)[0, 0] if not done else 0.0
+    next_value = agent.critic_model.predict(np.array([state], dtype=np.float32), verbose=0)[0, 0] if not done else 0.0
 
     # Convert arrays for training
     states_arr = np.array(states_arr, dtype=np.float32)
@@ -78,31 +108,16 @@ for episode in range(max_episodes):
     # Compute advantages and returns
     advantages, returns = agent.compute_advantages(rewards_arr, values_arr, dones_arr, next_value)
 
-    # Update the PPO agent
-    agent.update(states_arr, actions_arr, old_log_probs_arr, advantages, returns, epochs=epochs, batch_size=batch_size)
+    # Train PPO
+    train_step(agent, states_arr, actions_arr, old_log_probs_arr, advantages, returns, epochs, batch_size)
 
     # Save periodically
     if (episode + 1) % save_frequency == 0:
-        actor_path = os.path.join(save_dir, f'actor_model_ep{episode+1}.keras')
-        critic_path = os.path.join(save_dir, f'critic_model_ep{episode+1}.keras')
-        log_std_path = os.path.join(save_dir, f'log_std_ep{episode+1}.npy')
-
-        agent.actor_model.save(actor_path)
-        agent.critic_model.save(critic_path)
-        np.save(log_std_path, agent.log_std.numpy())
-        print(f"Models saved at episode {episode+1}")
+        save_models(agent, save_dir, episode=episode + 1)
 
     # Log progress
     reward_history.append(total_reward)
     average_reward = np.mean(reward_history)
     print(f"Episode {episode+1}/{max_episodes}, Total Reward: {total_reward}, Average Reward: {average_reward:.2f}")
 
-# Save final models and log_std (move outside the loop)
-final_actor_path = os.path.join(save_dir, 'actor_model_final.keras')
-final_critic_path = os.path.join(save_dir, 'critic_model_final.keras')
-final_log_std_path = os.path.join(save_dir, 'log_std_final.npy')
-
-agent.actor_model.save(final_actor_path)
-agent.critic_model.save(final_critic_path)
-np.save(final_log_std_path, agent.log_std.numpy())
-print("Final models and log_std saved.")
+save_models(agent, save_dir)
