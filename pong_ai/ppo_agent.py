@@ -6,13 +6,13 @@ class PPOAgent:
     def __init__(self,
                  input_dim,
                  action_dim,
-                 actor_lr=0.0003,
-                 critic_lr=0.0001,
+                 actor_lr=0.0005,
+                 critic_lr=0.0002,
                  gamma=0.99,
-                 epsilon=0.2,
-                 lambda_gae=0.95,
+                 epsilon=0.25,
+                 lambda_gae=0.97,
                  c1=1.0,
-                 c2=0.01):
+                 c2=0.03):
         
         self.input_dim = input_dim
         self.action_dim = action_dim
@@ -35,16 +35,19 @@ class PPOAgent:
         x = layers.Dense(128, activation='relu')(inputs)
         x = layers.Dense(128, activation='relu')(x)
         x = layers.Dense(64, activation='relu')(x)
-        
-        # Separate heads for mean and std
         mu = layers.Dense(self.action_dim, activation='tanh')(x)
-        log_std = layers.Dense(self.action_dim, activation='tanh')(x)
-        log_std = layers.Lambda(lambda x: -2.0 + 0.5 * x)(log_std)  # Constrain log_std
+        
+        log_std = layers.Dense(
+            self.action_dim,
+            activation='tanh',
+            kernel_initializer='zeros',
+            bias_initializer=tf.keras.initializers.Constant(-1.75)
+        )(x)
         
         self.actor_model = tf.keras.Model(inputs=inputs, outputs=[mu, log_std])
         self.actor_optimizer = optimizers.Adam(learning_rate=self.actor_lr)
 
-        # Critic network with similar architecture
+        # Critic network
         inputs = layers.Input(shape=(self.input_dim,))
         x = layers.Dense(128, activation='relu')(inputs)
         x = layers.Dense(128, activation='relu')(x)
@@ -56,45 +59,48 @@ class PPOAgent:
             optimizer=optimizers.Adam(learning_rate=self.critic_lr),
             loss='mse'
         )
-
+        
     @tf.function
     def get_action_and_value(self, state):
         state = tf.cast(state, tf.float32)
         mu, log_std = self.actor_model(state)
         std = tf.exp(log_std)
         
-        # Sample action using reparameterization trick
-        eps = tf.random.normal(shape=mu.shape)
+        eps = tf.random.normal(shape=mu.shape, dtype=tf.float32)
         action = mu + eps * std
         
-        # Compute log probability
-        log_prob = -0.5 * (
+        log_prob = -0.5 * tf.cast(
             tf.square((action - mu) / (std + 1e-8))
             + 2 * log_std
-            + tf.math.log(2 * np.pi)
+            + tf.math.log(2 * np.pi),
+            tf.float32
         )
         log_prob = tf.reduce_sum(log_prob, axis=-1)
         
-        # Get value estimate
         value = self.critic_model(state)
         
         return action, log_prob, value
 
     @tf.function
     def train_step(self, states, actions, old_log_probs, advantages, returns):
+        states = tf.cast(states, tf.float32)
+        actions = tf.cast(actions, tf.float32)
+        old_log_probs = tf.cast(old_log_probs, tf.float32)
+        advantages = tf.cast(advantages, tf.float32)
+        returns = tf.cast(returns, tf.float32)
+
         with tf.GradientTape() as tape:
             mu, log_std = self.actor_model(states)
             std = tf.exp(log_std)
             
-            # Compute new log probabilities
-            log_probs = -0.5 * (
+            log_probs = -0.5 * tf.cast(
                 tf.square((actions - mu) / (std + 1e-8))
                 + 2 * log_std
-                + tf.math.log(2 * np.pi)
+                + tf.math.log(2 * np.pi),
+                tf.float32
             )
             log_probs = tf.reduce_sum(log_probs, axis=-1)
             
-            # Compute ratio and policy loss
             ratio = tf.exp(log_probs - old_log_probs)
             clip_ratio = tf.clip_by_value(ratio, 1 - self.epsilon, 1 + self.epsilon)
             
@@ -105,26 +111,22 @@ class PPOAgent:
                 )
             )
             
-            # Compute value loss
             values = self.critic_model(states)
             value_loss = tf.reduce_mean(tf.square(returns - values))
             
-            # Compute entropy bonus
             entropy = tf.reduce_mean(
-                0.5 * (tf.math.log(2 * np.pi * tf.square(std)) + 1)
+                0.5 * tf.cast(
+                    tf.math.log(2 * np.pi * tf.square(std)) + 1,
+                    tf.float32
+                )
             )
             
-            # Total loss
             total_loss = policy_loss + self.c1 * value_loss - self.c2 * entropy
 
-        # Compute and apply gradients
         variables = self.actor_model.trainable_variables + self.critic_model.trainable_variables
         gradients = tape.gradient(total_loss, variables)
-        
-        # Clip gradients for stability
         gradients, _ = tf.clip_by_global_norm(gradients, 0.5)
         
-        # Apply gradients to both networks
         self.actor_optimizer.apply_gradients(
             zip(gradients[:len(self.actor_model.trainable_variables)],
                 self.actor_model.trainable_variables)
@@ -137,8 +139,9 @@ class PPOAgent:
         return policy_loss, value_loss, entropy
 
     def compute_advantages(self, rewards, values, dones, next_value):
-        advantages = np.zeros_like(rewards)
-        gae = 0
+        advantages = np.zeros_like(rewards, dtype=np.float32)
+        gae = 0.0
+        
         for t in reversed(range(len(rewards))):
             if t == len(rewards) - 1:
                 next_val = next_value
@@ -155,4 +158,4 @@ class PPOAgent:
         # Normalize advantages
         advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
         
-        return advantages, returns
+        return advantages.astype(np.float32), returns.astype(np.float32)

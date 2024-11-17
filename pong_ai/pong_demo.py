@@ -3,9 +3,9 @@ import random
 import time
 import os
 import json
+import numpy as np
+from tensorflow.keras.models import load_model
 
-
-# Path for storing game state data
 STATE_FILE_PATH = "./game_state.json"
 
 def ensure_directory_exists():
@@ -24,18 +24,33 @@ BLACK = (0, 0, 0)
 # Paddle and ball settings
 PADDLE_WIDTH, PADDLE_HEIGHT = 10, 80
 BALL_SIZE = 20
-BALL_SPEED = 4
+BALL_SPEED = 6
 BALL_MAX_SPEED = 10
+PADDLE_SPEED = 6
 UPDATE_INTERVAL = 1
 last_update_time = 0
+
+# Load AI model
+actor_model_path = os.path.join("models", "best_actor.keras")
+try:
+    actor_model = load_model(actor_model_path)
+    print("Actor model loaded successfully!")
+except Exception as e:
+    print(f"Error loading actor model: {e}")
+    actor_model = None
 
 class Paddle:
     def __init__(self, x, y):
         self.rect = pygame.Rect(x, y, PADDLE_WIDTH, PADDLE_HEIGHT)
-        self.speed = 6
 
     def move(self, up=True):
-        self.rect.y += -self.speed if up else self.speed
+        self.rect.y += -PADDLE_SPEED if up else PADDLE_SPEED
+        self.rect.y = max(0, min(self.rect.y, HEIGHT - PADDLE_HEIGHT))
+
+    def move_with_velocity(self, velocity):
+        if isinstance(velocity, np.ndarray):
+            velocity = velocity.item()
+        self.rect.y += velocity
         self.rect.y = max(0, min(self.rect.y, HEIGHT - PADDLE_HEIGHT))
 
     def draw(self, screen):
@@ -61,13 +76,11 @@ class Ball:
             self.reset_position()
 
     def reset_position(self):
-        # Center the ball and reset speed with a random direction
         self.rect.center = (WIDTH // 2, HEIGHT // 2)
         self.speed_x = BALL_SPEED * random.choice((1, -1))
         self.speed_y = BALL_SPEED * random.choice((1, -1))
 
     def increase_speed(self):
-        # Increase speed with a cap at BALL_MAX_SPEED
         if abs(self.speed_x) < BALL_MAX_SPEED:
             self.speed_x *= 1.1
         if abs(self.speed_y) < BALL_MAX_SPEED:
@@ -75,7 +88,6 @@ class Ball:
 
     def check_collision(self, paddle):
         if self.rect.colliderect(paddle.rect):
-            # Adjust angle based on hit location and reverse direction
             offset = (self.rect.centery - paddle.rect.centery) / (PADDLE_HEIGHT / 2)
             self.speed_y = BALL_SPEED * offset
             self.speed_x *= -1
@@ -89,6 +101,15 @@ player_paddle = Paddle(WIDTH - 20, HEIGHT // 2 - PADDLE_HEIGHT // 2)
 ai_paddle = Paddle(10, HEIGHT // 2 - PADDLE_HEIGHT // 2)
 ball = Ball()
 game_state = {}
+
+def get_normalized_state():
+    return np.array([
+        ai_paddle.rect.y / HEIGHT,          # AI paddle position
+        ball.rect.x / WIDTH,               # Ball x position
+        ball.rect.y / HEIGHT,              # Ball y position
+        ball.speed_x / BALL_MAX_SPEED,     # Ball x speed
+        ball.speed_y / BALL_MAX_SPEED      # Ball y speed
+    ], dtype=np.float32).reshape(1, -1)
 
 def update_game_state():
     global game_state
@@ -127,10 +148,6 @@ if __name__ == "__main__":
     while running:
         screen.fill(BLACK)
 
-        state = load_game_state()
-        if "ai_paddle" in state:
-            ai_paddle.rect.y = state["ai_paddle"]
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -140,6 +157,13 @@ if __name__ == "__main__":
             player_paddle.move(up=True)
         if keys[pygame.K_DOWN]:
             player_paddle.move(up=False)
+
+        if actor_model:
+            state = get_normalized_state()
+            velocity = actor_model.predict(state, verbose=0)[0][0]
+            velocity += np.random.normal(0, 0.1)
+            velocity = np.clip(velocity, -1, 1) * PADDLE_SPEED
+            ai_paddle.move_with_velocity(velocity)
 
         ball.move()
         if ball.rect.left < 0:

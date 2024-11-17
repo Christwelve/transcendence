@@ -1,123 +1,128 @@
 import os
-# os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 from env import PongEnv
 from ppo_agent import PPOAgent
-from collections import deque
 import numpy as np
 import tensorflow as tf
+from collections import deque
+import matplotlib.pyplot as plt
 
-# Initialize environment and agent
-env = PongEnv()
-input_dim = env.get_normalized_state().shape[0]
-action_dim = 1
-agent = PPOAgent(input_dim=input_dim, action_dim=action_dim)
-agent.build_models()
+def train_ppo():
+    # Environment and agent setup
+    env = PongEnv()
+    state_dim = env.get_normalized_state().shape[0]
+    action_dim = 1
+    
+    agent = PPOAgent(input_dim=state_dim, action_dim=action_dim)
+    
+    # Training parameters
+    num_episodes = 500
+    max_steps_per_episode = 1000
+    update_interval = 25
+    num_epochs = 10
+    batch_size = 64
+    
+    # Metrics tracking
+    reward_history = deque(maxlen=100)
+    episode_length_history = deque(maxlen=100)
+    
+    # Training loop
+    total_steps = 0
+    best_average_reward = float('-inf')
+    
+    for episode in range(num_episodes):
+        state = env.reset()
+        episode_reward = 0
+        episode_steps = 0
+        
+        # Storage
+        states = []
+        actions = []
+        rewards = []
+        values = []
+        log_probs = []
+        dones = []
+        
+        while episode_steps < max_steps_per_episode:
+            # Get action and value
+            state_tensor = tf.convert_to_tensor([state], dtype=tf.float32)
+            action, log_prob, value = agent.get_action_and_value(state_tensor)
+            
+            # Take action in environment
+            action_np = action.numpy()[0]
+            next_state, reward, done = env.step(action_np[0])
+            
+            # Store transition
+            states.append(state)
+            actions.append(action_np)
+            rewards.append(reward)
+            values.append(value.numpy()[0])
+            log_probs.append(log_prob.numpy()[0])
+            dones.append(done)
+            
+            state = next_state
+            episode_reward += reward
+            episode_steps += 1
+            total_steps += 1
+            
+            if done or episode_steps >= max_steps_per_episode:
+                break
+        
+        # Convert to numpy arrays
+        states = np.array(states, dtype=np.float32)
+        actions = np.array(actions, dtype=np.float32)
+        rewards = np.array(rewards, dtype=np.float32)
+        values = np.array(values, dtype=np.float32)
+        log_probs = np.array(log_probs, dtype=np.float32)
+        dones = np.array(dones, dtype=np.float32)
+        
+        # Compute advantages and returns
+        if done:
+            next_value = 0.0
+        else:
+            next_value = agent.get_action_and_value(
+                tf.convert_to_tensor([next_state], dtype=tf.float32)
+            )[2].numpy()[0]
+        
+        advantages, returns = agent.compute_advantages(rewards, values, dones, next_value)
+        
+        # Update policy
+        indices = np.arange(len(states))
+        for _ in range(num_epochs):
+            np.random.shuffle(indices)
+            for start in range(0, len(states), batch_size):
+                end = start + batch_size
+                batch_indices = indices[start:end]
+                
+                policy_loss, value_loss, entropy = agent.train_step(
+                    states[batch_indices],
+                    actions[batch_indices],
+                    log_probs[batch_indices],
+                    advantages[batch_indices],
+                    returns[batch_indices]
+                )
+        
+        # Track metrics
+        reward_history.append(episode_reward)
+        episode_length_history.append(episode_steps)
+        avg_reward = np.mean(reward_history)
+        avg_length = np.mean(episode_length_history)
+        
+        # Save best model
+        if avg_reward > best_average_reward:
+            best_average_reward = avg_reward
+            agent.actor_model.save('models/best_actor.keras')
+            agent.critic_model.save('models/best_critic.keras')
+        
+        # Print progress
+        if (episode + 1) % 10 == 0:
+            print(f"Episode {episode + 1}")
+            print(f"Average Episode Length: {avg_length:.2f}")
+            print(f"Average Reward: {avg_reward:.2f}")
+            print(f"Best Average Reward: {best_average_reward:.2f}")
+            print("-" * 50)
 
-print("Training started...")
-
-# Training hyperparameters
-max_episodes = 100
-max_steps_per_episode = 1000
-epochs = 10
-batch_size = 64
-save_frequency = 10
-
-# Directory to save models
-save_dir = 'models'
-os.makedirs(save_dir, exist_ok=True)
-
-# For tracking reward history
-reward_history = deque(maxlen=100)
-
-
-def save_models(agent, save_dir, episode=None):
-    if episode:
-        actor_path = os.path.join(save_dir, f'actor_model_ep{episode}.keras')
-        critic_path = os.path.join(save_dir, f'critic_model_ep{episode}.keras')
-        log_std_path = os.path.join(save_dir, f'log_std_ep{episode}.npy')
-    else:
-        actor_path = os.path.join(save_dir, 'actor_model_final.keras')
-        critic_path = os.path.join(save_dir, 'critic_model_final.keras')
-        log_std_path = os.path.join(save_dir, 'log_std_final.npy')
-
-    agent.actor_model.save(actor_path)
-    agent.critic_model.save(critic_path)
-    np.save(log_std_path, agent.log_std.numpy())
-    print(f"Models saved{' at episode ' + str(episode) if episode else ' (final)'}.")
-
-
-@tf.function
-def train_step(agent, states, actions, old_log_probs, advantages, returns, epochs, batch_size):
-    dataset = tf.data.Dataset.from_tensor_slices((states, actions, old_log_probs, advantages, returns))
-    dataset = dataset.shuffle(buffer_size=len(states)).batch(batch_size)
-
-    for epoch in range(epochs):
-        for batch in dataset:
-            agent.update(*batch)
-
-
-# Training loop
-for episode in range(max_episodes):
-    state = env.reset()
-    done = False
-    total_reward = 0
-    steps = 0
-
-    # Storage for training data
-    states_arr = []
-    actions_arr = []
-    old_log_probs_arr = []
-    rewards_arr = []
-    dones_arr = []
-    values_arr = []
-
-    while not done and steps < max_steps_per_episode:
-        # Get action and log probability from the policy
-        action, log_prob = agent.get_action(state)
-        value = agent.critic_model.predict(np.array([state], dtype=np.float32), verbose=0)[0, 0]
-
-        # Extract action for the environment
-        action_env = action[0]
-        next_state, reward, done = env.step(action_env)
-
-        # Store transition data
-        states_arr.append(state)
-        actions_arr.append(action)
-        old_log_probs_arr.append(log_prob)
-        rewards_arr.append(reward)
-        dones_arr.append(done)
-        values_arr.append(value)
-
-        state = next_state
-        total_reward += reward
-        steps += 1
-
-    # Get last value for advantage computation
-    next_value = agent.critic_model.predict(np.array([state], dtype=np.float32), verbose=0)[0, 0] if not done else 0.0
-
-    # Convert arrays for training
-    states_arr = np.array(states_arr, dtype=np.float32)
-    actions_arr = np.array(actions_arr, dtype=np.float32)
-    old_log_probs_arr = np.array(old_log_probs_arr, dtype=np.float32)
-    rewards_arr = np.array(rewards_arr, dtype=np.float32)
-    dones_arr = np.array(dones_arr, dtype=np.bool_)
-    values_arr = np.array(values_arr, dtype=np.float32)
-
-    # Compute advantages and returns
-    advantages, returns = agent.compute_advantages(rewards_arr, values_arr, dones_arr, next_value)
-
-    # Train PPO
-    train_step(agent, states_arr, actions_arr, old_log_probs_arr, advantages, returns, epochs, batch_size)
-
-    # Save periodically
-    if (episode + 1) % save_frequency == 0:
-        save_models(agent, save_dir, episode=episode + 1)
-
-    # Log progress
-    reward_history.append(total_reward)
-    average_reward = np.mean(reward_history)
-    print(f"Episode {episode+1}/{max_episodes}, Total Reward: {total_reward}, Average Reward: {average_reward:.2f}")
-
-save_models(agent, save_dir)
+if __name__ == "__main__":
+    os.makedirs('models', exist_ok=True)
+    train_ppo()
