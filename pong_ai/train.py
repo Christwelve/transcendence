@@ -28,7 +28,7 @@ os.makedirs(save_dir, exist_ok=True)
 reward_history = deque(maxlen=100)
 
 
-#Training loop
+# Training loop
 for episode in range(max_episodes):
     state = env.reset()
     done = False
@@ -63,6 +63,23 @@ for episode in range(max_episodes):
         state = next_state
         total_reward += reward
         steps += 1
+
+    # Get last value for advantage computation
+    next_value = agent.critic_model.predict(np.array([state]), verbose=0)[0, 0] if not done else 0.0
+
+    # Convert arrays for training
+    states_arr = np.array(states_arr, dtype=np.float32)
+    actions_arr = np.array(actions_arr, dtype=np.float32)
+    old_log_probs_arr = np.array(old_log_probs_arr, dtype=np.float32)
+    rewards_arr = np.array(rewards_arr, dtype=np.float32)
+    dones_arr = np.array(dones_arr, dtype=np.bool_)
+    values_arr = np.array(values_arr, dtype=np.float32)
+
+    # Compute advantages and returns using the agent's method
+    advantages, returns = agent.compute_advantages(rewards_arr, values_arr, dones_arr, next_value)
+
+    # Update the PPO agent
+    agent.update(states_arr, actions_arr, old_log_probs_arr, advantages, returns, epochs=epochs, batch_size=batch_size)
 
     # Log progress
     reward_history.append(total_reward)
