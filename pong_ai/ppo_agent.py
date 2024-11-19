@@ -9,8 +9,8 @@ class PPOAgent:
     def __init__(self,
                  input_dim,
                  action_dim,
-                 actor_lr=0.0005,
-                 critic_lr=0.0001,
+                 actor_lr=1e-5,
+                 critic_lr=1e-5,
                  gamma=0.95,
                  epsilon=0.25,
                  lambda_gae=0.97,
@@ -39,17 +39,22 @@ class PPOAgent:
     def build_models(self):
         # Actor network
         inputs = layers.Input(shape=(self.input_dim,))
-        x = layers.Dense(128, activation='relu', kernel_initializer='he_normal')(inputs)
-        x = layers.Dense(128, activation='relu', kernel_initializer='he_normal')(x)
-        x = layers.Dropout(0.2)(x)  # Add Dropout for regularization
-        x = layers.Dense(64, activation='relu', kernel_initializer='he_normal')(x)
+        x = layers.Dense(128, activation='relu', kernel_initializer='he_normal',
+                         kernel_regularizer=tf.keras.regularizers.l2(1e-4))(inputs)
+        x = layers.BatchNormalization()(x)  # Stabilize inputs
+        x = layers.Dense(128, activation='relu', kernel_initializer='he_normal',
+                         kernel_regularizer=tf.keras.regularizers.l2(1e-4))(x)
+        x = layers.Dropout(0.2)(x)  # Add dropout for regularization
+        x = layers.Dense(64, activation='relu', kernel_initializer='he_normal',
+                         kernel_regularizer=tf.keras.regularizers.l2(1e-4))(x)
         mu = layers.Dense(self.action_dim, activation='tanh')(x)
     
         log_std = layers.Dense(
             self.action_dim,
             activation='linear',
             kernel_initializer='zeros',
-            bias_initializer='zeros'  # Initialize bias to zero
+            bias_initializer='zeros',  # Avoid large initial values
+            kernel_constraint=tf.keras.constraints.MinMaxNorm(-2.0, 2.0)
         )(x)
     
         self.actor_model = tf.keras.Model(inputs=inputs, outputs=[mu, log_std])
@@ -57,14 +62,19 @@ class PPOAgent:
 
         # Critic network
         inputs = layers.Input(shape=(self.input_dim,))
-        x = layers.Dense(128, activation='relu', kernel_initializer='he_normal')(inputs)
-        x = layers.Dense(128, activation='relu', kernel_initializer='he_normal')(x)
-        x = layers.Dropout(0.2)(x)  # Add Dropout
-        x = layers.Dense(64, activation='relu', kernel_initializer='he_normal')(x)
+        x = layers.Dense(128, activation='relu', kernel_initializer='he_normal',
+                         kernel_regularizer=tf.keras.regularizers.l2(1e-4))(inputs)
+        x = layers.BatchNormalization()(x)
+        x = layers.Dropout(0.2)(x)
+        x = layers.Dense(128, activation='relu', kernel_initializer='he_normal',
+                         kernel_regularizer=tf.keras.regularizers.l2(1e-4))(x)
+        x = layers.Dropout(0.2)(x)
+        x = layers.Dense(64, activation='relu', kernel_initializer='he_normal',
+                         kernel_regularizer=tf.keras.regularizers.l2(1e-4))(x)
         value = layers.Dense(1)(x)
     
         self.critic_model = tf.keras.Model(inputs=inputs, outputs=value)
-        self.critic_optimizer = optimizers.Adam(learning_rate=self.critic_lr)
+        self.critic_optimizer = optimizers.Adam(learning_rate=self.critic_lr) 
 
         
     @tf.function
@@ -104,7 +114,7 @@ class PPOAgent:
             mu, log_std = self.actor_model(states)
             std = tf.exp(log_std)
             std = tf.clip_by_value(std, self.min_std, self.max_std)
-            log_probs = -0.5 * tf.square((actions - mu) / (std + 1e-8)) - log_std - tf.math.log(2 * np.pi)
+            log_probs = -0.5 * tf.square((actions - mu) / (std + 1e-8)) - log_std - tf.math.log(2 * np.pi + 1e-8)
             log_probs = tf.reduce_sum(log_probs, axis=-1)
             ratio = tf.exp(log_probs - old_log_probs)
             clip_ratio = tf.clip_by_value(ratio, 1 - self.epsilon, 1 + self.epsilon)
@@ -135,7 +145,7 @@ class PPOAgent:
             return policy_loss, value_loss, entropy
 
         # Apply clipped gradients
-        gradients, _ = tf.clip_by_global_norm(gradients, 10)
+        gradients, _ = tf.clip_by_global_norm(gradients, 1.0)
         self.actor_optimizer.apply_gradients(zip(gradients[:len(self.actor_model.trainable_variables)],
                                                  self.actor_model.trainable_variables))
         self.critic_optimizer.apply_gradients(zip(gradients[len(self.actor_model.trainable_variables):],
