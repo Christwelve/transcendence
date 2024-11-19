@@ -46,9 +46,16 @@ class PongEnv:
 
         # Calculate reward and check if game is done
         reward = self.calc_reward()
-        self.done = self.check_done()
+        # print(f"Reward: {reward}")  # Log reward
+        if np.isnan(reward) or np.isinf(reward):
+            print(f"NaN or Inf detected in reward! State: {self.state}, Action: {action}")
+            self.reset()  # Reset environment if reward is NaN or Inf
+            return self.get_normalized_state(), reward, self.done
 
-        # Log state with time stamp
+        self.done = self.check_done()
+        if self.done:
+            self.reset()  # Reset environment if done
+    
         self.log_state(action, reward)
 
         return self.get_normalized_state(), reward, self.done
@@ -77,7 +84,7 @@ class PongEnv:
         # Check collision with paddle
         paddle_top = self.state["ai_paddle"]
         paddle_bottom = paddle_top + self.paddle_height
-        paddle_x = 0  # Assume paddle at x = 0
+        paddle_x = 0
 
         if self.state["ball_x"] <= paddle_x + self.ball_size:
             if paddle_top <= self.state["ball_y"] <= paddle_bottom:
@@ -97,7 +104,6 @@ class PongEnv:
                 self.state["ball_missed"] = True
 
         elif self.state["ball_x"] > self.screen_width:
-            # Reset ball if it goes beyond the right boundary
             self.reset_ball()
 
     def reset_ball(self):
@@ -109,17 +115,19 @@ class PongEnv:
 
     def calc_reward(self):
         if self.state["ball_missed"]:
-            return -10
+            reward = -1
         elif self.state["paddle_idle"]:
-            return -1.0  # Penalize idle paddle
+            reward = -0.1
         elif self.state["ball_hit"]:
-            return 1.0  # Reward for hitting the ball
+            reward = 0.5
         else:
             paddle_y = self.state["ai_paddle"]
             ball_y = self.state["ball_y"]
             proximity_reward = 1.0 - abs(paddle_y - ball_y) / self.screen_height
             proximity_reward = max(0.0, min(proximity_reward, 0.5))
-            return 0.2 + proximity_reward
+            reward = 0.1 + proximity_reward
+            reward = np.clip(reward, -1, 1)
+        return reward / 100
 
     def check_done(self):
         return self.state["ball_missed"]

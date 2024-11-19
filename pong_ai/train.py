@@ -8,6 +8,7 @@ import tensorflow as tf
 from collections import deque
 import matplotlib.pyplot as plt
 
+
 def train_ppo():
     # Environment and agent setup
     env = PongEnv()
