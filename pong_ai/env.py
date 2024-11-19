@@ -32,16 +32,13 @@ class PongEnv:
         return self.get_normalized_state()
 
     def step(self, action):
-        # Track paddle position for idle detection
-        previous_paddle_position = self.state["ai_paddle"]
-
         # Clip action and move paddle
         paddle_velocity = max(-self.paddle_speed, min(self.paddle_speed, action))
         self.state["ai_paddle"] += paddle_velocity
         self.state["ai_paddle"] = max(0, min(self.screen_height - self.paddle_height, self.state["ai_paddle"]))
 
         # Update paddle_idle state
-        self.state["paddle_idle"] = previous_paddle_position == self.state["ai_paddle"]
+        self.state["paddle_idle"] = paddle_velocity == 0
 
         # Update ball position and check for collision
         self.update_ball()
@@ -118,7 +115,6 @@ class PongEnv:
         elif self.state["ball_hit"]:
             return 1.0  # Reward for hitting the ball
         else:
-            # Encourage staying near the ball's vertical position
             paddle_y = self.state["ai_paddle"]
             ball_y = self.state["ball_y"]
             proximity_reward = 1.0 - abs(paddle_y - ball_y) / self.screen_height

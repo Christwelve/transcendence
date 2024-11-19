@@ -1,12 +1,17 @@
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
+
 from env import PongEnv
 from ppo_agent import PPOAgent
 import numpy as np
 import tensorflow as tf
 from collections import deque
 import matplotlib.pyplot as plt
+
+
+print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+print("Available GPUs: ", tf.config.list_physical_devices('GPU'))
 
 def train_ppo():
     # Environment and agent setup
