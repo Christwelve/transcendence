@@ -1,17 +1,12 @@
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
-
 from env import PongEnv
 from ppo_agent import PPOAgent
 import numpy as np
 import tensorflow as tf
 from collections import deque
 import matplotlib.pyplot as plt
-
-
-print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
-print("Available GPUs: ", tf.config.list_physical_devices('GPU'))
 
 def train_ppo():
     # Environment and agent setup
@@ -31,6 +26,9 @@ def train_ppo():
     # Metrics tracking
     reward_history = deque(maxlen=100)
     episode_length_history = deque(maxlen=100)
+    policy_loss_history = []
+    value_loss_history = []
+    entropy_history = []
     
     # Training loop
     total_steps = 0
@@ -107,6 +105,11 @@ def train_ppo():
                     advantages[batch_indices],
                     returns[batch_indices]
                 )
+                
+                # Track losses and entropy
+                policy_loss_history.append(policy_loss.numpy())
+                value_loss_history.append(value_loss.numpy())
+                entropy_history.append(entropy.numpy())
         
         # Track metrics
         reward_history.append(episode_reward)
@@ -120,13 +123,47 @@ def train_ppo():
             agent.actor_model.save('models/best_actor.keras')
             agent.critic_model.save('models/best_critic.keras')
         
+        # Save latest model
+        agent.actor_model.save('models/latest_actor.keras')
+        agent.critic_model.save('models/latest_critic.keras')
+        
         # Print progress
         if (episode + 1) % 10 == 0:
             print(f"Episode {episode + 1}")
             print(f"Average Episode Length: {avg_length:.2f}")
             print(f"Average Reward: {avg_reward:.2f}")
             print(f"Best Average Reward: {best_average_reward:.2f}")
+            print(f"Last Policy Loss: {policy_loss_history[-1]:.4f}")
+            print(f"Last Value Loss: {value_loss_history[-1]:.4f}")
+            print(f"Last Entropy: {entropy_history[-1]:.4f}")
             print("-" * 50)
+    
+    # Plot training metrics
+    plt.figure(figsize=(12, 8))
+    plt.subplot(3, 1, 1)
+    plt.plot(policy_loss_history, label='Policy Loss')
+    plt.xlabel('Updates')
+    plt.ylabel('Loss')
+    plt.title('Policy Loss over Time')
+    plt.legend()
+    
+    plt.subplot(3, 1, 2)
+    plt.plot(value_loss_history, label='Value Loss')
+    plt.xlabel('Updates')
+    plt.ylabel('Loss')
+    plt.title('Value Loss over Time')
+    plt.legend()
+    
+    plt.subplot(3, 1, 3)
+    plt.plot(entropy_history, label='Entropy')
+    plt.xlabel('Updates')
+    plt.ylabel('Entropy')
+    plt.title('Entropy over Time')
+    plt.legend()
+    
+    plt.tight_layout()
+    plt.savefig('training_metrics.png')
+    plt.show()
 
 if __name__ == "__main__":
     os.makedirs('models', exist_ok=True)

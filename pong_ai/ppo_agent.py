@@ -39,9 +39,9 @@ class PPOAgent:
         
         log_std = layers.Dense(
             self.action_dim,
-            activation='tanh',
+            activation='linear',  # Change to linear activation
             kernel_initializer='zeros',
-            bias_initializer=tf.keras.initializers.Constant(-1.75)
+            bias_initializer=tf.keras.initializers.Constant(1.0)  # Adjusted initialization
         )(x)
         
         self.actor_model = tf.keras.Model(inputs=inputs, outputs=[mu, log_std])
@@ -55,10 +55,7 @@ class PPOAgent:
         value = layers.Dense(1)(x)
         
         self.critic_model = tf.keras.Model(inputs=inputs, outputs=value)
-        self.critic_model.compile(
-            optimizer=optimizers.Adam(learning_rate=self.critic_lr),
-            loss='mse'
-        )
+        self.critic_optimizer = optimizers.Adam(learning_rate=self.critic_lr)
         
     @tf.function
     def get_action_and_value(self, state):
@@ -131,7 +128,7 @@ class PPOAgent:
             zip(gradients[:len(self.actor_model.trainable_variables)],
                 self.actor_model.trainable_variables)
         )
-        self.critic_model.optimizer.apply_gradients(
+        self.critic_optimizer.apply_gradients(
             zip(gradients[len(self.actor_model.trainable_variables):],
                 self.critic_model.trainable_variables)
         )
