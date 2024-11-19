@@ -7,12 +7,14 @@ class PPOAgent:
                  input_dim,
                  action_dim,
                  actor_lr=0.0005,
-                 critic_lr=0.0002,
+                 critic_lr=0.0001,
                  gamma=0.99,
                  epsilon=0.25,
                  lambda_gae=0.97,
                  c1=1.0,
-                 c2=0.03):
+                 c2=0.03,
+                 min_std=0.1,  # Minimum standard deviation
+                 max_std=2.0):  # Maximum standard deviation
         
         self.input_dim = input_dim
         self.action_dim = action_dim
@@ -23,6 +25,8 @@ class PPOAgent:
         self.lambda_gae = lambda_gae
         self.c1 = c1
         self.c2 = c2
+        self.min_std = min_std
+        self.max_std = max_std
 
         # Initialize models
         self.actor_model = None
@@ -39,9 +43,9 @@ class PPOAgent:
         
         log_std = layers.Dense(
             self.action_dim,
-            activation='linear',  # Change to linear activation
+            activation='linear',
             kernel_initializer='zeros',
-            bias_initializer=tf.keras.initializers.Constant(1.0)  # Adjusted initialization
+            bias_initializer=tf.keras.initializers.Constant(1.0)
         )(x)
         
         self.actor_model = tf.keras.Model(inputs=inputs, outputs=[mu, log_std])
@@ -62,6 +66,9 @@ class PPOAgent:
         state = tf.cast(state, tf.float32)
         mu, log_std = self.actor_model(state)
         std = tf.exp(log_std)
+        
+        # Clip standard deviation
+        std = tf.clip_by_value(std, self.min_std, self.max_std)
         
         eps = tf.random.normal(shape=mu.shape, dtype=tf.float32)
         action = mu + eps * std
@@ -89,6 +96,9 @@ class PPOAgent:
         with tf.GradientTape() as tape:
             mu, log_std = self.actor_model(states)
             std = tf.exp(log_std)
+            
+            # Clip standard deviation
+            std = tf.clip_by_value(std, self.min_std, self.max_std)
             
             log_probs = -0.5 * tf.cast(
                 tf.square((actions - mu) / (std + 1e-8))
