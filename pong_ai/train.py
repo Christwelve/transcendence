@@ -8,7 +8,6 @@ import tensorflow as tf
 from collections import deque
 import matplotlib.pyplot as plt
 
-
 def train_ppo():
     # Environment and agent setup
     env = PongEnv()
@@ -18,11 +17,12 @@ def train_ppo():
     agent = PPOAgent(input_dim=state_dim, action_dim=action_dim)
     
     # Training parameters
-    num_episodes = 500
+    num_episodes = 20000
     max_steps_per_episode = 1000
     update_interval = 25
     num_epochs = 10
     batch_size = 64
+    save_interval = 1000  # Save the model every 50 episodes
     
     # Metrics tracking
     reward_history = deque(maxlen=100)
@@ -30,6 +30,7 @@ def train_ppo():
     policy_loss_history = []
     value_loss_history = []
     entropy_history = []
+    best_average_reward_history = []
     
     # Training loop
     total_steps = 0
@@ -125,8 +126,12 @@ def train_ppo():
             agent.critic_model.save('models/best_critic.keras')
         
         # Save latest model
-        agent.actor_model.save('models/latest_actor.keras')
-        agent.critic_model.save('models/latest_critic.keras')
+        if (episode + 1) % save_interval == 0:
+            agent.actor_model.save(f'models/actor_episode_{episode + 1}.keras')
+            agent.critic_model.save(f'models/critic_episode_{episode + 1}.keras')
+        
+        # Track best average reward history
+        best_average_reward_history.append(best_average_reward)
         
         # Print progress
         if (episode + 1) % 10 == 0:
@@ -140,26 +145,46 @@ def train_ppo():
             print("-" * 50)
     
     # Plot training metrics
-    plt.figure(figsize=(12, 8))
-    plt.subplot(3, 1, 1)
+    plt.figure(figsize=(16, 12))
+    
+    # Policy Loss
+    plt.subplot(3, 2, 1)
     plt.plot(policy_loss_history, label='Policy Loss')
     plt.xlabel('Updates')
     plt.ylabel('Loss')
     plt.title('Policy Loss over Time')
     plt.legend()
     
-    plt.subplot(3, 1, 2)
+    # Value Loss
+    plt.subplot(3, 2, 2)
     plt.plot(value_loss_history, label='Value Loss')
     plt.xlabel('Updates')
     plt.ylabel('Loss')
     plt.title('Value Loss over Time')
     plt.legend()
     
-    plt.subplot(3, 1, 3)
+    # Entropy
+    plt.subplot(3, 2, 3)
     plt.plot(entropy_history, label='Entropy')
     plt.xlabel('Updates')
     plt.ylabel('Entropy')
     plt.title('Entropy over Time')
+    plt.legend()
+    
+    # Best Average Reward
+    plt.subplot(3, 2, 4)
+    plt.plot(best_average_reward_history, label='Best Average Reward', color='green')
+    plt.xlabel('Episodes')
+    plt.ylabel('Average Reward')
+    plt.title('Best Average Reward over Time')
+    plt.legend()
+    
+    # Average Episode Length
+    plt.subplot(3, 2, 5)
+    plt.plot(episode_length_history, label='Average Episode Length')
+    plt.xlabel('Episodes')
+    plt.ylabel('Length')
+    plt.title('Average Episode Length over Time')
     plt.legend()
     
     plt.tight_layout()

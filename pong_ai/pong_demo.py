@@ -31,7 +31,7 @@ UPDATE_INTERVAL = 1
 last_update_time = 0
 
 # Load AI model
-actor_model_path = os.path.join("models", "latest_actor.keras")
+actor_model_path = os.path.join("models", "best_actor.keras")
 try:
     actor_model = load_model(actor_model_path)
     print("Actor model loaded successfully!")
@@ -160,7 +160,7 @@ if __name__ == "__main__":
 
         if actor_model:
             state = get_normalized_state()
-            print(f"Normalized state: {state}")
+            # print(f"Normalized state: {state}")
             predicted_velocity = actor_model.predict(state, verbose=0)[0][0]
             velocity = predicted_velocity * PADDLE_SPEED * np.abs(predicted_velocity)
             ai_paddle.move_with_velocity(velocity)
