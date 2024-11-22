@@ -3,11 +3,13 @@ const express = require('express');
 const {Server: WebSocketServer} = require('socket.io');
 const app = express();
 const server = http.createServer(app);
+const {createProxy, sendInstructions} = require('./proxy.js');
 
 const io = new WebSocketServer(server, {
 	serveClient: false,
 	cors: {
-		origin: 'http://localhost:3000',
+		origin: '*',
+		// origin: 'http://localhost:3000',
 		methods: ['GET', 'POST'],
 		// allowedHeaders: ['my-custom-header'],
 		credentials: true
@@ -17,34 +19,21 @@ const io = new WebSocketServer(server, {
 const port = 4000;
 
 let roomId = 0;
-const playerList = [];
-const roomList = [];
+
+const template = {
+	players: {},
+	rooms: {},
+}
+const data = createProxy(template);
+
+setInterval(sendInstructions.bind(null, io.emit.bind(io, 'instruction')), 0);
 
 server.listen(port, () => {
 	console.log(`Nodejs listening at http://localhost:${port}`);
 });
 
-function randi(min, max) {
-	return Math.round(Math.random() * (max - min) + min);
-}
-
-function getRoomMeta(room) {
-	const {id, name, type, status, players, playersMax} = room;
-
-	const playersCurrent = players.length;
-
-	return {
-		id,
-		name,
-		type,
-		status,
-		playersCurrent,
-		playersMax,
-	};
-}
-
-function getRoomMetaList() {
-	return roomList.map(getRoomMeta);
+function getPlayerFromSocket(socket) {
+	return data.players[socket.id];
 }
 
 function createRoom(player, options) {
@@ -52,7 +41,7 @@ function createRoom(player, options) {
 
 	const id = roomId++;
 	const status = 0;
-	const players = [player];
+	const players = [player.id];
 
 	return {
 		id,
@@ -70,28 +59,85 @@ io.on('connection', async socket => {
 		id: socket.id,
 		name: Math.random().toString(36).substring(2, 7),
 		state: 0,
+		room: null,
+		ready: false,
 	};
 
-	playerList.push(player);
+	data.players[player.id] = player;
 
-	socket.emit('game.room.list', getRoomMetaList());
+	socket.emit('user.id', player.id);
+	socket.emit('instruction', [{action: 'overwrite', value: data}]);
 
-	// setInterval(() => {
-	// 	const index = randi(0, roomList.length - 1);
-	// 	const room = roomList[index];
-	// 	const randomPlayerCount = randi(0, room.playersMax);
-	// 	room.players = randomPlayerCount;
-	// 	socket.emit('game.room.update', room);
-	// }, 1000);
-
-	socket.on('game.room.create', options => {
+	socket.on('room.create', options => {
+		const player = getPlayerFromSocket(socket);
 		const room = createRoom(player, options);
-		const meta = getRoomMeta(room);
 
-		roomList.push(room);
-
-		io.emit('game.room.create', meta);
+		data.rooms[room.id] = room;
+		player.state = 1;
+		player.roomId = room.id;
 	});
 
-	console.log('user connected');
+	socket.on('room.join', options => {
+		const {id} = options;
+		const player = getPlayerFromSocket(socket);
+
+		const room = data.rooms[id];
+
+		if(room == null)
+			return socket.emit('game.error', {title: 'Can not join room', message: `Room with id ${id} does not exist.`});
+
+		const {players, playersMax} = room;
+
+		if(players.length === playersMax)
+			return socket.emit('game.error', {title: 'Can not join room', message: `Room is full.`});
+
+		player.state = 1;
+		player.roomId = room.id;
+		room.players.push(player.id);
+	});
+
+	socket.on('room.leave', () => {
+		const player = getPlayerFromSocket(socket);
+		const {roomId} = player;
+
+		if(roomId == null)
+			return;
+
+		const room = data.rooms[roomId];
+
+		if(room != null) {
+			const index = room.players.findIndex(id => id === player.id);
+			room.players.splice(index, 1);
+
+			if(room.players.length === 0)
+				delete data.rooms[roomId];
+		}
+
+		player.roomId = null;
+		player.ready = false;
+		player.state = 0;
+	});
+
+	socket.on('player.ready', () => {
+		const player = getPlayerFromSocket(socket);
+
+		if(player.roomId == null)
+			return;
+
+		player.ready = !player.ready;
+	});
+
+	socket.on('disconnect', () => {
+		const player = getPlayerFromSocket(socket);
+		const room = data.rooms[player.roomId];
+
+		if(room != null) {
+			const index = room.players.findIndex(id => id === player.id);
+			room.players.splice(index, 1);
+		}
+
+		delete data.players[player.id];
+	});
+
+	console.log('user connected', socket.handshake.address);
 });

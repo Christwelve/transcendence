@@ -3,16 +3,25 @@ import "./App.css";
 import Register from "./components/Register/Register";
 import Login from "./components/Login/Login";
 import Home from "./components/Home/Home";
+import DataContextProvider from './components/DataContext'
+import Page from './pages/Page'
+import ModalPresenter from './components/ModalPresenter'
+import {closeModalTop} from './utils/modal'
 
 function App() {
-  const fetchData = async () => {
-    const res = await fetch("http://localhost:8000/");
-    console.log(res);
-  };
-
   useEffect(() => {
-    fetchData();
-  }, []);
+
+		const onKeyDown = event => {
+			if(event.code !== 'Escape')
+				return;
+
+			closeModalTop();
+		}
+
+		document.addEventListener('keydown', onKeyDown);
+
+		return () => document.removeEventListener('keydown', onKeyDown);
+	}, []);
 
   const [userStatus, setUserStatus] = useState("register");
   const [errorMessage, setErrorMessage] = useState(null);
@@ -69,7 +78,13 @@ function App() {
           errorMessage={errorMessage}
         />
       ) : (
-        <Home changeStatus={changeStatus} avatar={avatar} />
+
+        <DataContextProvider>
+          <Page />
+          <ModalPresenter />
+          // <Home changeStatus={changeStatus} avatar={avatar} />
+        </DataContextProvider>
+
       )}
     </>
   );
