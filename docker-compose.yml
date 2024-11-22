@@ -24,7 +24,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ${PWD}/django:/code/django
+      - ${PWD}/django:/app
     env_file:
       - .env
     depends_on:
@@ -54,7 +54,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     env_file:
-      - .env
+      - .env 
 
   pgadmin:
     networks:

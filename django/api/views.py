@@ -4,11 +4,12 @@ from rest_framework import status
 from .models import User, Match, Statistic
 from .serializers import UserSerializer, MatchSerializer, StatisticSerializer
 
+
 @api_view(['GET', 'POST'])
 def user_view(request):
     if request.method == 'GET':
         users = User.objects.all()
-        serializer = UserSerializer(users, many=True)
+        serializer = UserSerializer(users, many=True, context={'request': request})
         return Response(serializer.data)
     elif request.method == 'POST':
         serializer = UserSerializer(data=request.data)
