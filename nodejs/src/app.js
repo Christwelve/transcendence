@@ -65,8 +65,10 @@ io.on('connection', async socket => {
 
 	data.players[player.id] = player;
 
-	socket.emit('user.id', player.id);
-	socket.emit('instruction', [{action: 'overwrite', value: data}]);
+	socket.on('ready', () => {
+		socket.emit('user.id', player.id);
+		socket.emit('instruction', [{action: 'overwrite', value: data}]);
+	});
 
 	socket.on('room.create', options => {
 		const player = getPlayerFromSocket(socket);
