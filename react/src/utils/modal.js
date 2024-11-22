@@ -52,10 +52,24 @@ function closeModal(id, action = 'close') {
 	resolve([action, data]);
 }
 
+function closeModalTop() {
+	const ids = [...modals.keys()];
+	const count = ids.length;
+
+	console.log(ids, count);
+
+	if(count === 0)
+		return;
+
+	const idTop = ids[count - 1];
+
+	closeModal(idTop);
+}
+
 function pushModalList() {
 	const modalList = [...modals.values()].map(({element}) => element);
 
 	updateModalList(modalList);
 }
 
-export default showModal;
+export {showModal, closeModalTop};

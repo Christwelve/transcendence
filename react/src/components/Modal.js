@@ -28,7 +28,7 @@ function Modal(props) {
 	)
 }
 
-function CreateRoomModal(props) {
+function RoomCreateModal(props) {
 	const {data, updateModal, closeModal} = props;
 	const {type, playersMax} = data;
 
@@ -59,4 +59,4 @@ function CreateRoomModal(props) {
 	);
 }
 
-export default CreateRoomModal;
+export default RoomCreateModal;

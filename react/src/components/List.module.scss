@@ -10,11 +10,14 @@
 		color: red;
 	}
 
-	.row > * {
-		padding: 3px 6px;
-	}
+	.row {
 
-	.row:not(.header):hover {
-		background-color: rgba(255, 255, 255, 0.1);
+		& > * {
+			padding: 3px 6px;
+		}
+
+		&.item:hover, &.selected {
+			background-color: rgba(255, 255, 255, 0.1);
+		}
 	}
 }
