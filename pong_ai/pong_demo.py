@@ -38,7 +38,6 @@ CONFIG = {
   }
 }
 
-# Apply random seed for reproducibility
 random.seed(CONFIG["SEED"])
 
 # Initialize pygame
@@ -68,9 +67,17 @@ class Paddle:
         self.rect.y = max(0, min(self.rect.y, CONFIG["HEIGHT"] - CONFIG["PADDLE_HEIGHT"]))
 
     def move_with_velocity(self, velocity):
-        self.velocity = self.smoothing_alpha * self.velocity + (1 - self.smoothing_alpha) * velocity
+        if isinstance(velocity, np.ndarray):
+            # print(f"Velocity is a NumPy array: shape={velocity.shape}, value={velocity}")
+            velocity = velocity.item()  # Extract scalar
+
+        self.velocity = float(self.smoothing_alpha * self.velocity + (1 - self.smoothing_alpha) * velocity)
+        # print(f"After smoothing: self.velocity type={type(self.velocity)}, value={self.velocity}")
+
+        # Update position and clamp to bounds
         self.rect.y += self.velocity
         self.rect.y = max(0, min(self.rect.y, CONFIG["HEIGHT"] - CONFIG["PADDLE_HEIGHT"]))
+
 
     def draw(self, screen):
         pygame.draw.rect(screen, COLORS["WHITE"], self.rect)
@@ -111,10 +118,9 @@ class Ball:
         pygame.draw.ellipse(screen, COLORS["WHITE"], self.rect)
 
 
-def get_normalized_state(ai_paddle, player_paddle, ball):
+def get_normalized_state(ai_paddle, ball):
     return np.array([
         (ai_paddle.rect.y / CONFIG["HEIGHT"]) * 2 - 1,
-        (player_paddle.rect.y / CONFIG["HEIGHT"]) * 2 - 1,
         (ball.rect.x / CONFIG["WIDTH"]) * 2 - 1,
         (ball.rect.y / CONFIG["HEIGHT"]) * 2 - 1,
         ball.speed_x / CONFIG["BALL_MAX_SPEED"],
@@ -127,9 +133,8 @@ def save_game_state(state):
         json.dump(state, f)
 
 
-def update_game_state(player_paddle, ai_paddle, ball):
+def update_game_state(ai_paddle, ball):
     return {
-        "player_paddle": player_paddle.rect.y,
         "ai_paddle": ai_paddle.rect.y,
         "ball": (ball.rect.x, ball.rect.y),
         "ball_speed": (ball.speed_x, ball.speed_y)
@@ -157,12 +162,7 @@ if __name__ == "__main__":
             player_paddle.move(up=False)
 
         if actor_model:
-            state = get_normalized_state(ai_paddle, player_paddle, ball)
-            if CONFIG["DEBUG"]["PRINT_NORMALIZED_STATE"]:
-                    print(f"Normalized State: AI Paddle={state[0][0]:.3f}, "
-                    f"Player Paddle={state[0][1]:.3f}, "
-                    f"Ball X={state[0][2]:.3f}, Ball Y={state[0][3]:.3f}, "
-                    f"Ball Speed X={state[0][4]:.3f}, Ball Speed Y={state[0][5]:.3f}")
+            state = get_normalized_state(ai_paddle, ball)
             predicted_velocity = actor_model.predict(state, verbose=0)[0][0] * CONFIG["PADDLE_SPEED"]
             ai_paddle.move_with_velocity(predicted_velocity)
 
@@ -173,7 +173,7 @@ if __name__ == "__main__":
         ball.check_collision(player_paddle)
         ball.check_collision(ai_paddle)
 
-        game_state = update_game_state(player_paddle, ai_paddle, ball)
+        game_state = update_game_state(ai_paddle, ball)
         if time.time() % CONFIG["UPDATE_INTERVAL"] < 0.02:
             save_game_state(game_state)
 
