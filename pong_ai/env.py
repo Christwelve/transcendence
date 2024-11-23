@@ -14,7 +14,7 @@ class PongEnv:
         self.paddle_width = 10
         self.paddle_speed = 10
         self.ball_size = 20
-        self.ball_speed = 5
+        self.ball_speed = 7
         self.ball_max_speed = 10
         self.reset()
 
@@ -168,7 +168,7 @@ class PongEnv:
         reward += proximity_reward
 
         # Normalize and clip reward
-        return np.clip(reward, -0.01, 0.01)
+        return np.clip(reward, -0.1, 0.1)
 
     def check_done(self):
         if self.state["ball_x"] <= 0 or self.state["ball_x"] >= self.screen_width:
