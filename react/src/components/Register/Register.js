@@ -9,6 +9,7 @@ const Register = ({ changeStatus }) => {
   const [emailError, setEmailError] = useState("");
   const [usernameError, setUsernameError] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [avatarError, setAvatarError] = useState("");
 
   const _onEmailChange = (event) => {
     setEmail(event.target.value);
@@ -37,7 +38,16 @@ const Register = ({ changeStatus }) => {
   };
 
   const _onAvatarChange = (event) => {
-    setAvatar(event.target.files[0]);
+    const file = event.target.files[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        setAvatarError("File size must be less than 2MB.");
+        setAvatar(null);
+        return;
+      }
+      setAvatarError("");
+      setAvatar(file);
+    }
   };
 
   const validateFieldsOnSubmit = () => {
@@ -156,11 +166,12 @@ const Register = ({ changeStatus }) => {
           </label>
           <input
             type="file"
-            className="form-control"
+            className={`form-control ${avatarError ? "is-invalid" : ""}`}
             id="avatar"
-            accept="image/*"
+            accept="image/jpeg, image/png"
             onChange={_onAvatarChange}
           />
+          {avatarError && <div className="invalid-feedback">{avatarError}</div>}
         </div>
         <div className="mb-3">
           <button
