@@ -46,18 +46,30 @@ function App() {
     }
   };
 
-  const userLogin = (user) => {
-    const dbUser = database[user.username];
-    if (dbUser) {
-      if (dbUser.password === user.password) {
-        setUserStatus("logged");
-        setAvatar(`https://robohash.org/${user.username}?200x200`);
-        setErrorMessage(null);
-      } else {
+  const userLogin = async (user) => {
+    const response = await fetch(`http://localhost:8000/api/login/`, {
+      method: "POST",
+      body: user,
+    });
+
+    const userData = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 400 || response.status === 404) {
         setErrorMessage("Wrong credentials!");
+        console.log("hey");
+      } else {
+        console.error("An unexpected error occurred:", response.statusText);
       }
     } else {
-      setErrorMessage("Wrong credentials!");
+      if(!userData.avatar)
+        setAvatar(`https://robohash.org/${userData.username}?200x200`);
+      else {
+        const avatarIcon = (userData.avatar).split('/').pop();
+        setAvatar(`http://localhost:8000/media/${avatarIcon}`);
+      }
+      setUserStatus("logged");
+      setErrorMessage(null);
     }
   };
 
@@ -82,7 +94,7 @@ function App() {
         <DataContextProvider>
           <Page />
           <ModalPresenter />
-          // <Home changeStatus={changeStatus} avatar={avatar} />
+           <Home changeStatus={changeStatus} avatar={avatar} />
         </DataContextProvider>
 
       )}

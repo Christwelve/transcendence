@@ -14,7 +14,11 @@ const Login = ({ changeStatus, userLogin, errorMessage }) => {
   };
 
   const createUser = () => {
-    return { username, password };
+    const formData = new FormData();
+    formData.append("username", username);
+    formData.append("password", password);
+
+    return formData;
   };
 
   const _onFormSubmit = (event) => {
