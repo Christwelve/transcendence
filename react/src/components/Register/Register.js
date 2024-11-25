@@ -105,6 +105,23 @@ const Register = ({ changeStatus }) => {
     addUserToDatabase(user);
   };
 
+  const login_with_42 = async () => {
+    try {
+      const response = await fetch("http://localhost:8000/api/auth/42/login/", {
+        method: "GET",
+      });
+
+      if (!response.ok) {
+        console.error("An unexpected error occurred:", response.statusText);
+      } else {
+        console.log("User successfully registered.");
+        changeStatus("login");
+      }
+    } catch (error) {
+      console.error("Network error:", error.message);
+    }
+  }
+
   return (
     <div className="container">
       <h1>Register</h1>
@@ -183,6 +200,14 @@ const Register = ({ changeStatus }) => {
               Login now
             </span>
           </p>
+          <br />
+          <p>--or--</p>
+          <br />
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={login_with_42}
+            >Login with 42</button>
         </div>
       </form>
     </div>

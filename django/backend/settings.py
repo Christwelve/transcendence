@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',
+	'oauth2_provider',
     'api',
 ]
 
@@ -147,3 +148,20 @@ PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.Argon2PasswordHasher",
     "django.contrib.auth.hashers.ScryptPasswordHasher",
 ]
+
+SOCIAL_AUTH_INTRAFRA_KEY = 'u-s4t2ud-a0107502fdff957356cbf5bc3b549d8eb8ca965098659b780123375c5217074a'
+SOCIAL_AUTH_INTRAFRA_SECRET = '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'
+
+SOCIAL_AUTH_INTRAFRA = {
+    'BASE_DOMAIN': 'https://api.intra.42.fr',
+    'AUTH_LOGIN_URL': '/oauth/authorize',
+    'AUTH_ACCESS_TOKEN_URL': '/oauth/token',
+    'AUTH_USERINFO_URL': '/v2/me',
+    'API_KEY': SOCIAL_AUTH_INTRAFRA_KEY,
+    'API_SECRET': SOCIAL_AUTH_INTRAFRA_SECRET,
+    'SCOPE': ['public'],  # Adjust scopes based on your needs
+}
+
+LOGIN_URL = '/admin/login/'
+REDIRECT_URI = 'http://localhost:3000'
+URL_42 = 'https://api.intra.42.fr/oauth/authorize?client_id=u-s4t2ud-f022b7678aeb9e8e2f068f80dd09d855f78cba8e21d492bb48b5313a0bf84de6&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fapi%2F42%2Flogin%2Fcallback&response_type=code'

@@ -66,14 +66,12 @@ function App() {
         setAvatar(`https://robohash.org/${userData.username}?200x200`);
       else {
         const avatarIcon = (userData.avatar).split('/').pop();
-        setAvatar(`http://localhost:8000/media/${avatarIcon}`);
+        setAvatar(`http://localhost:8000/media/avatars/${avatarIcon}`);
       }
       setUserStatus("logged");
       setErrorMessage(null);
     }
   };
-
-  console.log("state: ", userStatus);
 
   return (
     <>
