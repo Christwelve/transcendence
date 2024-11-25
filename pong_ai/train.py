@@ -17,12 +17,12 @@ def train_ppo():
     agent = PPOAgent(input_dim=state_dim, action_dim=action_dim)
     
     # Training parameters
-    num_episodes = 20000
+    num_episodes = 3000
     max_steps_per_episode = 1000
-    update_interval = 25
+    # update_interval = 25
     num_epochs = 10
     batch_size = 64
-    save_interval = 1000  # Save the model every 50 episodes
+    save_interval = 500  
     
     # Metrics tracking
     reward_history = deque(maxlen=100)
