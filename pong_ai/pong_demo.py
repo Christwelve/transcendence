@@ -68,13 +68,8 @@ class Paddle:
 
     def move_with_velocity(self, velocity):
         if isinstance(velocity, np.ndarray):
-            # print(f"Velocity is a NumPy array: shape={velocity.shape}, value={velocity}")
-            velocity = velocity.item()  # Extract scalar
-
+            velocity = velocity.item()
         self.velocity = float(self.smoothing_alpha * self.velocity + (1 - self.smoothing_alpha) * velocity)
-        # print(f"After smoothing: self.velocity type={type(self.velocity)}, value={self.velocity}")
-
-        # Update position and clamp to bounds
         self.rect.y += self.velocity
         self.rect.y = max(0, min(self.rect.y, CONFIG["HEIGHT"] - CONFIG["PADDLE_HEIGHT"]))
 
@@ -164,7 +159,10 @@ if __name__ == "__main__":
         if actor_model:
             state = get_normalized_state(ai_paddle, ball)
             predicted_velocity = actor_model.predict(state, verbose=0)[0][0] * CONFIG["PADDLE_SPEED"]
+            # predicted_velocity *= 0.5
             ai_paddle.move_with_velocity(predicted_velocity)
+
+
 
         ball.move()
         if ball.rect.left <= 0 or ball.rect.right >= CONFIG["WIDTH"]:

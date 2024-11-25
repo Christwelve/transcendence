@@ -9,15 +9,15 @@ class PPOAgent:
     def __init__(self,
                  input_dim,
                  action_dim,
-                 actor_lr=1e-5,
+                 actor_lr=5e-5,
                  critic_lr=1e-5,
-                 gamma=0.95,
-                 epsilon=0.25,
-                 lambda_gae=0.97,
+                 gamma=0.99,
+                 epsilon=0.2,
+                 lambda_gae=0.95,
                  c1=1.0,
-                 c2=0.05,
-                 min_std=0.1,  # Minimum standard deviation
-                 max_std=2.0):  # Maximum standard deviation
+                 c2=0.2,
+                 min_std=0.2,  # Minimum standard deviation
+                 max_std=1.0):  # Maximum standard deviation
         
         self.input_dim = input_dim
         self.action_dim = action_dim

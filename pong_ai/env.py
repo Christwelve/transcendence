@@ -147,28 +147,34 @@ class PongEnv:
 
         # Penalty for missing the ball
         if self.state.get("ball_missed", False):
-            return -0.01  # Early return for missed ball with normalized reward
+            return -1.0  # Larger penalty for missing the ball
 
-        # Penalty for idle paddle
-        if self.state.get("paddle_idle", False):
-            return -0.001  # Small penalty for being idle
-
-        # Bonus for hitting the ball
-        if self.state.get("ball_hit", False):
-            return 0.5  # Small reward for hitting the ball
-
-        # Calculate proximity-based reward
+        # Penalty for idle paddle (only if far from the ball)
         paddle_y = self.state.get("ai_paddle", 0)
         ball_y = self.state.get("ball_y", 0)
+        if self.state.get("paddle_idle", False) and abs(paddle_y - ball_y) > 0.1 * self.screen_height:
+            reward -= 0.1  # Slightly higher penalty for being idle when far from the ball
 
-        # Proximity reward encourages paddle to stay close to the ball
-        proximity_factor = 0.5
-        max_proximity_reward = 0.005
+        # Reward for hitting the ball
+        if self.state.get("ball_hit", False):
+            ball_speed_x = abs(self.state.get("ball_speed_x", 0)) / self.screen_width
+            reward += 1.0 + ball_speed_x  # Higher reward for hitting faster balls
+
+        # Proximity-based reward
+        proximity_factor = 1.0  # Increase proximity factor to emphasize staying close to the ball
+        max_proximity_reward = 0.5  # Allow a higher maximum reward for proximity
         proximity_reward = proximity_factor * max(0.0, 1.0 - abs(paddle_y - ball_y) / self.screen_height)
-        reward += proximity_reward
+        reward += 0.7 * proximity_reward
 
-        # Normalize and clip reward
+        # Future position prediction (optional)
+        ball_speed_y = self.state.get("ball_speed_y", 0)
+        predicted_ball_y = ball_y + ball_speed_y * (self.state.get("ball_x", 0) / abs(self.state.get("ball_speed_x", 1e-5)))
+        predicted_proximity_reward = proximity_factor * max(0.0, 1.0 - abs(paddle_y - predicted_ball_y) / self.screen_height)
+        reward += 0.3 * predicted_proximity_reward  # Weight future prediction reward lower
+
+        # Clip reward to a broader range
         return np.clip(reward, -0.1, 0.1)
+
 
     def check_done(self):
         if self.state["ball_x"] <= 0 or self.state["ball_x"] >= self.screen_width:
