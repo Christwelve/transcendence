@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import "../genericStyles.css";
 
-const Register = ({ changeStatus }) => {
+const Register = ({ changeStatus, login_with_42 }) => {
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -115,6 +115,7 @@ const Register = ({ changeStatus }) => {
     addUserToDatabase(user);
   };
 
+
   return (
     <div className="container">
       <h1>Register</h1>
@@ -194,6 +195,14 @@ const Register = ({ changeStatus }) => {
               Login now
             </span>
           </p>
+          <br />
+          <p>--or--</p>
+          <br />
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={login_with_42}
+            >Login with 42</button>
         </div>
       </form>
     </div>
