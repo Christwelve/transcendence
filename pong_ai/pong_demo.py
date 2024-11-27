@@ -4,6 +4,7 @@ import time
 import os
 import json
 import numpy as np
+import tensorflow as tf
 from tensorflow.keras.models import load_model
 
 STATE_FILE_PATH = "./game_state.json"
@@ -15,7 +16,7 @@ CONFIG = {
     "PADDLE_WIDTH": 10,
     "PADDLE_HEIGHT": 80,
     "BALL_SIZE": 20,
-    "BALL_SPEED": 6,
+    "BALL_SPEED": 8,
     "BALL_MAX_SPEED": 10,
     "PADDLE_SPEED": 10,
     "UPDATE_INTERVAL": 1,
@@ -30,7 +31,7 @@ CONFIG = {
     },
     "AI": {
         "SMOOTHING_ALPHA": 0.0, 
-        "MODEL_PATH": "./models_2.0/actor_episode_2000.keras"
+        "MODEL_PATH": "./models/best_actor.keras"
     },
     "DEBUG": {
         "PRINT_NORMALIZED_STATE": False,
@@ -150,6 +151,8 @@ def update_game_state(ai_paddle, ball):
         "ball_speed": (ball.speed_x, ball.speed_y)
     }
 
+action_mapping = {0: -1, 1: 0, 2: 1}
+
 # Main game loop
 if __name__ == "__main__":
     clock = pygame.time.Clock()
@@ -174,11 +177,23 @@ if __name__ == "__main__":
         # AI paddle movement
         if actor_model:
             state = get_normalized_state(ai_paddle, ball)
-            predicted_velocity = actor_model.predict(state, verbose=0)[0][0] * CONFIG["PADDLE_SPEED"]
-            # Clip the predicted velocity
-            predicted_velocity = np.clip(predicted_velocity, -CONFIG["PADDLE_SPEED"], CONFIG["PADDLE_SPEED"])
-            # print(predicted_velocity)
-            ai_paddle.move_with_velocity(predicted_velocity)
+            # Get logits from the model
+            logits = actor_model.predict(state, verbose=0)
+            # Convert logits to action probabilities
+            action_probs = tf.nn.softmax(logits).numpy()[0]
+            # Select the action with the highest probability
+            action_idx = np.argmax(action_probs)
+            # Map action index to actual action
+            action = action_mapping[action_idx]
+
+            # Move the paddle based on the action
+            if action == -1:
+                ai_paddle.move(up=True)
+            elif action == 1:
+                ai_paddle.move(up=False)
+            else:
+                # Stay idle
+                pass
 
         # Ball movement
         ball.move()
