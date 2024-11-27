@@ -57,12 +57,24 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ORIGIN_WHITELIST = [
+    'http://localhost:3000'
+]
 
 # TODO:
-# CORS_ALLOWED_ORIGINS = [
-#     "http://localhost:3000",
-# ]
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+]
+
+# Optional: Allow credentials (e.g., cookies, sessions)
+CORS_ALLOW_CREDENTIALS = True
+
+# Optional: Specify allowed headers
+CORS_ALLOW_HEADERS = [
+    "content-type",
+    "authorization",
+]
 
 ROOT_URLCONF = 'backend.urls'
 
@@ -149,19 +161,15 @@ PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.ScryptPasswordHasher",
 ]
 
-SOCIAL_AUTH_INTRAFRA_KEY = 'u-s4t2ud-a0107502fdff957356cbf5bc3b549d8eb8ca965098659b780123375c5217074a'
-SOCIAL_AUTH_INTRAFRA_SECRET = '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'
-
-SOCIAL_AUTH_INTRAFRA = {
+OAUTH2_PROVIDER = {
     'BASE_DOMAIN': 'https://api.intra.42.fr',
     'AUTH_LOGIN_URL': '/oauth/authorize',
     'AUTH_ACCESS_TOKEN_URL': '/oauth/token',
     'AUTH_USERINFO_URL': '/v2/me',
-    'API_KEY': SOCIAL_AUTH_INTRAFRA_KEY,
-    'API_SECRET': SOCIAL_AUTH_INTRAFRA_SECRET,
-    'SCOPE': ['public'],  # Adjust scopes based on your needs
+    'CLIENT_ID': 'u-s4t2ud-35200b91dbc192b0409be4fe981c496c78f0d18c705602b771e804d09f4fabab',
+    'CLIENT_SECRET': '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',
+    'SCOPE': {'public': 'Public access'},  # Adjust scopes based on your needs
 }
 
 LOGIN_URL = '/admin/login/'
-REDIRECT_URI = 'http://localhost:3000'
-URL_42 = 'https://api.intra.42.fr/oauth/authorize?client_id=u-s4t2ud-f022b7678aeb9e8e2f068f80dd09d855f78cba8e21d492bb48b5313a0bf84de6&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fapi%2F42%2Flogin%2Fcallback&response_type=code'
+URL_42 = 'https://api.intra.42.fr/oauth/authorize?client_id=u-s4t2ud-35200b91dbc192b0409be4fe981c496c78f0d18c705602b771e804d09f4fabab&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fapi%2F42%2Flogin%2Fcallback%2F&response_type=code'

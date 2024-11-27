@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import "../genericStyles.css";
 
-const Register = ({ changeStatus }) => {
+const Register = ({ changeStatus, login_with_42 }) => {
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -105,22 +105,6 @@ const Register = ({ changeStatus }) => {
     addUserToDatabase(user);
   };
 
-  const login_with_42 = async () => {
-    try {
-      const response = await fetch("http://localhost:8000/api/auth/42/login/", {
-        method: "GET",
-      });
-
-      if (!response.ok) {
-        console.error("An unexpected error occurred:", response.statusText);
-      } else {
-        console.log("User successfully registered.");
-        changeStatus("login");
-      }
-    } catch (error) {
-      console.error("Network error:", error.message);
-    }
-  }
 
   return (
     <div className="container">
