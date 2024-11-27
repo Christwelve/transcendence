@@ -33,18 +33,17 @@ class PongEnv:
         return self.get_normalized_state()
 
     def step(self, action):
-        # Clip action and move paddle
-        action = float(action)
-        # print("Received action:", action, type(action))
-        
-        paddle_velocity = max(-self.paddle_speed, min(self.paddle_speed, action))
-        paddle_velocity = float(paddle_velocity)
-        # print("Paddle velocity:", paddle_velocity)
-        
+        # Map discrete action to paddle velocity
+        if action == -1:
+            paddle_velocity = -self.paddle_speed
+        elif action == 1:
+            paddle_velocity = self.paddle_speed
+        else:
+            paddle_velocity = 0
+
         self.state["ai_paddle"] += paddle_velocity
         self.state["ai_paddle"] = max(0, min(self.screen_height - self.paddle_height, self.state["ai_paddle"]))
-        # print("New ai_paddle position:", self.state["ai_paddle"])
-        
+
         # Update paddle_idle state
         self.state["paddle_idle"] = paddle_velocity == 0
 
@@ -68,6 +67,7 @@ class PongEnv:
         self.log_state(action, reward)
 
         return self.get_normalized_state(), reward, self.done
+
 
     def get_normalized_state(self):
         # print("ai_paddle:", self.state["ai_paddle"], type(self.state["ai_paddle"]))
@@ -156,53 +156,56 @@ class PongEnv:
         self.state["ball_hit"] = False
         self.state["ball_missed"] = False
 
-    def calc_reward(self):
+    def calc_reward(self)
         reward = 0.0
 
-        # Penalty for missing the ball
+        # **1. Penalty for missing the ball**
         if self.state.get("ball_missed", False):
-            reward = -1.0  # Larger penalty for missing the ball
-            return reward
+            reward = -1.0  # Large penalty for missing the ball
+            return reward  # End early as this is a terminal condition
 
-        # Penalty for idle paddle (only if far from the ball)
+        # **2. Penalty for idle paddle (if far from the ball)**
         paddle_y = self.state.get("ai_paddle", 0)
         ball_y = self.state.get("ball_y", 0)
-        if self.state.get("paddle_idle", False) and abs(paddle_y - ball_y) > 0.1 * self.screen_height:
-            reward -= 0.1  # Slightly higher penalty for being idle when far from the ball
+        if self.state.get("paddle_idle", False):
+            distance_factor = abs(paddle_y - ball_y) / self.screen_height
+            idle_penalty = -0.2 *distance_factor  # Slight penalty for being idle when far from the ball
+            reward += idle_penalty
 
-        # Reward for hitting the ball
+        # **3. Reward for hitting the ball**
         if self.state.get("ball_hit", False):
             ball_speed_x = abs(self.state.get("ball_speed_x", 0)) / self.screen_width
-            reward += 1.0 + ball_speed_x  # Higher reward for hitting faster balls
+            hit_reward = 1.0 + 2.0 * ball_speed_x  # Higher reward for hitting faster balls
+            reward += hit_reward
 
-        # Proximity-based reward
-        proximity_factor = 1.0  # Emphasize staying close to the ball
+        # **4. Proximity-based reward**
+        proximity_factor = 1.0  # Weight for proximity rewards
         proximity_reward = proximity_factor * max(0.0, 1.0 - abs(paddle_y - ball_y) / self.screen_height)
-        reward += 0.7 * proximity_reward
+        reward += 0.7 * proximity_reward  # Weighted proximity reward
 
-        # Future position prediction (optional)
+        # **5. Future position prediction reward**
+        ball_speed_x = self.state.get("ball_speed_x", 0)
         ball_speed_y = self.state.get("ball_speed_y", 0)
-        if self.state.get("ball_speed_x", 0) != 0:
-            # Predict the ball's future y position when it reaches the paddle's x-coordinate
+        if ball_speed_x != 0:  # Only predict if the ball is moving
             distance_to_paddle = abs(self.state["ball_x"] - (0 + self.ball_size))  # AI paddle at x=0
-            if self.state["ball_speed_x"] < 0:
-                time_to_paddle = distance_to_paddle / abs(self.state["ball_speed_x"])
+            if ball_speed_x < 0:  # Ball is moving toward the AI paddle
+                time_to_paddle = distance_to_paddle / abs(ball_speed_x)
                 predicted_ball_y = self.state["ball_y"] + ball_speed_y * time_to_paddle
 
-                # Reflect off the top and bottom walls if necessary
-                while predicted_ball_y < 0 or predicted_ball_y > self.screen_height:
-                    if predicted_ball_y < 0:
-                        predicted_ball_y = -predicted_ball_y
-                    elif predicted_ball_y > self.screen_height:
-                        predicted_ball_y = 2 * self.screen_height - predicted_ball_y
+                # Reflect predicted position off walls if necessary
+                predicted_ball_y = abs(predicted_ball_y) % (2 * self.screen_height)
+                if predicted_ball_y > self.screen_height:
+                    predicted_ball_y = 2 * self.screen_height - predicted_ball_y
 
+                # Reward for being close to predicted ball position
                 predicted_proximity_reward = proximity_factor * max(0.0, 1.0 - abs(paddle_y - predicted_ball_y) / self.screen_height)
-                reward += 0.3 * predicted_proximity_reward  # Weight future prediction reward lower
+                reward += 0.5 * predicted_proximity_reward  # Lower weight for future proximity
 
-        # Clip reward to a reasonable range
+        # **6. Reward clipping to a predefined range**
         reward = np.clip(reward, -1.0, 1.0)
 
         return float(reward)
+
 
     def check_done(self):
         # Episode ends if the ball goes out of bounds

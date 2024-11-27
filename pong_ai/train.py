@@ -1,30 +1,30 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+# os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # Suppress info and warning messages
 
 from env import PongEnv
 from ppo_agent import PPOAgent
-import numpy as np # type: ignore
+import numpy as np
 import tensorflow as tf
 from collections import deque
 import matplotlib.pyplot as plt
 
-print("Num GPUs Available:", len(tf.config.list_physical_devices('GPU')))
-
+with tf.device('/GPU:0'):
+    print("Using GPU!")
+    
 def train_ppo():
     # Environment and agent setup
     env = PongEnv()
     state_dim = env.get_normalized_state().shape[0]
-    action_dim = 1
-
+    action_dim = 3 
     agent = PPOAgent(input_dim=state_dim, action_dim=action_dim)
 
     # Training parameters
-    num_episodes = 1000
-    max_steps_per_pisode = 1000
-    num_epochs = 20
-    batch_size = 64
-    save_interval = 500
-    
+    num_episodes = 30000
+    max_steps_per_episode = 1000
+    num_epochs = 15
+    batch_size = 128
+    save_interval = 1000
+
     # Metrics tracking
     reward_history = deque(maxlen=100)
     episode_length_history = deque(maxlen=100)
@@ -35,6 +35,9 @@ def train_ppo():
 
     # Initialize best average reward
     best_average_reward = float('-inf')
+
+    # Action mapping from indices to actual actions
+    action_mapping = {0: -1, 1: 0, 2: 1}
 
     for episode in range(num_episodes):
         state = env.reset()
@@ -49,21 +52,23 @@ def train_ppo():
         log_probs = []
         dones = []
 
-        while episode_steps < max_steps_per_pisode:
+        while episode_steps < max_steps_per_episode:
             # Get action and value from the agent
             state_tensor = tf.convert_to_tensor([state], dtype=tf.float32)
-            action, log_prob, value = agent.get_action_and_value(state_tensor)
+            action_idx, log_prob, value = agent.get_action_and_value(state_tensor)
+
+            # Convert action index to actual action
+            action_idx = action_idx.numpy()[0]
+            action = action_mapping[action_idx]
 
             # Take action in the environment
-            action_np = action.numpy().item()
-            # Assuming the environment expects a list or array for action
-            next_state, reward, done = env.step(action_np)
+            next_state, reward, done = env.step(action)
 
             # Store the transition
             states.append(state)
-            actions.append(action_np)
+            actions.append(action_idx)  # Store the action index
             rewards.append(reward)
-            values.append(value.numpy()[0])
+            values.append(value.numpy()[0][0])  # Adjust indexing
             log_probs.append(log_prob.numpy()[0])
             dones.append(done)
 
@@ -72,12 +77,12 @@ def train_ppo():
             episode_reward += reward
             episode_steps += 1
 
-            if done or episode_steps >= max_steps_per_pisode:
+            if done or episode_steps >= max_steps_per_episode:
                 break
 
         # Convert lists to numpy arrays for processing
         states = np.array(states, dtype=np.float32)
-        actions = np.array(actions, dtype=np.float32)
+        actions = np.array(actions, dtype=np.int32)
         rewards = np.array(rewards, dtype=np.float32)
         values = np.array(values, dtype=np.float32)
         log_probs = np.array(log_probs, dtype=np.float32)
@@ -86,12 +91,12 @@ def train_ppo():
         # Compute advantages and returns
         if done:
             next_value = 0.0
-        else: 
+        else:
             next_value = agent.get_action_and_value(
                 tf.convert_to_tensor([next_state], dtype=tf.float32)
-            )[2].numpy()[0]
+            )[2].numpy()[0][0]  # Adjust indexing
 
-        advantages, returns = agent.compute_advantages(rewards, values, dones, next_value)
+        advantages, returns = agent.compute_advantages(rewards, values, dones, next_value, True)
 
         # Initialize lists to store losses for this episode
         episode_policy_losses = []
@@ -155,7 +160,7 @@ def train_ppo():
             agent.critic_model.save(f'models/critic_episode_{episode + 1}.keras')
 
         # Append to best average reward history for plotting
-        best_average_reward_history.append(best_average_reward)
+        best_average_reward_history.append(avg_reward)
 
         # Print progress every 10 episodes
         if (episode + 1) % 10 == 0:
@@ -205,7 +210,7 @@ def train_ppo():
     plt.plot(best_average_reward_history, label='Best Average Reward', color='green')
     plt.xlabel('Episodes')
     plt.ylabel('Average Reward')
-    plt.title('Best Average Reward over Time')
+    plt.title('Average Reward over Time')
     plt.legend()
 
     # Average Episode Length
