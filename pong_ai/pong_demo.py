@@ -10,32 +10,32 @@ STATE_FILE_PATH = "./game_state.json"
 
 # Configuration
 CONFIG = {
-  "WIDTH": 800,
-  "HEIGHT": 400,
-  "PADDLE_WIDTH": 10,
-  "PADDLE_HEIGHT": 80,
-  "BALL_SIZE": 20,
-  "BALL_SPEED": 6,
-  "BALL_MAX_SPEED": 10,
-  "PADDLE_SPEED": 10,
-  "UPDATE_INTERVAL": 1,
-  "SEED": 42,
-  "GAME_SPEED": 60,
-  "SCORING": {
-      "MAX_SCORE": 10   
-  },
-  "COLORS": {
-      "WHITE": (255, 255, 255),
-      "BLACK": (0, 0, 0)
-  },
-  "AI": {
-      "SMOOTHING_ALPHA": 0.8,
-      "MODEL_PATH": "./models/best_actor.keras"
-  },
-  "DEBUG": {
-      "PRINT_NORMALIZED_STATE": True,
-      "SHOW_BALL_SPEED": False
-  }
+    "WIDTH": 800,
+    "HEIGHT": 400,
+    "PADDLE_WIDTH": 10,
+    "PADDLE_HEIGHT": 80,
+    "BALL_SIZE": 20,
+    "BALL_SPEED": 6,
+    "BALL_MAX_SPEED": 10,
+    "PADDLE_SPEED": 10,
+    "UPDATE_INTERVAL": 1,
+    "SEED": 42,
+    "GAME_SPEED": 60,
+    "SCORING": {
+        "MAX_SCORE": 10
+    },
+    "COLORS": {
+        "WHITE": (255, 255, 255),
+        "BLACK": (0, 0, 0)
+    },
+    "AI": {
+        "SMOOTHING_ALPHA": 0.0, 
+        "MODEL_PATH": "./models_2.0/actor_episode_2000.keras"
+    },
+    "DEBUG": {
+        "PRINT_NORMALIZED_STATE": False,
+        "SHOW_BALL_SPEED": False
+    }
 }
 
 random.seed(CONFIG["SEED"])
@@ -58,8 +58,7 @@ class Paddle:
     def __init__(self, x, y, config):
         self.rect = pygame.Rect(x, y, config["PADDLE_WIDTH"], config["PADDLE_HEIGHT"])
         self.speed = config["PADDLE_SPEED"]
-        self.smoothing_alpha = config["AI"]["SMOOTHING_ALPHA"]
-        self.velocity = 0  # Smoothed velocity
+        self.velocity = 0  # Initial velocity
 
     def move(self, up=True):
         direction = -1 if up else 1
@@ -69,14 +68,16 @@ class Paddle:
     def move_with_velocity(self, velocity):
         if isinstance(velocity, np.ndarray):
             velocity = velocity.item()
-        self.velocity = float(self.smoothing_alpha * self.velocity + (1 - self.smoothing_alpha) * velocity)
-        self.rect.y += self.velocity
-        self.rect.y = max(0, min(self.rect.y, CONFIG["HEIGHT"] - CONFIG["PADDLE_HEIGHT"]))
+        else:
+            velocity = float(velocity)
 
+        max_speed = CONFIG["PADDLE_SPEED"]
+        velocity = max(-max_speed, min(max_speed, velocity))
+        self.rect.y += velocity
+        self.rect.y = max(0, min(self.rect.y, CONFIG["HEIGHT"] - CONFIG["PADDLE_HEIGHT"]))
 
     def draw(self, screen):
         pygame.draw.rect(screen, COLORS["WHITE"], self.rect)
-
 
 class Ball:
     def __init__(self, config):
@@ -112,21 +113,35 @@ class Ball:
     def draw(self, screen):
         pygame.draw.ellipse(screen, COLORS["WHITE"], self.rect)
 
-
 def get_normalized_state(ai_paddle, ball):
-    return np.array([
-        (ai_paddle.rect.y / CONFIG["HEIGHT"]) * 2 - 1,
-        (ball.rect.x / CONFIG["WIDTH"]) * 2 - 1,
-        (ball.rect.y / CONFIG["HEIGHT"]) * 2 - 1,
-        ball.speed_x / CONFIG["BALL_MAX_SPEED"],
-        ball.speed_y / CONFIG["BALL_MAX_SPEED"]
-    ], dtype=np.float32).reshape(1, -1)
+    # Corrected normalization for ai_paddle position
+    normalized_paddle_y = (ai_paddle.rect.y / (CONFIG["HEIGHT"] - CONFIG["PADDLE_HEIGHT"])) * 2 - 1
+    # Use ball's center position for normalization
+    normalized_ball_x = (ball.rect.centerx / CONFIG["WIDTH"]) * 2 - 1
+    normalized_ball_y = (ball.rect.centery / CONFIG["HEIGHT"]) * 2 - 1
+    normalized_ball_speed_x = ball.speed_x / CONFIG["BALL_MAX_SPEED"]
+    normalized_ball_speed_y = ball.speed_y / CONFIG["BALL_MAX_SPEED"]
 
+    # Debugging prints
+    if CONFIG["DEBUG"]["PRINT_NORMALIZED_STATE"]:
+        print("Normalized State:")
+        print(f"Paddle Y: {normalized_paddle_y}")
+        print(f"Ball X: {normalized_ball_x}")
+        print(f"Ball Y: {normalized_ball_y}")
+        print(f"Ball Speed X: {normalized_ball_speed_x}")
+        print(f"Ball Speed Y: {normalized_ball_speed_y}")
+
+    return np.array([
+        normalized_paddle_y,
+        normalized_ball_x,
+        normalized_ball_y,
+        normalized_ball_speed_x,
+        normalized_ball_speed_y
+    ], dtype=np.float32).reshape(1, -1)
 
 def save_game_state(state):
     with open(STATE_FILE_PATH, "w") as f:
         json.dump(state, f)
-
 
 def update_game_state(ai_paddle, ball):
     return {
@@ -134,7 +149,6 @@ def update_game_state(ai_paddle, ball):
         "ball": (ball.rect.x, ball.rect.y),
         "ball_speed": (ball.speed_x, ball.speed_y)
     }
-
 
 # Main game loop
 if __name__ == "__main__":
@@ -150,20 +164,23 @@ if __name__ == "__main__":
             if event.type == pygame.QUIT:
                 running = False
 
+        # Player paddle movement
         keys = pygame.key.get_pressed()
         if keys[pygame.K_UP]:
             player_paddle.move(up=True)
         if keys[pygame.K_DOWN]:
             player_paddle.move(up=False)
 
+        # AI paddle movement
         if actor_model:
             state = get_normalized_state(ai_paddle, ball)
             predicted_velocity = actor_model.predict(state, verbose=0)[0][0] * CONFIG["PADDLE_SPEED"]
-            # predicted_velocity *= 0.5
+            # Clip the predicted velocity
+            predicted_velocity = np.clip(predicted_velocity, -CONFIG["PADDLE_SPEED"], CONFIG["PADDLE_SPEED"])
+            # print(predicted_velocity)
             ai_paddle.move_with_velocity(predicted_velocity)
 
-
-
+        # Ball movement
         ball.move()
         if ball.rect.left <= 0 or ball.rect.right >= CONFIG["WIDTH"]:
             ball.reset_position()
@@ -175,6 +192,7 @@ if __name__ == "__main__":
         if time.time() % CONFIG["UPDATE_INTERVAL"] < 0.02:
             save_game_state(game_state)
 
+        # Drawing
         player_paddle.draw(screen)
         ai_paddle.draw(screen)
         ball.draw(screen)

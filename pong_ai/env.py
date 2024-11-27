@@ -34,10 +34,17 @@ class PongEnv:
 
     def step(self, action):
         # Clip action and move paddle
+        action = float(action)
+        # print("Received action:", action, type(action))
+        
         paddle_velocity = max(-self.paddle_speed, min(self.paddle_speed, action))
+        paddle_velocity = float(paddle_velocity)
+        # print("Paddle velocity:", paddle_velocity)
+        
         self.state["ai_paddle"] += paddle_velocity
         self.state["ai_paddle"] = max(0, min(self.screen_height - self.paddle_height, self.state["ai_paddle"]))
-
+        # print("New ai_paddle position:", self.state["ai_paddle"])
+        
         # Update paddle_idle state
         self.state["paddle_idle"] = paddle_velocity == 0
 
@@ -45,32 +52,42 @@ class PongEnv:
         self.update_ball()
         self.check_collisions()
 
-        # Calculate reward and check if game is done
+        # Calculate reward
         reward = self.calc_reward()
-        # print(f"Reward: {reward}")  # Log reward
+
+        # Handle NaN or Inf rewards
         if np.isnan(reward) or np.isinf(reward):
             print(f"NaN or Inf detected in reward! State: {self.state}, Action: {action}")
-            self.reset()  # Reset environment if reward is NaN or Inf
-            return self.get_normalized_state(), reward, self.done
+            reward = -1.0  # Assign a default penalty
+            self.done = True  # End the episode
 
-        self.done = self.check_done()
-        if self.done:
-            self.log_state(action, reward)
-            self.reset()  # Reset environment if done
-            return self.get_normalized_state(), reward, self.done
+        # Check if episode is done
+        self.done = self.done or self.check_done()
 
+        # Log the state, action, and reward
         self.log_state(action, reward)
 
         return self.get_normalized_state(), reward, self.done
 
     def get_normalized_state(self):
+        # print("ai_paddle:", self.state["ai_paddle"], type(self.state["ai_paddle"]))
+        # print("ball_x:", self.state["ball_x"], type(self.state["ball_x"]))
+        # print("ball_y:", self.state["ball_y"], type(self.state["ball_y"]))
+        # print("ball_speed_x:", self.state["ball_speed_x"], type(self.state["ball_speed_x"]))
+        # print("ball_speed_y:", self.state["ball_speed_y"], type(self.state["ball_speed_y"]))
+
+        # print("ai_paddle in get_normalized_state:", self.state["ai_paddle"])  # Debugging print
+        normalized_paddle = (self.state["ai_paddle"] / (self.screen_height - self.paddle_height)) * 2 - 1
+        # print("Normalized ai_paddle:", normalized_paddle)
         return np.array([
-            (self.state["ai_paddle"] / (self.screen_height - self.paddle_height)) * 2 - 1,
+            # (self.state["ai_paddle"] / (self.screen_height - self.paddle_height)) * 2 - 1,
+            normalized_paddle,
             (self.state["ball_x"] / self.screen_width) * 2 - 1,
             (self.state["ball_y"] / self.screen_height) * 2 - 1,
             self.state["ball_speed_x"] / self.ball_max_speed,
             self.state["ball_speed_y"] / self.ball_max_speed,
         ], dtype=np.float32)
+
 
     def update_ball(self):
         self.state["ball_x"] += self.state["ball_speed_x"]
@@ -110,6 +127,7 @@ class PongEnv:
             else:
                 # Ball missed the paddle
                 self.state["ball_missed"] = True
+                self.done = True  # End the episode
 
         # Check collision with player paddle (if applicable)
         player_paddle_top = self.state.get("player_paddle", 0)
@@ -123,11 +141,7 @@ class PongEnv:
             else:
                 # Ball missed the player paddle (optional for multiplayer mode)
                 self.state["ball_missed"] = True
-
-        # If the ball goes out of bounds, reset its position
-        if self.state["ball_x"] < 0 or self.state["ball_x"] > self.screen_width:
-            self.reset_ball()
-
+                self.done = True  # End the episode
 
     def reset_ball(self):
         # Reset ball to the center of the screen
@@ -147,7 +161,8 @@ class PongEnv:
 
         # Penalty for missing the ball
         if self.state.get("ball_missed", False):
-            return -1.0  # Larger penalty for missing the ball
+            reward = -1.0  # Larger penalty for missing the ball
+            return reward
 
         # Penalty for idle paddle (only if far from the ball)
         paddle_y = self.state.get("ai_paddle", 0)
@@ -161,22 +176,36 @@ class PongEnv:
             reward += 1.0 + ball_speed_x  # Higher reward for hitting faster balls
 
         # Proximity-based reward
-        proximity_factor = 1.0  # Increase proximity factor to emphasize staying close to the ball
-        max_proximity_reward = 0.5  # Allow a higher maximum reward for proximity
+        proximity_factor = 1.0  # Emphasize staying close to the ball
         proximity_reward = proximity_factor * max(0.0, 1.0 - abs(paddle_y - ball_y) / self.screen_height)
         reward += 0.7 * proximity_reward
 
         # Future position prediction (optional)
         ball_speed_y = self.state.get("ball_speed_y", 0)
-        predicted_ball_y = ball_y + ball_speed_y * (self.state.get("ball_x", 0) / abs(self.state.get("ball_speed_x", 1e-5)))
-        predicted_proximity_reward = proximity_factor * max(0.0, 1.0 - abs(paddle_y - predicted_ball_y) / self.screen_height)
-        reward += 0.3 * predicted_proximity_reward  # Weight future prediction reward lower
+        if self.state.get("ball_speed_x", 0) != 0:
+            # Predict the ball's future y position when it reaches the paddle's x-coordinate
+            distance_to_paddle = abs(self.state["ball_x"] - (0 + self.ball_size))  # AI paddle at x=0
+            if self.state["ball_speed_x"] < 0:
+                time_to_paddle = distance_to_paddle / abs(self.state["ball_speed_x"])
+                predicted_ball_y = self.state["ball_y"] + ball_speed_y * time_to_paddle
 
-        # Clip reward to a broader range
-        return np.clip(reward, -0.1, 0.1)
+                # Reflect off the top and bottom walls if necessary
+                while predicted_ball_y < 0 or predicted_ball_y > self.screen_height:
+                    if predicted_ball_y < 0:
+                        predicted_ball_y = -predicted_ball_y
+                    elif predicted_ball_y > self.screen_height:
+                        predicted_ball_y = 2 * self.screen_height - predicted_ball_y
 
+                predicted_proximity_reward = proximity_factor * max(0.0, 1.0 - abs(paddle_y - predicted_ball_y) / self.screen_height)
+                reward += 0.3 * predicted_proximity_reward  # Weight future prediction reward lower
+
+        # Clip reward to a reasonable range
+        reward = np.clip(reward, -1.0, 1.0)
+
+        return float(reward)
 
     def check_done(self):
+        # Episode ends if the ball goes out of bounds
         if self.state["ball_x"] <= 0 or self.state["ball_x"] >= self.screen_width:
             return True
         return False
