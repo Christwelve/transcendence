@@ -6,6 +6,9 @@ import random
 
 class PongEnv:
     def __init__(self):
+        """
+        Initialize environment parameters and state variables.
+        """
         self.done = False
         self.log = []
         self.screen_width = 800
@@ -19,6 +22,11 @@ class PongEnv:
         self.reset()
 
     def reset(self):
+        """
+        Reset the environment to its initial state.
+        Returns:
+            Normalized state for the agent.
+        """
         self.done = False
         self.state = {
             "ai_paddle": self.screen_height / 2 - self.paddle_height / 2,
@@ -33,7 +41,14 @@ class PongEnv:
         return self.get_normalized_state()
 
     def step(self, action):
-        # Map discrete action to paddle velocity
+        """
+        Take one step in the environment based on the given action.
+        Args:
+            action (int): Discrete action (-1, 0, 1) for paddle movement.
+        Returns:
+            tuple: Normalized state, reward, and done flag.
+        """
+        # Map action to paddle velocity
         if action == -1:
             paddle_velocity = -self.paddle_speed
         elif action == 1:
@@ -41,46 +56,38 @@ class PongEnv:
         else:
             paddle_velocity = 0
 
+        # Update paddle position
         self.state["ai_paddle"] += paddle_velocity
         self.state["ai_paddle"] = max(0, min(self.screen_height - self.paddle_height, self.state["ai_paddle"]))
-
-        # Update paddle_idle state
         self.state["paddle_idle"] = paddle_velocity == 0
 
-        # Update ball position and check for collision
+        # Update ball position and handle collisions
         self.update_ball()
         self.check_collisions()
 
-        # Calculate reward
+        # Calculate reward and handle anomalies
         reward = self.calc_reward()
-
-        # Handle NaN or Inf rewards
         if np.isnan(reward) or np.isinf(reward):
             print(f"NaN or Inf detected in reward! State: {self.state}, Action: {action}")
-            reward = -1.0  # Assign a default penalty
-            self.done = True  # End the episode
+            reward = -1.0
+            self.done = True
 
         # Check if episode is done
         self.done = self.done or self.check_done()
 
-        # Log the state, action, and reward
+        # Log the current state, action, and reward
         self.log_state(action, reward)
 
         return self.get_normalized_state(), reward, self.done
 
-
     def get_normalized_state(self):
-        # print("ai_paddle:", self.state["ai_paddle"], type(self.state["ai_paddle"]))
-        # print("ball_x:", self.state["ball_x"], type(self.state["ball_x"]))
-        # print("ball_y:", self.state["ball_y"], type(self.state["ball_y"]))
-        # print("ball_speed_x:", self.state["ball_speed_x"], type(self.state["ball_speed_x"]))
-        # print("ball_speed_y:", self.state["ball_speed_y"], type(self.state["ball_speed_y"]))
-
-        # print("ai_paddle in get_normalized_state:", self.state["ai_paddle"])  # Debugging print
+        """
+        Normalize the state values for use in the agent's training.
+        Returns:
+            np.array: Normalized state.
+        """
         normalized_paddle = (self.state["ai_paddle"] / (self.screen_height - self.paddle_height)) * 2 - 1
-        # print("Normalized ai_paddle:", normalized_paddle)
         return np.array([
-            # (self.state["ai_paddle"] / (self.screen_height - self.paddle_height)) * 2 - 1,
             normalized_paddle,
             (self.state["ball_x"] / self.screen_width) * 2 - 1,
             (self.state["ball_y"] / self.screen_height) * 2 - 1,
@@ -88,132 +95,117 @@ class PongEnv:
             self.state["ball_speed_y"] / self.ball_max_speed,
         ], dtype=np.float32)
 
-
     def update_ball(self):
+        """
+        Update the ball's position based on its current speed.
+        """
         self.state["ball_x"] += self.state["ball_speed_x"]
         self.state["ball_y"] += self.state["ball_speed_y"]
 
     def check_collisions(self):
-        # Reset ball_hit and ball_missed states
+        """
+        Check and handle collisions of the ball with walls and paddles.
+        """
         self.state["ball_hit"] = False
         self.state["ball_missed"] = False
 
-        # Check collision with top and bottom walls
+        # Handle wall collisions
         if self.state["ball_y"] <= 0 or self.state["ball_y"] >= self.screen_height:
-            self.state["ball_speed_y"] *= -1  # Reverse vertical direction
+            self.state["ball_speed_y"] *= -1
 
-        # Check collision with AI paddle
+        # Handle collisions with AI paddle
         paddle_top = self.state["ai_paddle"]
         paddle_bottom = paddle_top + self.paddle_height
-        paddle_x = 0  # AI paddle is on the left side of the screen
+        paddle_x = 0
 
-        # If the ball is at the paddle's x-coordinate
         if self.state["ball_x"] <= paddle_x + self.ball_size:
             if paddle_top <= self.state["ball_y"] <= paddle_bottom:
-                # Ball hit the paddle
                 self.state["ball_hit"] = True
-                self.state["ball_speed_x"] *= -1  # Reverse horizontal direction
-
-                # Calculate ball speed offset based on where it hits the paddle
+                self.state["ball_speed_x"] *= -1
                 offset = (self.state["ball_y"] - paddle_top) - self.paddle_height / 2
                 self.state["ball_speed_y"] = (offset / (self.paddle_height / 2)) * self.ball_speed
-
-                # Ensure ball speed doesn't exceed the max speed
                 speed_magnitude = np.sqrt(self.state["ball_speed_x"]**2 + self.state["ball_speed_y"]**2)
                 if speed_magnitude > self.ball_max_speed:
                     scale = self.ball_max_speed / speed_magnitude
                     self.state["ball_speed_x"] *= scale
                     self.state["ball_speed_y"] *= scale
             else:
-                # Ball missed the paddle
                 self.state["ball_missed"] = True
-                self.done = True  # End the episode
-
-        # Check collision with player paddle (if applicable)
-        player_paddle_top = self.state.get("player_paddle", 0)
-        player_paddle_bottom = player_paddle_top + self.paddle_height
-        player_paddle_x = self.screen_width - self.paddle_width  # Player paddle is on the right
-
-        if self.state["ball_x"] >= player_paddle_x - self.ball_size:
-            if player_paddle_top <= self.state["ball_y"] <= player_paddle_bottom:
-                # Ball hit the player paddle
-                self.state["ball_speed_x"] *= -1  # Reverse horizontal direction
-            else:
-                # Ball missed the player paddle (optional for multiplayer mode)
-                self.state["ball_missed"] = True
-                self.done = True  # End the episode
+                self.done = True
 
     def reset_ball(self):
-        # Reset ball to the center of the screen
-        self.state["ball_x"] = self.screen_width // 2
-        self.state["ball_y"] = self.screen_height // 2
+        """
+        Reset the ball to a random position in the playable space,
+        ensuring it moves toward the AI paddle for meaningful training.
+        """
+        # Randomize the initial position of the ball within the full screen
+        self.state["ball_x"] = random.uniform(self.ball_size, self.screen_width - self.ball_size)
+        self.state["ball_y"] = random.uniform(self.ball_size, self.screen_height - self.ball_size)
 
-        # Randomize ball speed and direction
-        self.state["ball_speed_x"] = self.ball_speed * random.choice([-1, 1])
-        self.state["ball_speed_y"] = self.ball_speed * random.choice([-1, 1])
+        # Randomize horizontal speed to ensure both directions are tested equally
+        self.state["ball_speed_x"] = random.choice([-1, 1]) * self.ball_speed
 
-        # Reset hit/missed states
+        # Randomize vertical speed for varied trajectories
+        self.state["ball_speed_y"] = random.uniform(-self.ball_speed, self.ball_speed)
+
         self.state["ball_hit"] = False
         self.state["ball_missed"] = False
 
-    def calc_reward(self)
+    def calc_reward(self):
+        """
+        Calculate the reward based on the current state.
+        Returns:
+            float: Reward value.
+        """
         reward = 0.0
 
-        # **1. Penalty for missing the ball**
+        # Penalize for missing the ball
         if self.state.get("ball_missed", False):
-            reward = -1.0  # Large penalty for missing the ball
-            return reward  # End early as this is a terminal condition
+            return -1.0
 
-        # **2. Penalty for idle paddle (if far from the ball)**
+        # Penalize idle paddle
         paddle_y = self.state.get("ai_paddle", 0)
         ball_y = self.state.get("ball_y", 0)
         if self.state.get("paddle_idle", False):
             distance_factor = abs(paddle_y - ball_y) / self.screen_height
-            idle_penalty = -0.2 *distance_factor  # Slight penalty for being idle when far from the ball
-            reward += idle_penalty
+            reward += -0.2 * distance_factor
 
-        # **3. Reward for hitting the ball**
+        # Reward for hitting the ball
         if self.state.get("ball_hit", False):
             ball_speed_x = abs(self.state.get("ball_speed_x", 0)) / self.screen_width
-            hit_reward = 1.0 + 2.0 * ball_speed_x  # Higher reward for hitting faster balls
-            reward += hit_reward
+            reward += 1.0 + 2.0 * ball_speed_x
 
-        # **4. Proximity-based reward**
-        proximity_factor = 1.0  # Weight for proximity rewards
+        # Reward for proximity to the ball
+        proximity_factor = 1.0
         proximity_reward = proximity_factor * max(0.0, 1.0 - abs(paddle_y - ball_y) / self.screen_height)
-        reward += 0.7 * proximity_reward  # Weighted proximity reward
+        reward += 0.7 * proximity_reward
 
-        # **5. Future position prediction reward**
+        # Predict future position reward
         ball_speed_x = self.state.get("ball_speed_x", 0)
         ball_speed_y = self.state.get("ball_speed_y", 0)
-        if ball_speed_x != 0:  # Only predict if the ball is moving
-            distance_to_paddle = abs(self.state["ball_x"] - (0 + self.ball_size))  # AI paddle at x=0
-            if ball_speed_x < 0:  # Ball is moving toward the AI paddle
+        if ball_speed_x != 0:
+            distance_to_paddle = abs(self.state["ball_x"] - (0 + self.ball_size))
+            if ball_speed_x < 0:
                 time_to_paddle = distance_to_paddle / abs(ball_speed_x)
                 predicted_ball_y = self.state["ball_y"] + ball_speed_y * time_to_paddle
-
-                # Reflect predicted position off walls if necessary
                 predicted_ball_y = abs(predicted_ball_y) % (2 * self.screen_height)
                 if predicted_ball_y > self.screen_height:
                     predicted_ball_y = 2 * self.screen_height - predicted_ball_y
+                proximity_reward = proximity_factor * max(0.0, 1.0 - abs(paddle_y - predicted_ball_y) / self.screen_height)
+                reward += 0.5 * proximity_reward
 
-                # Reward for being close to predicted ball position
-                predicted_proximity_reward = proximity_factor * max(0.0, 1.0 - abs(paddle_y - predicted_ball_y) / self.screen_height)
-                reward += 0.5 * predicted_proximity_reward  # Lower weight for future proximity
-
-        # **6. Reward clipping to a predefined range**
-        reward = np.clip(reward, -1.0, 1.0)
-
-        return float(reward)
-
+        return float(np.clip(reward, -1.0, 1.0))
 
     def check_done(self):
-        # Episode ends if the ball goes out of bounds
-        if self.state["ball_x"] <= 0 or self.state["ball_x"] >= self.screen_width:
-            return True
-        return False
+        return self.state["ball_x"] <= 0 or self.state["ball_x"] >= self.screen_width
 
     def log_state(self, action, reward):
+        """
+        Log the current state, action, and reward for debugging or analysis.
+        Args:
+            action (int): The action taken.
+            reward (float): The reward received.
+        """
         log_entry = {
             "timestamp": time.time(),
             "state": self.state.copy(),
