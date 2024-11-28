@@ -1,28 +1,42 @@
 import os
-# os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # Suppress info and warning messages
-
-from env import PongEnv
-from ppo_agent import PPOAgent
 import numpy as np
 import tensorflow as tf
 from collections import deque
 import matplotlib.pyplot as plt
+from env import PongEnv
+from ppo_agent import PPOAgent
 
-with tf.device('/GPU:0'):
-    print("Using GPU!")
-    
-def train_ppo():
-    # Environment and agent setup
+if tf.device('/GPU:0'):
+    print('GPU use detected\n')
+
+def setup_environment():
+    """
+    Set up the Pong environment and initialize the PPO agent.
+    Returns:
+        env (PongEnv): The Pong environment.
+        agent (PPOAgent): The PPO agent.
+        state_dim (int): The dimensionality of the state space.
+        action_dim (int): The number of possible actions.
+    """
     env = PongEnv()
     state_dim = env.get_normalized_state().shape[0]
-    action_dim = 3 
+    action_dim = 3  # [-1, 0, 1]
     agent = PPOAgent(input_dim=state_dim, action_dim=action_dim)
+    return env, agent, state_dim, action_dim
+
+
+def train_ppo():
+    """
+    Train the PPO agent in the Pong environment.
+    """
+    # Set up environment and PPO agent
+    env, agent, state_dim, action_dim = setup_environment()
 
     # Training parameters
-    num_episodes = 30000
+    num_episodes = 5000
     max_steps_per_episode = 1000
-    num_epochs = 15
-    batch_size = 128
+    num_epochs = 10
+    batch_size = 64
     save_interval = 1000
 
     # Metrics tracking
@@ -33,79 +47,64 @@ def train_ppo():
     entropy_history = []
     best_average_reward_history = []
 
-    # Initialize best average reward
+    # Best average reward for saving the best model
     best_average_reward = float('-inf')
+    action_mapping = {0: -1, 1: 0, 2: 1}  # Action mapping for PongEnv
 
-    # Action mapping from indices to actual actions
-    action_mapping = {0: -1, 1: 0, 2: 1}
-
+    # Training loop
     for episode in range(num_episodes):
         state = env.reset()
         episode_reward = 0
         episode_steps = 0
 
-        # Storage for transitions
-        states = []
-        actions = []
-        rewards = []
-        values = []
-        log_probs = []
-        dones = []
+        # Transition storage for one episode
+        states, actions, rewards, values, log_probs, dones = [], [], [], [], [], []
 
+        # Episode interaction
         while episode_steps < max_steps_per_episode:
-            # Get action and value from the agent
             state_tensor = tf.convert_to_tensor([state], dtype=tf.float32)
             action_idx, log_prob, value = agent.get_action_and_value(state_tensor)
-
-            # Convert action index to actual action
             action_idx = action_idx.numpy()[0]
             action = action_mapping[action_idx]
 
-            # Take action in the environment
+            # Perform environment step
             next_state, reward, done = env.step(action)
 
-            # Store the transition
+            # Store transitions
             states.append(state)
-            actions.append(action_idx)  # Store the action index
+            actions.append(action_idx)
             rewards.append(reward)
-            values.append(value.numpy()[0][0])  # Adjust indexing
+            values.append(value.numpy()[0][0])
             log_probs.append(log_prob.numpy()[0])
             dones.append(done)
 
-            # Update state and episode metrics
             state = next_state
             episode_reward += reward
+            # print(f"Episode {episode + 1}, Step {episode_steps}, Reward: {reward:.3f}")
             episode_steps += 1
 
-            if done or episode_steps >= max_steps_per_episode:
+            if done:
                 break
 
-        # Convert lists to numpy arrays for processing
-        states = np.array(states, dtype=np.float32)
-        actions = np.array(actions, dtype=np.int32)
-        rewards = np.array(rewards, dtype=np.float32)
-        values = np.array(values, dtype=np.float32)
-        log_probs = np.array(log_probs, dtype=np.float32)
-        dones = np.array(dones, dtype=np.float32)
+        # print(f"Episode {episode + 1} Total Reward: {episode_reward:.3f}")
 
-        # Compute advantages and returns
-        if done:
-            next_value = 0.0
-        else:
-            next_value = agent.get_action_and_value(
-                tf.convert_to_tensor([next_state], dtype=tf.float32)
-            )[2].numpy()[0][0]  # Adjust indexing
+        # Convert transitions to numpy arrays
+        states, actions, rewards, values, log_probs, dones = map(
+            lambda x: np.array(x, dtype=np.float32),
+            [states, actions, rewards, values, log_probs, dones]
+        )
 
-        advantages, returns = agent.compute_advantages(rewards, values, dones, next_value, True)
+        # Compute next state value
+        next_value = 0.0 if done else agent.get_action_and_value(
+            tf.convert_to_tensor([next_state], dtype=tf.float32)
+        )[2].numpy()[0][0]
 
-        # Initialize lists to store losses for this episode
-        episode_policy_losses = []
-        episode_value_losses = []
-        episode_entropies = []
+        # Calculate advantages and returns
+        advantages, returns = agent.compute_advantages(rewards, values, dones, next_value, normalize_rewards=True)
 
-        # Perform policy updates
+        # Training updates
+        episode_policy_losses, episode_value_losses, episode_entropies = [], [], []
         for epoch in range(num_epochs):
-            # Shuffle the indices for each epoch
             indices = np.arange(len(states))
             np.random.shuffle(indices)
 
@@ -113,72 +112,60 @@ def train_ppo():
                 end = start + batch_size
                 batch_indices = indices[start:end]
 
-                # Get the batch data
-                batch_states = states[batch_indices]
-                batch_actions = actions[batch_indices]
-                batch_old_log_probs = log_probs[batch_indices]
-                batch_advantages = advantages[batch_indices]
-                batch_returns = returns[batch_indices]
-
-                # Perform a training step
                 policy_loss, value_loss, entropy = agent.train_step(
-                    batch_states,
-                    batch_actions,
-                    batch_old_log_probs,
-                    batch_advantages,
-                    batch_returns
+                    states[batch_indices],
+                    actions[batch_indices],
+                    log_probs[batch_indices],
+                    advantages[batch_indices],
+                    returns[batch_indices]
                 )
 
-                # Append losses to episode-specific lists
                 episode_policy_losses.append(policy_loss.numpy())
                 episode_value_losses.append(value_loss.numpy())
                 episode_entropies.append(entropy.numpy())
 
-        # After all epochs, append the mean losses to history
-        if episode_policy_losses:
-            policy_loss_history.append(np.mean(episode_policy_losses))
-        if episode_value_losses:
-            value_loss_history.append(np.mean(episode_value_losses))
-        if episode_entropies:
-            entropy_history.append(np.mean(episode_entropies))
-
-        # Track rewards and episode lengths
+        # Append metrics to history
+        policy_loss_history.append(np.mean(episode_policy_losses))
+        value_loss_history.append(np.mean(episode_value_losses))
+        entropy_history.append(np.mean(episode_entropies))
         reward_history.append(episode_reward)
         episode_length_history.append(episode_steps)
-        avg_reward = np.mean(reward_history)
-        avg_length = np.mean(episode_length_history)
 
-        # Update the best average reward and save the model if improved
+        # Calculate average reward
+        avg_reward = np.mean(reward_history)
+
+        os.makedirs('models', exist_ok=True)
+        # Save best model
         if avg_reward > best_average_reward:
             best_average_reward = avg_reward
             agent.actor_model.save('models/best_actor.keras')
             agent.critic_model.save('models/best_critic.keras')
 
-        # Save the latest model at specified intervals
+        # Save periodically
         if (episode + 1) % save_interval == 0:
             agent.actor_model.save(f'models/actor_episode_{episode + 1}.keras')
             agent.critic_model.save(f'models/critic_episode_{episode + 1}.keras')
 
-        # Append to best average reward history for plotting
         best_average_reward_history.append(avg_reward)
 
-        # Print progress every 10 episodes
+        # Logging progress
         if (episode + 1) % 10 == 0:
-            # Safely get the last policy loss, value loss, and entropy
-            last_policy_loss = policy_loss_history[-1] if policy_loss_history else float('nan')
-            last_value_loss = value_loss_history[-1] if value_loss_history else float('nan')
-            last_entropy = entropy_history[-1] if entropy_history else float('nan')
-
             print(f"Episode {episode + 1}")
-            print(f"Average Episode Length: {avg_length:.2f}")
             print(f"Average Reward: {avg_reward:.2f}")
-            print(f"Best Average Reward: {best_average_reward:.2f}")
-            print(f"Last Policy Loss: {last_policy_loss:.4f}")
-            print(f"Last Value Loss: {last_value_loss:.4f}")
-            print(f"Last Entropy: {last_entropy:.4f}")
+            print(f"Average Reward: {best_average_reward:.2f}")
+            print(f"Last Policy Loss: {policy_loss_history[-1]:.4f}")
+            print(f"Last Value Loss: {value_loss_history[-1]:.4f}")
+            print(f"Last Entropy: {entropy_history[-1]:.4f}")
             print("-" * 50)
 
     # Plot training metrics
+    plot_metrics(policy_loss_history, value_loss_history, entropy_history, best_average_reward_history, episode_length_history)
+
+
+def plot_metrics(policy_loss_history, value_loss_history, entropy_history, best_avg_rewards, episode_lengths):
+    """
+    Plot and save training metrics.
+    """
     plt.figure(figsize=(16, 12))
 
     # Policy Loss
@@ -207,7 +194,7 @@ def train_ppo():
 
     # Best Average Reward
     plt.subplot(3, 2, 4)
-    plt.plot(best_average_reward_history, label='Best Average Reward', color='green')
+    plt.plot(best_avg_rewards, label='Best Average Reward', color='green')
     plt.xlabel('Episodes')
     plt.ylabel('Average Reward')
     plt.title('Average Reward over Time')
@@ -215,7 +202,7 @@ def train_ppo():
 
     # Average Episode Length
     plt.subplot(3, 2, 5)
-    plt.plot(episode_length_history, label='Average Episode Length')
+    plt.plot(episode_lengths, label='Average Episode Length')
     plt.xlabel('Episodes')
     plt.ylabel('Length')
     plt.title('Average Episode Length over Time')
@@ -224,6 +211,7 @@ def train_ppo():
     plt.tight_layout()
     plt.savefig('training_metrics.png')
     plt.show()
+
 
 if __name__ == "__main__":
     os.makedirs('models', exist_ok=True)
