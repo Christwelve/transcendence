@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from env import PongEnv
 from ppo_agent import PPOAgent
 
-if tf.device('/GPU:0'):
+with tf.device('/GPU:0'):
     print('GPU use detected\n')
 
 def setup_environment():
@@ -33,7 +33,7 @@ def train_ppo():
     env, agent, state_dim, action_dim = setup_environment()
 
     # Training parameters
-    num_episodes = 5000
+    num_episodes = 20000
     max_steps_per_episode = 1000
     num_epochs = 10
     batch_size = 64
@@ -49,7 +49,7 @@ def train_ppo():
 
     # Best average reward for saving the best model
     best_average_reward = float('-inf')
-    action_mapping = {0: -1, 1: 0, 2: 1}  # Action mapping for PongEnv
+    action_mapping = {0: -1, 1: 0, 2: 1} 
 
     # Training loop
     for episode in range(num_episodes):
@@ -135,20 +135,18 @@ def train_ppo():
         avg_reward = np.mean(reward_history)
 
         os.makedirs('models', exist_ok=True)
-        # Save best model
+
         if avg_reward > best_average_reward:
             best_average_reward = avg_reward
             agent.actor_model.save('models/best_actor.keras')
             agent.critic_model.save('models/best_critic.keras')
 
-        # Save periodically
         if (episode + 1) % save_interval == 0:
             agent.actor_model.save(f'models/actor_episode_{episode + 1}.keras')
             agent.critic_model.save(f'models/critic_episode_{episode + 1}.keras')
 
         best_average_reward_history.append(avg_reward)
 
-        # Logging progress
         if (episode + 1) % 10 == 0:
             print(f"Episode {episode + 1}")
             print(f"Average Reward: {avg_reward:.2f}")
@@ -158,7 +156,6 @@ def train_ppo():
             print(f"Last Entropy: {entropy_history[-1]:.4f}")
             print("-" * 50)
 
-    # Plot training metrics
     plot_metrics(policy_loss_history, value_loss_history, entropy_history, best_average_reward_history, episode_length_history)
 
 

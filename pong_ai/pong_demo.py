@@ -59,7 +59,7 @@ class Paddle:
     def __init__(self, x, y, config):
         self.rect = pygame.Rect(x, y, config["PADDLE_WIDTH"], config["PADDLE_HEIGHT"])
         self.speed = config["PADDLE_SPEED"]
-        self.velocity = 0  # Initial velocity
+        self.velocity = 0
 
     def move(self, up=True):
         direction = -1 if up else 1

@@ -166,9 +166,9 @@ class PongEnv:
         # Penalize idle paddle
         paddle_y = self.state.get("ai_paddle", 0)
         ball_y = self.state.get("ball_y", 0)
-        # if self.state.get("paddle_idle", False):
-        #     distance_factor = abs(paddle_y - ball_y) / self.screen_height
-        #     reward += -0.2 * distance_factor
+        if self.state.get("paddle_idle", False):
+            distance_factor = abs(paddle_y - ball_y) / self.screen_height
+            reward += -0.2 * distance_factor
 
         # Reward for hitting the ball
         if self.state.get("ball_hit", False):
