@@ -1,0 +1,20 @@
+.friend-list {
+  padding: 16px;
+}
+
+.friend-list__search {
+  margin-bottom: 16px;
+
+  input {
+    padding: 8px;
+    margin-right: 8px;
+  }
+}
+
+.friend-list__user, .friend-list__friend {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px;
+  border: 1px solid #ccc;
+  margin-bottom: 8px;
+}
