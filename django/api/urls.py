@@ -13,3 +13,11 @@ urlpatterns = [
     path('42/login/callback/', views.login_with_42_callback, name='login_with_42_callback'),
 	path('o/', include(oauth2_urls)),
 ]
+
+# Friend-related endpoints
+urlpatterns += [
+    path('friend/', views.fetch_friends, name='fetch_friends'),
+    path('users/search/', views.search_users, name='search_users'),
+    path('friend/add/', views.add_friend, name='add_friend'),
+    path('friend/remove/', views.remove_friend, name='remove_friend'),
+]
