@@ -177,19 +177,23 @@ def fetch_friends(request):
     except Exception as e:
         return Response({'error': str(e)}, status=500)
 
+
 @api_view(['GET'])
 def search_users(request):
     try:
         query = request.GET.get('query', '').strip()
+        print(f"DEBUG: Query received: {query}")  # Log the query
         if not query:
             return Response({'error': 'Query parameter is required'}, status=400)
         users = User.objects.filter(username__icontains=query)
+        print(f"DEBUG: Users found: {users}")  # Log the query result
         if not users.exists():
             return Response({'detail': 'No User matches the given query.'}, status=200)
         results = [{'id': user.id, 'username': user.username} for user in users]
         return Response({'users': results}, status=200)
     except Exception as e:
         return Response({'error': str(e)}, status=500)
+
 
 
 @api_view(['POST'])

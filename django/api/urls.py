@@ -1,4 +1,4 @@
-from django.urls import path, include
+from django.urls import path, include, re_path
 from oauth2_provider import urls as oauth2_urls
 from . import views
 
@@ -17,7 +17,8 @@ urlpatterns = [
 # Friend-related endpoints
 urlpatterns += [
     path('friend/', views.fetch_friends, name='fetch_friends'),
-    path('users/search/', views.search_users, name='search_users'),
+    path('user/search/', views.search_users, name='search_users'),
+    re_path(r'^api/user/search/?$', views.search_users, name='search_users'),
     path('friend/add/', views.add_friend, name='add_friend'),
     path('friend/remove/', views.remove_friend, name='remove_friend'),
 ]

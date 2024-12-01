@@ -22,7 +22,7 @@ const FriendList = () => {
   // Search for users by username
   const handleSearch = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/api/users/search?query=${searchQuery}`);
+      const response = await fetch(`http://localhost:8000/api/user/search/?query=${searchQuery}`);
       const data = await response.json();
       setFilteredUsers(data.users || []);
     } catch (error) {
