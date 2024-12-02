@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Match, Statistic, Friend
+from .models import User, Match, Statistic
 
 class UserSerializer(serializers.ModelSerializer):
     avatar = serializers.ImageField(required=False)
@@ -17,17 +17,3 @@ class StatisticSerializer(serializers.ModelSerializer):
     class Meta:
         model = Statistic
         fields = '__all__'
-
-class FriendSerializer(serializers.ModelSerializer):
-    friend = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Friend
-        fields = ['id', 'friend', 'created_at']
-
-    def get_friend(self,obj):
-        return {
-            "username": obj.friend.username,
-            "status": obj.friend.status,
-            "last_online": obj.friend.last_online,
-        }
