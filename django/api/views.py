@@ -12,9 +12,6 @@ from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 
 from api.models import User, Friend
-print(User.objects.all())  # Should list users
-print(Friend.objects.all())  # Should list friendships
-
 
 @csrf_exempt
 @api_view(['GET'])
