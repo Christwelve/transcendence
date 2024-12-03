@@ -123,7 +123,6 @@ def user_view(request, username=None):
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             users = User.objects.all()
-            print(request)
             serializer = UserSerializer(users, many=True, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
     elif request.method == 'POST':
@@ -182,11 +181,9 @@ def fetch_friends(request):
 def search_users(request):
     try:
         query = request.GET.get('query', '').strip()
-        print(f"DEBUG: Query received: {query}")
         if not query:
             return Response({'error': 'Query parameter is required'}, status=400)
         users = User.objects.filter(username__icontains=query)
-        print(f"DEBUG: Users found: {users}")
         if not users.exists():
             return Response({'detail': 'No User matches the given query.'}, status=200)
         results = [{'id': user.id, 'username': user.username} for user in users]
