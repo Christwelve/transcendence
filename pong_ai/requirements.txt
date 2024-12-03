@@ -1,0 +1,4 @@
+flask
+pygame
+tensorflow
+matplotlib
