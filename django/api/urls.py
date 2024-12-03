@@ -22,3 +22,8 @@ urlpatterns += [
     path('friend/add/', views.add_friend, name='add_friend'),
     path('friend/remove/', views.remove_friend, name='remove_friend'),
 ]
+
+# Settings-related endoints
+urlpatterns += [
+    path('user/update/', views.update_profile, name='update_profile'),
+]

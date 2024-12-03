@@ -38,6 +38,7 @@ function App() {
   const [database, setDatabase] = useState({});
   const [avatar, setAvatar] = useState(null);
 
+
   const changeStatus = (status) => {
     setUserStatus(status);
   };
@@ -120,6 +121,8 @@ function App() {
       }
 
       const user = await response.json();
+
+      console.log("User avatar from backend:", user.avatar);
       setAvatar(user.avatar);
       setUserStatus("logged");
       setErrorMessage(null);
@@ -149,7 +152,7 @@ function App() {
         <DataContextProvider>
           <Page />
           <ModalPresenter />
-           <Home changeStatus={changeStatus} avatar={avatar} />
+           <Home changeStatus={changeStatus} avatar={avatar} setAvatar={setAvatar} />
         </DataContextProvider>
 
       )}

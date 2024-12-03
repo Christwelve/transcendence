@@ -29,7 +29,6 @@ def login_with_42(request):
 @api_view(['GET'])
 def login_with_42_callback(request):
     if request.method == 'GET':
-        # Extract authorization code from the request
         code = request.GET.get('code')
         if not code:
             return JsonResponse({'error': 'Missing authorization code'}, status=400)
@@ -43,56 +42,63 @@ def login_with_42_callback(request):
             'redirect_uri': 'http://localhost:8000/api/42/login/callback/',
         }
 
-        # post request to get the access token
         token_response = requests.post(access_token_url, data=data)
-
-        # Handle potential errors in the token request
         if not token_response.ok:
-            return JsonResponse({'error': 'Failed to obtain access token', 'code': code, 'response': token_response.status_code}, status=token_response.status_code)
+            return JsonResponse({'error': 'Failed to obtain access token'}, status=token_response.status_code)
 
         token_data = token_response.json()
         access_token = token_data.get('access_token')
         if not access_token:
             return JsonResponse({'error': 'Missing access token in response'}, status=400)
 
-        # Use access token to fetch user information from the 42 API
-        user_info_url = f'https://api.intra.42.fr/v2/me'
+        user_info_url = 'https://api.intra.42.fr/v2/me'
         headers = {'Authorization': f'Bearer {access_token}'}
         user_info_response = requests.get(user_info_url, headers=headers)
-
-        # Handle potential errors in fetching user information
         if not user_info_response.ok:
-            return JsonResponse({'error': 'Failed to fetch user information', 'headers': headers, 'status': user_info_response.status_code, 'token_data': token_data}, status=user_info_response.status_code)
+            return JsonResponse({'error': 'Failed to fetch user information'}, status=user_info_response.status_code)
 
         user_info_data = user_info_response.json()
 
-        # Extract relevant user information from the response
+        # Extract user details
         username = user_info_data.get('login')
         email = user_info_data.get('email')
-        avatar = user_info_data.get('image')['link']
-        password = make_password('')
+        avatar_from_42_api = user_info_data.get('image')['link']
 
-        userData = {'email': email, 'username': username, 'password': password}
 
-        # Authenticate or create user based on retrieved information
-        user = User.objects.filter(username=username).first()
-        data = {'user': 'empty'}
-        if not user:
-            serializer = UserSerializer(data=userData)
-            data = {'user': 'serialized'}
-            if serializer.is_valid():
-                serializer.save()
-                data = {'user': 'created'}
+        user = User.objects.filter(email=email).first()
+        if user:
+            # Update existing user data
+            user.username = username
+            user.save()
+        else:
+            # Create a new user
+            user = User.objects.create(
+                username=username,
+                email=email,
+                password=make_password(''),
+            )
 
+        # Determine which avatar to use
+        if user.avatar:
+            # User has a custom avatar; use it
+            avatar_url = user.avatar.url  # This will be a relative URL
+            # Construct the full URL
+            if not avatar_url.startswith('http'):
+                avatar_url = f'http://localhost:8000{avatar_url}'
+        else:
+            # User doesn't have a custom avatar; use the one from 42 API
+            avatar_url = avatar_from_42_api
+            
         request.session['user_data'] = {
-            'username': username,
-            'email': email,
-            'avatar': avatar,
+            'username': user.username,
+            'email': user.email,
+            'avatar': avatar_url,
         }
-
         return redirect(f"http://localhost:3000?logged_in=true")
 
     return redirect(f"http://localhost:3000?logged_in=false")
+
+
 
 @csrf_exempt
 @api_view(['GET'])
@@ -229,3 +235,35 @@ def remove_friend(request):
         return Response({'message': f'{friend_username} removed from your friends!'}, status=200)
     except User.DoesNotExist:
         return Response({'error': 'User not found'}, status=404)
+
+@api_view(['POST'])
+def update_profile(request):
+    try:
+        # Replace hardcoded username with authentication logic
+        user = User.objects.get(username='fvoicu')
+        data = request.data
+
+        if 'username' in data:
+            user.username = data['username']
+        if 'email' in data:
+            user.email = data['email']
+        if 'password' in data:
+            user.password = make_password(data['password'])
+        if 'avatar' in request.FILES:
+            user.avatar = request.FILES['avatar']
+
+        user.save()
+
+        # Construct the full avatar URL
+        avatar_url = user.avatar.url if user.avatar else None
+        if avatar_url and not avatar_url.startswith("http"):
+            avatar_url = f"http://{request.get_host()}{avatar_url}"
+
+        return Response({
+            'message': 'User updated successfully!',
+            'avatar': avatar_url
+        }, status=200)
+
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return Response({'error': str(e)}, status=500)

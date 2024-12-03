@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import "../genericStyles.css";
 import "./Profile.css";
 
-const Profile = ({ avatar }) => {
+const Profile = ({ avatar, setAvatar }) => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -11,23 +11,23 @@ const Profile = ({ avatar }) => {
 
   const handleSaveChanges = () => {
     const formData = new FormData();
-    formData.append("username", username);
-    formData.append("email", email);
-    if (newPassword) {
-      formData.append("password", newPassword);
-    }
-    if (avatarFile) {
-      formData.append("avatar", avatarFile);
-    }
-
-    // Call API to save changes
+    if (username) formData.append("username", username);
+    if (email) formData.append("email", email);
+    if (newPassword) formData.append("password", newPassword);
+    if (avatarFile) formData.append("avatar", avatarFile);
+  
     fetch("http://localhost:8000/api/user/update/", {
       method: "POST",
       body: formData,
     })
-      .then((response) => {
-        if (response.ok) {
-          alert("Profile updated successfully!");
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.message) {
+          alert(data.message);
+          if (data.avatar) {
+            setAvatar(data.avatar);
+            setAvatarPreview(data.avatar);
+          }
         } else {
           alert("Failed to update profile.");
         }
@@ -37,6 +37,7 @@ const Profile = ({ avatar }) => {
 
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
+    console.log(file)
     setAvatarFile(file);
     const reader = new FileReader();
     reader.onloadend = () => setAvatarPreview(reader.result);

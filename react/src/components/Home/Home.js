@@ -5,7 +5,7 @@ import Profile from "../Profile/Profile";
 import Main from "../Main/Main";
 import Game from "../Game/Game";
 
-const Home = ({ changeStatus, avatar }) => {
+const Home = ({ changeStatus, avatar, setAvatar }) => {
   const [mainComponent, setMainComponent] = useState("main");
 
   const changeComponent = (component) => {
@@ -20,7 +20,7 @@ const Home = ({ changeStatus, avatar }) => {
         avatar={avatar}
       />
       {mainComponent === "stats" && <Statistics />}
-      {mainComponent === "profile" && <Profile avatar={avatar} />}
+      {mainComponent === "profile" && <Profile avatar={avatar} setAvatar={setAvatar} />}
       {mainComponent === "main" && <Main />}
       {mainComponent === "game" && <Game />}
     </div>
