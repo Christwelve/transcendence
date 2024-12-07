@@ -2,6 +2,9 @@ import requests
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
+from rest_framework.authtoken.models import Token
 from .models import User, Match, Statistic
 from .serializers import UserSerializer, MatchSerializer, StatisticSerializer
 from django.contrib.auth.hashers import make_password, check_password
@@ -97,9 +100,10 @@ def login_with_42_callback(request):
 def get_user_data(request):
     user_data = request.session.get('user_data', None)
     if not user_data:
-        return JsonResponse({'error': 'No user data found'}, status=404)
+        return JsonResponse({'error': 'No user data found', 'session': request.session.get('user_data')}, status=404)
     return JsonResponse(user_data)
 
+@csrf_exempt
 @api_view(['POST'])
 def login_view(request):
     if request.method == 'POST':
@@ -107,8 +111,18 @@ def login_view(request):
         password = request.data['password']
         user = get_object_or_404(User, username=username)
         if check_password(password, user.password):
+            token, _ = Token.objects.get_or_create(user=user)  # Efficient token retrieval
             serializer = UserSerializer(user)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            request.session['user_data'] = {
+                'username': user.username,
+                'email': user.email,
+            }
+            request.session.save()
+            return Response({
+                'user': serializer.data,
+                'token': token.key,  # Include authToken in response
+                'user_data': request.session['user_data'],
+            }, status=status.HTTP_200_OK)
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
 
 

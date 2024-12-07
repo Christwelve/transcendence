@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "../genericStyles.css";
+import Cookies from 'js-cookie';
 
 const Register = ({ changeStatus, login_with_42 }) => {
   const [email, setEmail] = useState("");

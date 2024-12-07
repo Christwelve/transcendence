@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "./Navbar.css";
+import Cookies from 'js-cookie';
 
 const Navbar = ({ changeStatus, changeComponent, avatar }) => {
   const [homeIsActive, setHomeIsActive] = useState(true);
@@ -101,7 +102,11 @@ const Navbar = ({ changeStatus, changeComponent, avatar }) => {
                 <button
                   className="dropdown-item"
                   onClick={() => {
-                    changeStatus("login");
+                    const authToken = Cookies.get('authToken');
+                    if (authToken) //add this check just for safety
+                      Cookies.remove('authToken');
+                      Cookies.remove('pga4_session');
+                    changeStatus("login"); 
                   }}
                 >
                   Logout

@@ -7,6 +7,7 @@ import DataContextProvider from './components/DataContext'
 import Page from './pages/Page'
 import ModalPresenter from './components/ModalPresenter'
 import {closeModalTop} from './utils/modal'
+import Cookies from 'js-cookie';
 
 function App() {
   useEffect(() => {
@@ -27,8 +28,9 @@ function App() {
     // Check for `logged_in=true` in the query string
     const params = new URLSearchParams(window.location.search);
     const loggedIn = params.get("logged_in");
-
-    if (loggedIn === "true") {
+    console.log("hey");
+    if (loggedIn === "true" || Cookies.get('authToken')) {
+      console.log("haaaa");
       fetchUserData(); // Call the function to fetch user data
     }
   }, []);
@@ -72,12 +74,16 @@ function App() {
         console.error("An unexpected error occurred:", response.statusText);
       }
     } else {
-      if(!userData.avatar)
+      console.log("user:", userData.user);
+      if(!userData.user.avatar)
         setAvatar(`https://robohash.org/${userData.username}?200x200`);
       else {
         const avatarIcon = (userData.avatar).split('/').pop();
         setAvatar(`http://localhost:8000/media/avatars/${avatarIcon}`);
       }
+
+      //when we change the domain to a secure one we must add { secure: true } as 3rd parameter
+      Cookies.set('authToken', userData.token);
       setUserStatus("logged");
       setErrorMessage(null);
     }
