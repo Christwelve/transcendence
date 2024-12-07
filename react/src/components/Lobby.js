@@ -3,6 +3,7 @@ import List from './List'
 import RoomListItem from './RoomListItem'
 import RoomListButtonBar from './RoomListButtonBar'
 import {useDataContext} from './DataContext'
+import cls from '../utils/cls'
 import scss from './Lobby.module.scss'
 
 const roomListLabels = ['Id', 'Name', 'Type', 'Status', 'Players'];
@@ -11,8 +12,10 @@ function Lobby() {
 
 	const [selectedRoomId, setSelectedRoomId] = useState(null);
 
-	const {getRoomList, getPlayerList, joinRoom} = useDataContext();
+	const {getPlayer, getRoomList, getPlayerList, joinRoom} = useDataContext();
 	const roomList = getRoomList();
+	const currentPlayer = getPlayer();
+
 
 	const onClick = roomId => {
 		setSelectedRoomId(roomId);
@@ -34,7 +37,7 @@ function Lobby() {
 				<div>Players</div>
 				{
 					getPlayerList().map(player => (
-						<div key={player.id}>
+						<div key={player.id} className={cls(player.id === currentPlayer.id ? scss.player : null)}>
 							<span>{player.id}</span>
 							<span> | </span>
 							<span>{player.name}</span>

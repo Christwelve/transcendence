@@ -19,21 +19,18 @@ function DataContextProvider(props) {
 	const dataDefault = {
 		rooms: [],
 		players: [],
-	}
+	};
 
 	const [userId, setUserId] = useState(null);
 	const [data, setData] = useReducer(dataReducer, dataDefault);
 
-	const sendRef = useRef(null);
-	const send = sendRef.current;
-
-	// console.log(data);
-
+	const socketRef = useRef(null);
+	const send = socketRef.current?.emit?.bind(socketRef.current);
 
 	useEffect(() => {
 		const socket = io(SOCKET_SERVER_URL);
 
-		sendRef.current = socket.emit.bind(socket);
+		socketRef.current = socket;
 
 		socket.on('connect', () => {
 			console.log('Connected to server');
@@ -44,7 +41,6 @@ function DataContextProvider(props) {
 		socket.on('user.id', id => setUserId(id));
 		socket.on('instruction', instructions => setData(instructions));
 
-
 		return () => {
 			socket.disconnect();
 		};
@@ -53,6 +49,7 @@ function DataContextProvider(props) {
 
 	const fns = {
 		getPlayer: getPlayer.bind(null, data, userId),
+		getRoom: getRoom.bind(null, data),
 		getRoomList: getRoomList.bind(null, data),
 		getPlayerList: getPlayerList.bind(null, data),
 		getPlayerListForRoom: getPlayerListForRoom.bind(null, data),
@@ -60,6 +57,11 @@ function DataContextProvider(props) {
 		joinRoom: joinRoom.bind(null, send),
 		leaveRoom: leaveRoom.bind(null, send),
 		toggleReady: toggleReady.bind(null, send),
+		gameStart: gameStart.bind(null, send),
+		sendPlayerEvent: sendPlayerEvent.bind(null, send),
+		useListener: useListener.bind(null, socketRef.current),
+		requestServerTick: requestServerTick.bind(null, send),
+		requestTickAdjust: requestTickAdjust.bind(null, send),
 	};
 
 	return (
@@ -79,8 +81,6 @@ function dataReducer(state, instructions) {
 		object: applyStateObject,
 		array: applyStateArray,
 	};
-
-	console.log(instructions);
 
 	for(const instruction of instructions) {
 		const {type, action, path, value} = instruction;
@@ -142,6 +142,10 @@ function getPlayer(data, userId) {
 	return data.players[userId];
 }
 
+function getRoom(data, roomId) {
+	return data.rooms[roomId];
+}
+
 function getRoomList(data) {
 	return Object.values(data.rooms);
 }
@@ -175,6 +179,30 @@ function leaveRoom(send) {
 
 function toggleReady(send) {
 	send('player.ready');
+}
+
+function gameStart(send) {
+	send('game.start');
+}
+
+function sendPlayerEvent(send, data) {
+	send('player.event', data);
+}
+
+function useListener(socket, name, callback) {
+	useEffect(() => {
+		socket.on(name, callback);
+
+		return socket.off.bind(socket, name, callback);
+	}, [name, callback]);
+}
+
+function requestServerTick(send) {
+	send('game.tick');
+}
+
+function requestTickAdjust(send, tick) {
+	send('game.tick', tick.getTick());
 }
 
 export default DataContextProvider;

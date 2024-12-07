@@ -1,9 +1,11 @@
-const http = require('http');
-const express = require('express');
-const {Server: WebSocketServer} = require('socket.io');
+import http from 'http'
+import express from 'express'
+import {Server as WebSocketServer} from 'socket.io'
+import {createProxy, sendInstructions} from './proxy.js'
+import {ServerTick} from 'shared/tick'
+
 const app = express();
 const server = http.createServer(app);
-const {createProxy, sendInstructions} = require('./proxy.js');
 
 const io = new WebSocketServer(server, {
 	serveClient: false,
@@ -24,7 +26,10 @@ const template = {
 	players: {},
 	rooms: {},
 }
+
 const data = createProxy(template);
+
+const games = {};
 
 setInterval(sendInstructions.bind(null, io.emit.bind(io, 'instruction')), 0);
 
@@ -36,12 +41,34 @@ function getPlayerFromSocket(socket) {
 	return data.players[socket.id];
 }
 
+function getRoomFromPlayer(player) {
+	return data.rooms[player.roomId];
+}
+
+function getPlayersFromRoom(room) {
+	return room.players.map(playerId => data.players[playerId]);
+}
+
+function removePlayerFromRoom(player, room) {
+	if(room == null)
+		return;
+
+	const playerIndex = room.players.findIndex(playerId => playerId === player.id);
+	room.players.splice(playerIndex, 1);
+
+	if(room.players.length === 0)
+		delete data.rooms[room.id];
+	else if(player.id === room.masterId)
+		room.masterId = room.players[0];
+}
+
 function createRoom(player, options) {
 	const {name, type, playersMax} = options;
 
 	const id = roomId++;
 	const status = 0;
 	const players = [player.id];
+	const masterId = player.id;
 
 	return {
 		id,
@@ -50,7 +77,26 @@ function createRoom(player, options) {
 		status,
 		players,
 		playersMax,
+		masterId,
 	};
+}
+
+const onTick = (tick) => {
+	const entries = tick.getQueueEntries();
+
+	if(entries.length === 0)
+		return;
+
+	entries.forEach(entry => {
+		const {player, event} = entry;
+
+		tick.applyInput(event[3], player.index);
+		tick.updateVerifiedEventId(event[0], player.index);
+
+		console.log(tick._positions);
+	});
+
+	tick.sendUpdateToPlayers(io);
 }
 
 io.on('connection', async socket => {
@@ -59,11 +105,18 @@ io.on('connection', async socket => {
 		id: socket.id,
 		name: Math.random().toString(36).substring(2, 7),
 		state: 0,
-		room: null,
+		roomId: null,
 		ready: false,
+		index: -1,
 	};
 
 	data.players[player.id] = player;
+	const room = createRoom(player, {name: 'test', type: 0, playersMax: 4});
+	data.rooms[room.id] = room;
+	player.roomId = room.id;
+	room.players.push(player.id);
+
+	games[room.id] = new ServerTick([player], onTick);
 
 	socket.emit('user.id', player.id);
 	socket.emit('instruction', [{action: 'overwrite', value: data}]);
@@ -81,15 +134,18 @@ io.on('connection', async socket => {
 		const {id} = options;
 		const player = getPlayerFromSocket(socket);
 
+		if(player.state !== 0)
+			return socket.emit('notice', {type: 'error', title: 'Can not join room', message: 'Not in lobby.'});
+
 		const room = data.rooms[id];
 
 		if(room == null)
-			return socket.emit('game.error', {title: 'Can not join room', message: `Room with id ${id} does not exist.`});
+			return socket.emit('notice', {type: 'error', title: 'Can not join room', message: `Room with id ${id} does not exist.`});
 
 		const {players, playersMax} = room;
 
 		if(players.length === playersMax)
-			return socket.emit('game.error', {title: 'Can not join room', message: `Room is full.`});
+			return socket.emit('notice', {type: 'error', title: 'Can not join room', message: `Room is full.`});
 
 		player.state = 1;
 		player.roomId = room.id;
@@ -98,43 +154,100 @@ io.on('connection', async socket => {
 
 	socket.on('room.leave', () => {
 		const player = getPlayerFromSocket(socket);
-		const {roomId} = player;
+		const room = getRoomFromPlayer(player);
 
-		if(roomId == null)
+		if(room == null)
 			return;
 
-		const room = data.rooms[roomId];
-
-		if(room != null) {
-			const index = room.players.findIndex(id => id === player.id);
-			room.players.splice(index, 1);
-
-			if(room.players.length === 0)
-				delete data.rooms[roomId];
-		}
+		removePlayerFromRoom(player, room);
 
 		player.roomId = null;
 		player.ready = false;
+		player.index = -1;
 		player.state = 0;
 	});
 
 	socket.on('player.ready', () => {
 		const player = getPlayerFromSocket(socket);
 
+		if(player.state !== 1)
+			return;
 		if(player.roomId == null)
 			return;
 
 		player.ready = !player.ready;
 	});
 
+	socket.on('game.start', () => {
+		const player = getPlayerFromSocket(socket);
+		const room = getRoomFromPlayer(player);
+
+		if(room == null)
+			return;
+		if(player.id !== room.masterId)
+			return;
+		if(player.state !== 1)
+			return;
+
+		const players = getPlayersFromRoom(room);
+
+		console.log(players);
+
+		room.status = 1;
+
+		players.forEach(player => player.state = 2);
+
+		games[room.id] = new ServerTick(players, onTick);
+	});
+
+	socket.on('game.tick', (tickClient) => {
+		const player = getPlayerFromSocket(socket);
+		const room = getRoomFromPlayer(player);
+
+		if(room == null)
+			return;
+
+		const tick = games[room.id];
+
+		console.log('tc', tickClient);
+
+		if(tickClient == null)
+			return socket.emit('game.tick', 'set', tick.getTick());
+
+		const difference = tick.calculateOffsetDelta(tickClient);
+
+		if(difference === 0)
+			return;
+
+		socket.emit('game.tick', 'adjust', difference);
+	});
+
+	socket.on('player.event', event => {
+		const player = getPlayerFromSocket(socket);
+		const room = getRoomFromPlayer(player);
+
+		if(room == null)
+			return;
+
+		const tick = games[room.id];
+
+		// console.log(player.name, 'ct', event[1], 'st', tick._tick, 'diff', event[1] - tick._tick);
+
+		if(tick.canQueueEvent(event))
+			return tick.queueEvent(player, event);
+
+		const [eventId] = event;
+
+		socket.emit('packet.dropped', eventId);
+
+		console.log('dropped packet from', player.name);
+	});
+
 	socket.on('disconnect', () => {
 		const player = getPlayerFromSocket(socket);
-		const room = data.rooms[player.roomId];
+		const room = getRoomFromPlayer(player);
 
-		if(room != null) {
-			const index = room.players.findIndex(id => id === player.id);
-			room.players.splice(index, 1);
-		}
+		removePlayerFromRoom(player, room);
 
 		delete data.players[player.id];
 	});

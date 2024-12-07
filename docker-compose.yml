@@ -12,6 +12,7 @@ services:
       - "4000:4000"
     volumes:
       - ${PWD}/nodejs:/code/nodejs
+      - ${PWD}/shared:/shared
       - nodejs_data:/code/nodejs/node_modules
       # - ./nodejs/node_modules:/code/nodejs/node_modules
       # - /code/nodejs/node_modules
@@ -39,6 +40,7 @@ services:
       - "3000:3000"
     volumes:
       - ${PWD}/react:/app
+      - ${PWD}/shared:/shared
       - /app/node_modules
     env_file:
       - .env
@@ -54,7 +56,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     env_file:
-      - .env 
+      - .env
 
   pgadmin:
     networks:

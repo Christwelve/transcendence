@@ -3,7 +3,7 @@ import scss from './List.module.scss'
 import cls from '../utils/cls'
 
 function List(props) {
-	const {columnNames, component: ItemComponent, items, onClick, onDoubleClick, isSelected = () => false} = props;
+	const {columnNames, component: ItemComponent, items, onClick, onDoubleClick, rowClasses = () => null, isSelected = () => false} = props;
 
 	return (
 		<table className={cls(scss.list)}>
@@ -18,7 +18,7 @@ function List(props) {
 			</thead>
 			<tbody>
 				{
-					items.map((item, i) => <ItemComponent key={i} {...item} baseClasses={cls(scss.row, scss.item, isSelected(item) ? scss.selected : null)} onClick={onClick} onDoubleClick={onDoubleClick} />)
+					items.map((item, i) => <ItemComponent key={i} {...item} baseClasses={cls(scss.row, scss.item, isSelected(item) && scss.selected, rowClasses(item))} onClick={onClick} onDoubleClick={onDoubleClick} />)
 				}
 			</tbody>
 		</table>

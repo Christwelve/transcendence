@@ -1,21 +1,22 @@
-/* html {
+html {
 	background-color: #000;
-} */
+}
 
 body {
 	position: relative;
 	margin: 0;
+	background-color: inherit !important;
 	color: #fff;
 	font-family: monospace;
 }
 
 * {
-  box-sizing: border-box;
+box-sizing: border-box;
 }
 
 a {
-  color: inherit;
-  text-decoration: none;
+color: inherit;
+text-decoration: none;
 }
 
 button {
@@ -36,15 +37,4 @@ button {
 
 #stats > * {
 	padding: 3px;
-}
-
-.game-ui {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	position: fixed;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100vh;
 }

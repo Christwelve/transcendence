@@ -1,6 +1,7 @@
 {
   "name": "nodejs",
   "version": "1.0.0",
+  "type": "module",
   "main": "src/app.js",
   "scripts": {
     "start": "nodemon src/app.js"

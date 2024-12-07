@@ -1,4 +1,14 @@
 .room {
 	display: flex;
 	flex-direction: column;
+	color: #fff;
+
+	.player {
+		color: #f80;
+	}
+
+	.master {
+		font-weight: 700;
+		text-decoration: underline;
+	}
 }
