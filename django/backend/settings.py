@@ -72,6 +72,9 @@ CORS_ALLOWED_ORIGINS = [
 # Optional: Allow credentials (e.g., cookies, sessions)
 CORS_ALLOW_CREDENTIALS = True
 
+# For allowing cross-origin cookies
+SESSION_COOKIE_SAMESITE = 'None'
+
 # Optional: Specify allowed headers
 CORS_ALLOW_HEADERS = [
     "content-type",

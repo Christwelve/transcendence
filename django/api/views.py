@@ -14,7 +14,6 @@ from django.http import HttpResponseRedirect, JsonResponse
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 
-@csrf_exempt
 @api_view(['GET'])
 def login_with_42(request):
     authorization_url = (
@@ -26,7 +25,6 @@ def login_with_42(request):
     )
     return JsonResponse({'authorization_url': authorization_url})
 
-@csrf_exempt
 @api_view(['GET'])
 def login_with_42_callback(request):
     if request.method == 'GET':
@@ -95,7 +93,6 @@ def login_with_42_callback(request):
 
     return redirect(f"http://localhost:3000?logged_in=false")
 
-@csrf_exempt
 @api_view(['GET'])
 def get_user_data(request):
     user_data = request.session.get('user_data', None)
