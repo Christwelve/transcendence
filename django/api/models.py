@@ -2,6 +2,7 @@ import os
 import uuid
 from django.db import models
 
+
 def avatar_upload_path(instance, filename):
     ext = filename.split('.')[-1]
     unique_filename = f"{uuid.uuid4().hex}.{ext}"
@@ -45,3 +46,18 @@ class Statistic(models.Model):
 
     def __str__(self):
         return f"Statistic {self.id}: Match {self.match.id}, User {self.user.username}"
+
+class Friend(models.Model):
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="friends_owner"
+    )
+    friend = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="friends_friend"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "friend")
+        
+    def __str__(self):
+        return f"{self.user.username} is friends with {self.friend.username}"
