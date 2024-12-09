@@ -62,8 +62,6 @@ $tongue-color: #ff99cc;
   align-items: center;
   margin-bottom: 2rem;
   position: relative;
-  // Add glow around the robot similar to the text
-  box-shadow: 0 0 10px $primary-color, 0 0 20px lighten($primary-color, 15%);
 
   .circle-bg {
     position: relative;
@@ -71,9 +69,6 @@ $tongue-color: #ff99cc;
     border-radius: 50%;
     width: 150px;
     height: 150px;
-    // Match the glow style of the login text (no animation)
-    box-shadow: 0 0 10px $primary-color, 0 0 20px lighten($primary-color, 15%);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
 
     &.robot-smile-trigger {
       .robot-face {
@@ -167,7 +162,6 @@ $tongue-color: #ff99cc;
           position: absolute;
           top: 40px;
           transition: transform 0.2s ease-out;
-          // Apply both horizontal and vertical offsets
           transform: translate(var(--eye-offset-x), var(--eye-offset-y));
 
           &.left {
@@ -176,6 +170,40 @@ $tongue-color: #ff99cc;
 
           &.right {
             right: 30px;
+          }
+        }
+
+        &.eyes-closed {
+          .eyes {
+            background: none;
+            width: 10px;
+            height: 10px;
+            border-radius: 0;
+            transform: none !important;
+
+            &.left::before {
+              content: ">";
+              position: absolute;
+              top: 50%;
+              left: 30%;
+              transform: translate(-50%, -50%);
+              color: $primary-color;
+              font-size: 5rem;
+            }
+
+            &.right::before {
+              content: "<";
+              position: absolute;
+              top: 50%;
+              right: 30%;
+              transform: translate(50%, -50%);
+              color: $primary-color;
+              font-size: 5rem;
+            }
+          }
+
+          .mouth{
+            display: none;
           }
         }
 

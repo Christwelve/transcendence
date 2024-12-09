@@ -1,10 +1,10 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import styles from "./Login.module.scss";
 
 const Login = ({ changeStatus, userLogin, errorMessage }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-
+  
   const robotFaceRef = useRef(null);
 
   const _onUsernameChange = (event) => {
@@ -33,11 +33,14 @@ const Login = ({ changeStatus, userLogin, errorMessage }) => {
     username.trim() ? styles["robot-smile-trigger"] : ""
   ].join(" ");
 
-  // Handle mouse movement to adjust eye position
+  // Eye offset states
   const [eyeOffsetX, setEyeOffsetX] = useState(0);
   const [eyeOffsetY, setEyeOffsetY] = useState(0);
 
   const _onMouseMove = (e) => {
+    // If password is not empty, don't move the eyes
+    if (password.trim().length > 0) return;
+
     if (robotFaceRef.current) {
       const rect = robotFaceRef.current.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
@@ -61,6 +64,12 @@ const Login = ({ changeStatus, userLogin, errorMessage }) => {
     }
   };
 
+  // Determine if the eyes should be closed
+  const robotFaceClasses = [styles["robot-face"]];
+  if (password.trim().length > 0) {
+    robotFaceClasses.push(styles["eyes-closed"]);
+  }
+
   return (
     <div className={styles.container} onMouseMove={_onMouseMove}>
       <div className={styles.robot}>
@@ -68,7 +77,7 @@ const Login = ({ changeStatus, userLogin, errorMessage }) => {
           <div className={`${styles["robot-ear"]} ${styles.left}`}></div>
           <div className={styles["robot-head"]}>
             <div
-              className={styles["robot-face"]}
+              className={robotFaceClasses.join(" ")}
               ref={robotFaceRef}
               style={{
                 "--eye-offset-x": `${eyeOffsetX}px`,
