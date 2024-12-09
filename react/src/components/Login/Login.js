@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import styles from "./Login.module.scss";
 
 const Login = ({ changeStatus, userLogin, errorMessage }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+
+  const robotFaceRef = useRef(null);
 
   const _onUsernameChange = (event) => {
     setUsername(event.target.value);
@@ -31,13 +33,48 @@ const Login = ({ changeStatus, userLogin, errorMessage }) => {
     username.trim() ? styles["robot-smile-trigger"] : ""
   ].join(" ");
 
+  // Handle mouse movement to adjust eye position
+  const [eyeOffsetX, setEyeOffsetX] = useState(0);
+  const [eyeOffsetY, setEyeOffsetY] = useState(0);
+
+  const _onMouseMove = (e) => {
+    if (robotFaceRef.current) {
+      const rect = robotFaceRef.current.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
+      const deltaX = mouseX - centerX;
+      const deltaY = mouseY - centerY;
+
+      const maxOffset = 5;
+      let offsetX = (deltaX / (rect.width / 2)) * maxOffset;
+      let offsetY = (deltaY / (rect.height / 2)) * maxOffset;
+
+      if (offsetX > maxOffset) offsetX = maxOffset;
+      if (offsetX < -maxOffset) offsetX = -maxOffset;
+      if (offsetY > maxOffset) offsetY = maxOffset;
+      if (offsetY < -maxOffset) offsetY = -maxOffset;
+
+      setEyeOffsetX(offsetX);
+      setEyeOffsetY(offsetY);
+    }
+  };
+
   return (
-    <div className={styles.container}>
+    <div className={styles.container} onMouseMove={_onMouseMove}>
       <div className={styles.robot}>
         <div className={circleBgClasses}>
           <div className={`${styles["robot-ear"]} ${styles.left}`}></div>
           <div className={styles["robot-head"]}>
-            <div className={styles["robot-face"]}>
+            <div
+              className={styles["robot-face"]}
+              ref={robotFaceRef}
+              style={{
+                "--eye-offset-x": `${eyeOffsetX}px`,
+                "--eye-offset-y": `${eyeOffsetY}px`
+              }}
+            >
               <div className={`${styles.eyes} ${styles.left}`}></div>
               <div className={`${styles.eyes} ${styles.right}`}></div>
               <div className={styles.mouth}></div>

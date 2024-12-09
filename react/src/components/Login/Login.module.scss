@@ -7,21 +7,6 @@ $text-color: #ffffff;
 $error-color: #ff4d4f;
 $tongue-color: #ff99cc;
 
-// Keyframe for subtle glow effect
-@keyframes subtle-glow {
-  0% {
-    box-shadow: 0 0 20px $primary-color, 0 0 40px lighten($primary-color, 20%);
-  }
-
-  50% {
-    box-shadow: 0 0 25px $primary-color, 0 0 50px lighten($primary-color, 20%);
-  }
-
-  100% {
-    box-shadow: 0 0 20px $primary-color, 0 0 40px lighten($primary-color, 20%);
-  }
-}
-
 @keyframes twinkling {
 
   0%,
@@ -77,6 +62,8 @@ $tongue-color: #ff99cc;
   align-items: center;
   margin-bottom: 2rem;
   position: relative;
+  // Add glow around the robot similar to the text
+  box-shadow: 0 0 10px $primary-color, 0 0 20px lighten($primary-color, 15%);
 
   .circle-bg {
     position: relative;
@@ -84,7 +71,8 @@ $tongue-color: #ff99cc;
     border-radius: 50%;
     width: 150px;
     height: 150px;
-    animation: subtle-glow 3s infinite alternate;
+    // Match the glow style of the login text (no animation)
+    box-shadow: 0 0 10px $primary-color, 0 0 20px lighten($primary-color, 15%);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 
     &.robot-smile-trigger {
@@ -120,7 +108,6 @@ $tongue-color: #ff99cc;
     }
 
     &:hover {
-      // Hover also triggers smile
       @extend .robot-smile-trigger;
     }
 
@@ -169,14 +156,19 @@ $tongue-color: #ff99cc;
         border: 8px solid $primary-color;
         transition: all 200ms;
         border-radius: 45px;
+        --eye-offset-x: 0px;
+        --eye-offset-y: 0px;
 
         .eyes {
           height: 20px;
           width: 20px;
           background: $primary-color;
-          border-radius: 100%;
+          border-radius: 50%;
           position: absolute;
           top: 40px;
+          transition: transform 0.2s ease-out;
+          // Apply both horizontal and vertical offsets
+          transform: translate(var(--eye-offset-x), var(--eye-offset-y));
 
           &.left {
             left: 30px;
