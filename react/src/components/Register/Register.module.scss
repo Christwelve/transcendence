@@ -1,0 +1,171 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
+// Use the same variables as in Login
+$primary-color: #00fff6;
+$background: #000814;
+$text-color: #ffffff;
+$tongue-color: #ff99cc;
+
+@keyframes twinkling {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background: radial-gradient(circle, rgba(0, 8, 20, 1) 0%, rgba(0, 3, 10, 1) 100%);
+  color: $text-color;
+  overflow: hidden;
+  position: relative;
+  font-family: 'Roboto', sans-serif;
+
+  &:before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, white, transparent);
+    opacity: 0.05;
+    animation: twinkling 10s infinite;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  h1 {
+    font-size: 3rem;
+    color: $primary-color;
+    text-shadow: 0 0 10px $primary-color, 0 0 20px lighten($primary-color, 15%);
+    font-family: 'Orbitron', sans-serif;
+    text-transform: uppercase;
+    font-weight: bold;
+    margin: 1.5rem;
+  }
+}
+
+.form {
+  width: 350px;
+  background: rgba(0, 10, 20, 0.9);
+  border: 2px solid $primary-color;
+  font-family: 'Roboto', sans-serif;
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: 0 0 15px $primary-color;
+
+  .form-group {
+    margin-bottom: 1.5rem;
+    text-align: center;
+
+    label {
+      display: block;
+      font-size: 1.2rem;
+      color: lighten($text-color, 20%);
+      text-align: left;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.8rem;
+      border: none;
+      background: rgba(255, 255, 255, 0.1);
+      color: $text-color;
+      border-radius: 5px;
+      box-shadow: inset 0 0 5px $primary-color;
+
+      &:focus {
+        outline: none;
+        box-shadow: 0 0 10px $primary-color;
+      }
+
+      &::placeholder {
+        color: rgba(255, 255, 255, 0.6);
+      }
+
+      &[type="file"] {
+        cursor: pointer;
+
+        &::file-selector-button {
+          background: $primary-color;
+          border: none;
+          padding: 0.5rem 1rem;
+          color: $background;
+          border-radius: 5px;
+          cursor: pointer;
+          box-shadow: 0 0 5px $primary-color;
+          transition: 0.3s ease;
+          margin-right: 1rem;
+
+          &:hover {
+            background: lighten($primary-color, 10%);
+            box-shadow: 0 0 10px $primary-color;
+          }
+        }
+      }
+    }
+
+    .invalid-feedback {
+      color: $tongue-color;
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+    }
+  }
+
+  .btn-primary {
+    width: 100%;
+    padding: 0.8rem;
+    border: none;
+    border-radius: 5px;
+    background: $primary-color;
+    color: $background;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: 0.3s ease;
+    box-shadow: 0 0 10px $primary-color;
+
+    &:hover {
+      background: lighten($primary-color, 10%);
+      box-shadow: 0 0 20px $primary-color;
+    }
+  }
+
+  .link {
+    margin-top: 1rem;
+    color: $primary-color;
+    text-decoration: none;
+    cursor: pointer;
+
+    &:hover {
+      color: lighten($primary-color, 10%);
+    }
+  }
+}
+
+.invalid-feedback {
+  margin-top: 1rem;
+  color: $tongue-color;
+  font-family: 'Roboto', sans-serif;
+  text-shadow:
+    0 0 5px rgba(red($tongue-color), green($tongue-color), blue($tongue-color), 1),
+    0 0 10px rgba(red($tongue-color), green($tongue-color), blue($tongue-color), 0.7),
+    0 0 20px rgba(red($tongue-color), green($tongue-color), blue($tongue-color), 0.4),
+    0 0 40px rgba(red($tongue-color), green($tongue-color), blue($tongue-color), 0.2);
+}
+
+:global(.invalid-feedback) {
+	margin-top: 1.05rem !important;
+  color: $tongue-color !important;
+  font-family: 'Roboto', sans-serif;
+  text-shadow: 0 0 10px $tongue-color;
+}
