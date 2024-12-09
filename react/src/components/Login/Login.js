@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import "../genericStyles.css";
+import styles from "./Login.module.scss";
 
 const Login = ({ changeStatus, userLogin, errorMessage }) => {
   const [username, setUsername] = useState("");
@@ -17,7 +17,6 @@ const Login = ({ changeStatus, userLogin, errorMessage }) => {
     const formData = new FormData();
     formData.append("username", username);
     formData.append("password", password);
-
     return formData;
   };
 
@@ -26,57 +25,70 @@ const Login = ({ changeStatus, userLogin, errorMessage }) => {
     const user = createUser();
     userLogin(user);
   };
+
+  const circleBgClasses = [
+    styles["circle-bg"],
+    username.trim() ? styles["robot-smile-trigger"] : ""
+  ].join(" ");
+
   return (
-    <div className="container">
+    <div className={styles.container}>
+      <div className={styles.robot}>
+        <div className={circleBgClasses}>
+          <div className={`${styles["robot-ear"]} ${styles.left}`}></div>
+          <div className={styles["robot-head"]}>
+            <div className={styles["robot-face"]}>
+              <div className={`${styles.eyes} ${styles.left}`}></div>
+              <div className={`${styles.eyes} ${styles.right}`}></div>
+              <div className={styles.mouth}></div>
+            </div>
+          </div>
+          <div className={`${styles["robot-ear"]} ${styles.right}`}></div>
+        </div>
+      </div>
+
       <h1>Login</h1>
-      <form className="wd-25 pd-3">
-        <div className="mb-3">
-          <label htmlFor="username" className="form-label">
-            Username
-          </label>
+      <form className={`${styles.form} ${styles["pd-3"]}`} onSubmit={_onFormSubmit}>
+        <div className={styles["form-group"]}>
+          <label htmlFor="username" className={styles["form-label"]}>Username</label>
           <input
-            type="username"
-            className="form-control"
+            type="text"
+            className={styles["form-control"]}
             id="username"
             placeholder="example"
             onChange={_onUsernameChange}
           />
         </div>
-        <div className="mb-3">
-          <label htmlFor="password" className="form-label">
-            Password
-          </label>
+        <div className={styles["form-group"]}>
+          <label htmlFor="password" className={styles["form-label"]}>Password</label>
           <input
             type="password"
             id="password"
-            className="form-control"
+            className={styles["form-control"]}
             onChange={_onPasswordChange}
           />
         </div>
-        <div className="mb-3">
+        <div className={styles["form-group"]}>
           <button
             type="submit"
-            className="btn btn-primary mb-3"
-            onClick={_onFormSubmit}
+            className={styles["btn-primary"]}
           >
             Login
           </button>
         </div>
-        <div className="mb-3">
-          <p>
-            Don't you have an account?{" "}
-            <span
-              className="link"
-              onClick={() => {
-                changeStatus("register");
-              }}
-            >
-              Register now
-            </span>
-          </p>
+        <div className={styles["form-group"]}>
+          <p>Don't you have an account?{" "}</p>
+          <span
+            className={styles.link}
+            onClick={() => {
+              changeStatus("register");
+            }}
+          >
+            <p>Register now</p>
+          </span>
         </div>
       </form>
-      <p className="error">{errorMessage}</p>
+      {errorMessage && <p className={styles.error}>{errorMessage}</p>}
     </div>
   );
 };
