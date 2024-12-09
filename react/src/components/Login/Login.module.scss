@@ -4,7 +4,6 @@
 $primary-color: #00fff6;
 $background: #000814;
 $text-color: #ffffff;
-$error-color: #ff4d4f;
 $tongue-color: #ff99cc;
 
 @keyframes twinkling {
@@ -316,5 +315,11 @@ $tongue-color: #ff99cc;
 
 .error {
   margin-top: 1rem;
-  color: $error-color;
+  color: $tongue-color;
+  font-family: 'Roboto', sans-serif;
+  text-shadow:
+    0 0 5px rgba(red($tongue-color), green($tongue-color), blue($tongue-color), 1),
+    0 0 10px rgba(red($tongue-color), green($tongue-color), blue($tongue-color), 0.7),
+    0 0 20px rgba(red($tongue-color), green($tongue-color), blue($tongue-color), 0.4),
+    0 0 40px rgba(red($tongue-color), green($tongue-color), blue($tongue-color), 0.2);
 }
