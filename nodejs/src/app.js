@@ -53,13 +53,19 @@ function removePlayerFromRoom(player, room) {
 	if(room == null)
 		return;
 
-	const playerIndex = room.players.findIndex(playerId => playerId === player.id);
-	room.players.splice(playerIndex, 1);
+	const {id, players, masterId} = room;
 
-	if(room.players.length === 0)
-		delete data.rooms[room.id];
-	else if(player.id === room.masterId)
-		room.masterId = room.players[0];
+	const playerIndex = players.findIndex(playerId => playerId === player.id);
+	players.splice(playerIndex, 1);
+
+	if(players.length === 0) {
+		games[id]?.detach();
+
+		delete games[id];
+		delete data.rooms[id];
+	}
+	else if(player.id === masterId)
+		room.masterId = players[0];
 }
 
 function createRoom(player, options) {
@@ -92,8 +98,6 @@ const onTick = (tick) => {
 
 		tick.applyInput(event[3], player.index);
 		tick.updateVerifiedEventId(event[0], player.index);
-
-		console.log(tick._positions);
 	});
 
 	tick.sendUpdateToPlayers(io);
@@ -111,12 +115,23 @@ io.on('connection', async socket => {
 	};
 
 	data.players[player.id] = player;
-	const room = createRoom(player, {name: 'test', type: 0, playersMax: 4});
-	data.rooms[room.id] = room;
-	player.roomId = room.id;
-	room.players.push(player.id);
 
-	games[room.id] = new ServerTick([player], onTick);
+	// ---- test
+	// const roomIds = Reflect.ownKeys(data.rooms);
+	// let room;
+
+	// if(roomIds.length === 0) {
+	// 	room = createRoom(player, {name: 'test', type: 0, playersMax: 4});
+	// 	data.rooms[room.id] = room;
+	// 	games[room.id] = new ServerTick([player], onTick);
+	// } else {
+	// 	room = data.rooms[roomIds[0]];
+	// }
+
+	// player.roomId = room.id;
+	// room.players.push(player.id);
+	// ---- test
+
 
 	socket.emit('user.id', player.id);
 	socket.emit('instruction', [{action: 'overwrite', value: data}]);
@@ -142,7 +157,10 @@ io.on('connection', async socket => {
 		if(room == null)
 			return socket.emit('notice', {type: 'error', title: 'Can not join room', message: `Room with id ${id} does not exist.`});
 
-		const {players, playersMax} = room;
+		const {status, players, playersMax} = room;
+
+		if(status !== 0)
+			return socket.emit('notice', {type: 'error', title: 'Can not join room', message: `Room already started.`});
 
 		if(players.length === playersMax)
 			return socket.emit('notice', {type: 'error', title: 'Can not join room', message: `Room is full.`});
@@ -198,6 +216,8 @@ io.on('connection', async socket => {
 		players.forEach(player => player.state = 2);
 
 		games[room.id] = new ServerTick(players, onTick);
+
+		setTimeout(() => room.status = 2, 1000);
 	});
 
 	socket.on('game.tick', (tickClient) => {
@@ -208,8 +228,6 @@ io.on('connection', async socket => {
 			return;
 
 		const tick = games[room.id];
-
-		console.log('tc', tickClient);
 
 		if(tickClient == null)
 			return socket.emit('game.tick', 'set', tick.getTick());
@@ -240,7 +258,7 @@ io.on('connection', async socket => {
 
 		socket.emit('packet.dropped', eventId);
 
-		console.log('dropped packet from', player.name);
+		console.log('dropped packet from', player.name, event);
 	});
 
 	socket.on('disconnect', () => {

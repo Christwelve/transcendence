@@ -31,8 +31,8 @@ function Page() {
 				<span>fps: {stats.fps?.toFixed(2)}</span>
 			</div> */}
 			<div className={cls(scss.ui)}>
-				{/* {screen} */}
-				<Game />
+				{screen}
+				{/* <Game /> */}
 			</div>
 		</>
 	);

@@ -4,6 +4,7 @@
   "type": "module",
   "exports": {
     "./sizes": "./sizes.js",
+    "./cuboids": "./cuboids.js",
     "./tick": "./tick.js"
   }
 }

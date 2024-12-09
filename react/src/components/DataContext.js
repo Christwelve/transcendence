@@ -77,6 +77,8 @@ function dataReducer(state, instructions) {
 	if(instructions === lastInstructions)
 		return state;
 
+	console.log(instructions);
+
 	const fns = {
 		object: applyStateObject,
 		array: applyStateArray,
@@ -91,6 +93,9 @@ function dataReducer(state, instructions) {
 		}
 
 		const [entity, property] = getEntity(state, path);
+
+		if(entity == null)
+			continue;
 
 		fns[type](entity, property, action, value);
 	}

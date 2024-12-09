@@ -4,6 +4,7 @@ import {Box3} from 'three';
 import {useDataContext} from './DataContext'
 import {ClientTick} from 'shared/tick'
 import sizes from 'shared/sizes'
+import {getCuboids} from 'shared/cuboids'
 
 const keysDown = {};
 
@@ -66,6 +67,7 @@ function CameraTurn() {
 
 		// camera.position.set(x, camera.position.y, z);
 		camera.position.set(0, camera.position.y, 0);
+		// camera.position.set(0, 50, -100);
 
 		const targetPosition = [0, 0, 0];
 		camera.lookAt(...targetPosition);
@@ -165,20 +167,24 @@ function resolveCollision(diffA, diffB, borderBox, border, ball, axis) {
 function TickHandler(props) {
 	const {ballRef, paddleRefs, borderRefs, playerIndex} = props;
 
-	const {useListener, requestServerTick, requestTickAdjust, sendPlayerEvent} = useDataContext();
-	// const cont = useDataContext();
-
-	// console.log(cont.useListener);
-
-	// const useListener = () => {};
+	const {getPlayer, useListener, requestServerTick, requestTickAdjust, sendPlayerEvent} = useDataContext();
 
 	const tickRef = useRef(null);
 
-	console.log('ddd');
+	const callback = tick => {
 
-	const callback = (tick) => {
+		tick.moveBall();
 
-		updateBall(ballRef);
+		const entries = tick.getRelevantQueueEntries();
+
+		entries.forEach(entry => {
+			const {playerIndex, position} = entry;
+
+			tick.setPositionFor(playerIndex, position);
+		});
+
+		if(tick.getPlayerIndex() === -1)
+			return;
 
 		const left = isKeyDown('KeyA');
 		const right = isKeyDown('KeyD');
@@ -196,7 +202,9 @@ function TickHandler(props) {
 	};
 
 	useEffect(() => {
-		const tick = new ClientTick(playerIndex, callback);
+		const player = getPlayer();
+
+		const tick = new ClientTick(player, callback);
 
 		tickRef.current = tick;
 
@@ -225,15 +233,36 @@ function TickHandler(props) {
 
 			position[axis] = value;
 		});
+
+		const ball = ballRef.current;
+
+		if(ball == null)
+			return;
+
+		const [x, z] = tick.getBallData();
+
+		ball.position.set(x, 0, z);
 	});
 
-	useListener('packet.dropped', (...args) => {
-		console.log('packet dropped', ...args);
+	useListener('player.index', index => {
+		const tick = tickRef.current;
+
+		tick.setPlayerIndex(index);
+	});
+
+	useListener('packet.dropped', id => {
+		console.log('packet dropped', id);
+
+		const tick = tickRef.current;
+
+		tick.handleDroppedPacket(id);
 	});
 
 	useListener('game.tick', (type, value) => {
 		const tick = tickRef.current;
 		const fn = type === 'set' ? tick.setTick : tick.adjustTick;
+
+		// TODO: add fast forward or wait if tick adjusted
 
 		console.log('before: t', type, 'st', value, 'ct', tick.getTick());
 
@@ -253,6 +282,8 @@ function TickHandler(props) {
 			if(tick.isPlayerIndex(i)) {
 				tick.clearOldHistory(verifiedEventId);
 				tick.reconcilePosition(position);
+			} else {
+				tick.queuePositionOther(position, i, tickServer);
 			}
 		});
 
@@ -265,6 +296,10 @@ function updateBall(ballRef) {
 
 	if(ball == null)
 		return;
+
+	// ball.rotation.y -= 0.01;
+
+	return;
 
 	const {position, velocity} = ball;
 	const [dx, dz] = velocity;
@@ -289,13 +324,6 @@ function isKeyDown(code) {
 }
 
 function Game(props) {
-	const {sendPlayerEvent} = useDataContext();
-
-	const paddleRedRef = useRef(null);
-	const paddleGreenRef = useRef(null);
-	const paddleBlueRef = useRef(null);
-	const paddleYellowRef = useRef(null);
-	const ballRef = useRef(null);
 
 	const border0Ref = useRef(null);
 	const border1Ref = useRef(null);
@@ -309,6 +337,13 @@ function Game(props) {
 	const border9Ref = useRef(null);
 	const border10Ref = useRef(null);
 	const border11Ref = useRef(null);
+
+	const paddleRedRef = useRef(null);
+	const paddleGreenRef = useRef(null);
+	const paddleBlueRef = useRef(null);
+	const paddleYellowRef = useRef(null);
+
+	const ballRef = useRef(null);
 
 	const borderRefs = [
 		border0Ref,
@@ -336,42 +371,7 @@ function Game(props) {
 		paddleYellowRef,
 	];
 
-	const halfSize = sizes.boardSize / 2;
-	const cornerSize = [sizes.borderSize, sizes.borderSize / 2, sizes.borderSize];
-
-	const borderLength = (sizes.boardSize - sizes.goalSize - sizes.borderSize) / 2;
-	const borderCenter = (sizes.goalSize + borderLength) / 2;
-	const borderSizeVertical = [borderLength, sizes.borderSize / 2, sizes.borderSize];
-	const borderSizeHorizontal = [sizes.borderSize, sizes.borderSize / 2, borderLength];
-	const paddleSizeVertical = [sizes.paddleSize, sizes.borderSize / 2, sizes.borderSize];
-	const paddleSizeHorizontal = [sizes.borderSize, sizes.borderSize / 2, sizes.paddleSize];
-
-	const cuboids = [
-		// corners
-		{position: [-halfSize, 0, -halfSize], size: cornerSize, ref: borderRefs[0]},
-		{position: [halfSize, 0, -halfSize], size: cornerSize, ref: borderRefs[1]},
-		{position: [halfSize, 0, halfSize], size: cornerSize, ref: borderRefs[2]},
-		{position: [-halfSize, 0, halfSize], size: cornerSize, ref: borderRefs[3]},
-		// top
-		{position: [-borderCenter, 0, -halfSize], size: borderSizeVertical, ref: borderRefs[4]},
-		{position: [borderCenter, 0, -halfSize], size: borderSizeVertical, ref: borderRefs[5]},
-		// bottom
-		{position: [-borderCenter, 0, halfSize], size: borderSizeVertical, ref: borderRefs[6]},
-		{position: [borderCenter, 0, halfSize], size: borderSizeVertical, ref: borderRefs[7]},
-		// left
-		{position: [-halfSize, 0, -borderCenter], size: borderSizeHorizontal, ref: borderRefs[8]},
-		{position: [-halfSize, 0, borderCenter], size: borderSizeHorizontal, ref: borderRefs[9]},
-		// right
-		{position: [halfSize, 0, -borderCenter], size: borderSizeHorizontal, ref: borderRefs[10]},
-		{position: [halfSize, 0, borderCenter], size: borderSizeHorizontal, ref: borderRefs[11], color: '#f80'},
-		// paddles
-		{position: [0, 0, -halfSize], size: paddleSizeVertical, color: '#f00', axis: 'x', ref: paddleRedRef},
-		{position: [0, 0, halfSize], size: paddleSizeVertical, color: '#0f0', axis: 'x', ref: paddleGreenRef},
-		{position: [-halfSize, 0, 0], size: paddleSizeHorizontal, color: '#00f', axis: 'z', ref: paddleBlueRef},
-		{position: [halfSize, 0, 0], size: paddleSizeHorizontal, color: '#ff0', axis: 'z', ref: paddleYellowRef},
-		// ball
-		{position: [0, 0, 0], size: cornerSize, ref: ballRef, velocity: [-1, 0.1], color: '#0ff'},
-	];
+	const cuboids = getCuboids(borderRefs, paddleRefs, ballRef);
 
 	useEffect(() => {
 

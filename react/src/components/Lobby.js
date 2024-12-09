@@ -38,9 +38,11 @@ function Lobby() {
 				{
 					getPlayerList().map(player => (
 						<div key={player.id} className={cls(player.id === currentPlayer.id ? scss.player : null)}>
-							<span>{player.id}</span>
+							<span>id({player.id})</span>
 							<span> | </span>
-							<span>{player.name}</span>
+							<span>name({player.name})</span>
+							<span> | </span>
+							<span>state({player.state})</span>
 						</div>
 					))
 				}

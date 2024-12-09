@@ -1,4 +1,5 @@
 import sizes from 'shared/sizes'
+import {getBoundingBoxes, resolveCollision} from 'shared/cuboids'
 
 const TICK_DEFAULT_OFFSET = 5;
 
@@ -11,9 +12,15 @@ let instances = [];
 class Tick {
 	constructor(callback) {
 		this._id = instanceId++;
-		this._positions = [0, 0, 0, 0];
+
 		this._tick = 0;
 		this._callback = callback;
+
+		this._queue = [];
+		this._positions = [0, 0, 0, 0];
+		// [x, z, dx, dy, lastContactPlayerIndex]
+		this._ballData = [0, 0, 0.2, -1, 0];
+
 		this._detached = false;
 
 		instances.push(this);
@@ -25,10 +32,12 @@ class Tick {
 	}
 
 	getTick() {
+		this._assertDetached();
+
 		return this._tick;
 	}
 
-	applyInput(input, playerIndex = this._playerIndex) {
+	applyInput(input, playerIndex = this.getPlayerIndex()) {
 		this._assertDetached();
 
 		const limit = (sizes.goalSize - sizes.paddleSize) / 2;
@@ -44,6 +53,40 @@ class Tick {
 			this._positions[playerIndex] = -limit;
 	}
 
+	moveBall() {
+		this._assertDetached();
+
+		const [x, z, dx, dz] = this._ballData;
+
+		const px = x + dx;
+		const pz = z + dz;
+
+		this._ballData[0] = px;
+		this._ballData[1] = pz;
+
+		const limit = sizes.boardSize / 2 + sizes.borderSize;
+
+		if(Math.abs(px) > limit || Math.abs(pz) > limit) {
+			this._ballData[0] = 0;
+			this._ballData[1] = 0;
+
+			return;
+		}
+
+		const [boundingBoxesOther, boundingBoxBall] = getBoundingBoxes(this._positions, this._ballData);
+
+		for(const boundingBox of boundingBoxesOther) {
+			const hit = resolveCollision(this._ballData, boundingBoxBall, boundingBox);
+
+			if(hit)
+				break;
+		}
+	}
+
+	getBallData() {
+		return this._ballData;
+	}
+
 	detach() {
 		this._assertDetached();
 
@@ -54,12 +97,12 @@ class Tick {
 }
 
 class ClientTick extends Tick {
-	constructor(playerIndex, callback) {
+	constructor(player, callback) {
 		super(callback);
 
 		this._tickOffset = TICK_DEFAULT_OFFSET;
 
-		this._playerIndex = playerIndex;
+		this._player = player;
 
 		this._eventId = 0;
 		this._history = [];
@@ -67,11 +110,21 @@ class ClientTick extends Tick {
 		this._verifiedPosition = 0;
 	}
 
+	getPlayerIndex() {
+		this._assertDetached();
+
+		return this._player.index;
+	}
+
 	setTick(value) {
+		this._assertDetached();
+
 		this._tick = value + this._tickOffset;
 	}
 
 	adjustTick(value) {
+		this._assertDetached();
+
 		this._tickOffset += value;
 		this._tick += value;
 	}
@@ -92,21 +145,35 @@ class ClientTick extends Tick {
 	}
 
 	getPositions() {
+		this._assertDetached();
+
 		return this._positions;
 	}
 
+	getBallPosition() {
+		this._assertDetached();
+
+		const [x, z] = this._ballData;
+
+		return [x, z];
+	}
+
 	handleDroppedPacket(id) {
+		this._assertDetached();
+
 		this._history = this._history.filter(([eventId]) => eventId !== id);
 
 		this.reconcilePosition(this._verifiedPosition);
 	}
 
 	reconcilePosition(position) {
-		// TODO: maybe give margin of error
+		this._assertDetached();
 
-		const currentPosition = this._positions[this._playerIndex];
+		const playerIndex = this.getPlayerIndex();
 
-		this._positions[this._playerIndex] = position;
+		const currentPosition = this._positions[playerIndex];
+
+		this._positions[playerIndex] = position;
 		this._verifiedPosition = position;
 
 		this._history.forEach(entry => {
@@ -115,23 +182,64 @@ class ClientTick extends Tick {
 			this.applyInput(input);
 		});
 
-		const reconciledPosition = this._positions[this._playerIndex];
+		const reconciledPosition = this._positions[playerIndex];
 		const difference = Math.abs(reconciledPosition - currentPosition);
 
 		if(difference > 2)
-			return console.log('rec', currentPosition, '->', this._positions[this._playerIndex]);
+			return;
 
-		this._positions[this._playerIndex] = currentPosition;
+		this._positions[playerIndex] = currentPosition;
 	}
 
 	isPlayerIndex(index) {
-		return this._playerIndex === index;
+		this._assertDetached();
+
+		return index === this.getPlayerIndex();
 	}
 
 	clearOldHistory(id) {
+		this._assertDetached();
+
 		const end = this._history.findIndex(([eventId]) => eventId === id) + 1;
 
 		this._history.splice(0, end);
+	}
+
+	queuePositionOther(position, playerIndex, tickServer) {
+		this._assertDetached();
+
+		const applyAt = tickServer + this._tickOffset / 2;
+
+		const entry = {
+			applyAt,
+			playerIndex,
+			position
+		};
+
+		this._queue.push(entry);
+	}
+
+	getRelevantQueueEntries() {
+		this._assertDetached();
+
+		if(this._queue.length === 0)
+			return [];
+
+		const index = this._queue.findIndex(entry => entry.applyAt > this._tick);
+
+		if(index !== -1)
+			return this._queue.splice(0, index);
+
+		const entries = [...this._queue];
+		this._queue.length = 0;
+
+		return entries;
+	}
+
+	setPositionFor(playerIndex, position) {
+		this._assertDetached();
+
+		this._positions[playerIndex] = position;
 	}
 }
 
@@ -142,15 +250,13 @@ class ServerTick extends Tick {
 		this._players = players;
 		this._verifiedEventIds = [0, 0, 0, 0];
 
-		this._queue = [];
-
 		this._players.forEach((player, i) => player.index = i);
 	}
 
 	_getUpdateObject(playerIndex) {
 		const verifiedEventId = this._verifiedEventIds[playerIndex];
 
-		return [this._tick, verifiedEventId, this._positions];
+		return [this._tick + 2, verifiedEventId, this._positions];
 	}
 
 	canQueueEvent(event) {
@@ -178,8 +284,6 @@ class ServerTick extends Tick {
 
 	calculateOffsetDelta(tickClient) {
 		const difference = tickClient - this._tick;
-
-		console.log('d', this._tick, tickClient, difference);
 
 		if(difference < 1 || difference > 2)
 			return -(difference - 2);
