@@ -102,6 +102,8 @@ function resolveCollision(ballData, ballBox, otherBox) {
 
 // helper functions
 function calculateBoundingBoxOverlap(box1, box2) {
+	// console.log(box1, box2);
+
 	if(
 		box1.max.x < box2.min.x || box2.max.x < box1.min.x ||
 		box1.max.z < box2.min.z || box2.max.z < box1.min.z
@@ -139,7 +141,11 @@ function getBoundingBoxesPaddles(playerPositions) {
 
 		position[axisIndex] = playerPosition;
 
-		return calculateBoundingBox(paddle);
+		const boundingBox = calculateBoundingBox(paddle);
+
+		boundingBox.playerIndex = i;
+
+		return boundingBox;
 	});
 
 	return boundingBoxesPaddles;

@@ -271,12 +271,10 @@ function TickHandler(props) {
 		console.log(' after: t', type, 'ad', value, 'ct', tick.getTick());
 	});
 
-	useListener('game.update', (payload) => {
+	useListener('game.update', payload => {
 		const [tickServer, verifiedEventId, verifiedPositions] = payload;
 
 		const tick = tickRef.current;
-
-		console.table(verifiedEventId, ...tick._history);
 
 		verifiedPositions.forEach((position, i) => {
 			if(tick.isPlayerIndex(i)) {
@@ -286,8 +284,6 @@ function TickHandler(props) {
 				tick.queuePositionOther(position, i, tickServer);
 			}
 		});
-
-		console.log(payload);
 	});
 }
 

@@ -19,7 +19,8 @@ class Tick {
 		this._queue = [];
 		this._positions = [0, 0, 0, 0];
 		// [x, z, dx, dy, lastContactPlayerIndex]
-		this._ballData = [0, 0, 0.2, -1, 0];
+		// this._ballData = [0, 0, 0.2, -1, 0];
+		this._ballData = [0, 0, 0.3, 1, 0];
 
 		this._detached = false;
 
@@ -29,6 +30,53 @@ class Tick {
 	_assertDetached() {
 		if(this._detached)
 			throw Error('Tick is detached.');
+	}
+
+	_calculateNewBallDirection(playerIndex) {
+		if(playerIndex == null)
+			return;
+
+		const halfPi = Math.PI / 2;
+		const rotations = [halfPi, -halfPi, 0,  Math.PI];
+
+		const halfSize = sizes.boardSize / 2;
+		const multiplier = (playerIndex % 2 === 0 ? -1 : 1);
+		const fixed = halfSize * multiplier;
+		const indexFixed = playerIndex < 2 ? 1 : 0
+		const indexPosition = playerIndex < 2 ? 0 : 1;
+
+		const paddlePosition = [0, 0];
+
+		paddlePosition[indexFixed] = fixed;
+		paddlePosition[indexPosition] = this._positions[playerIndex];
+
+		const [px, pz] = paddlePosition;
+		const [bx, bz] = this._ballData;
+
+		let paddleVector = [0, 0];
+		paddleVector[indexPosition] = playerIndex % 3 === 0 ? -1 : 1;
+
+		const ballVector = [bx - px, bz - pz];
+
+		const dot = this._dotVector(paddleVector, ballVector);
+
+		const t = dot / (sizes.paddleSize / 2);
+
+		const theta = rotations[playerIndex] + (Math.PI / 4) * t;
+
+		this._ballData[2] = Math.cos(theta);
+		this._ballData[3] = Math.sin(theta);
+	}
+
+	_normalizeVector(vector) {
+		const [x, z] = vector;
+		const length = Math.hypot(x, z);
+
+		return [x / length, z / length];
+	}
+
+	_dotVector(v1, v2) {
+		return v1[0] * v2[0] + v1[1] * v2[1];
 	}
 
 	getTick() {
@@ -76,10 +124,15 @@ class Tick {
 		const [boundingBoxesOther, boundingBoxBall] = getBoundingBoxes(this._positions, this._ballData);
 
 		for(const boundingBox of boundingBoxesOther) {
+
 			const hit = resolveCollision(this._ballData, boundingBoxBall, boundingBox);
 
-			if(hit)
-				break;
+			if(!hit)
+				continue;
+
+			this._calculateNewBallDirection(boundingBox.playerIndex);
+
+			break;
 		}
 	}
 
@@ -301,7 +354,7 @@ class ServerTick extends Tick {
 		this._players.forEach(player => {
 			const update = this._getUpdateObject(player.index);
 
-			io.sockets.sockets.get(player.id).emit('game.update', update);
+			io.sockets.sockets.get(player.id)?.emit('game.update', update);
 		});
 	}
 }
