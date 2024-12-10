@@ -61,14 +61,17 @@ $text-color: #ffffff;
   }
 
   .profile {
-    width: 50px;
-    height: 50px;
-    border: 2px solid $text-color;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
+    border: 2px solid $primary-color;
+    box-shadow: 0 0 20px $primary-color, 0 0 40px $primary-color !important;
     transition: 0.3s;
+    object-fit: cover !important;
+    object-position: center;
 
     &:hover {
-      box-shadow: 0 0 10px $primary-color !important;
+      box-shadow: 0 0 30px $primary-color, 0 0 60px $primary-color;
     }
   }
 
@@ -77,19 +80,20 @@ $text-color: #ffffff;
     border: 1px solid $primary-color;
     box-shadow: 0 0 10px $primary-color;
     border-radius: 5px;
+    justify-content: space-evenly !important;
+    padding: 10px 0;
   }
 
   .dropdownItem {
     color: $text-color !important;
-    transition: background 0.3s;
+    width: 100%;
+    text-align: center;
+    transition: background 0.3s, transform 0.2s;
 
     &:hover {
       background: rgba(255, 255, 255, 0.1) !important;
       color: $text-color !important;
+      transform: scale(1.05);
     }
-  }
-
-  .dropdownDivider {
-    border-top: 1px solid $primary-color !important;
   }
 }
