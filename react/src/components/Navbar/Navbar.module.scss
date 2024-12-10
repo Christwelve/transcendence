@@ -7,18 +7,28 @@ $text-color: #ffffff;
 
 .customNavbar {
   font-family: "Roboto", sans-serif;
-  background: $background !important; // Override bg-primary
+  background: $background !important; 
   border-bottom: 2px solid $primary-color;
   box-shadow: 0 0 10px $primary-color;
+
 
   .navbarBrand {
     font-family: "Orbitron", sans-serif;
     color: $primary-color !important;
     text-shadow: 0 0 10px $primary-color;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 2rem;
+    font-weight: bold;
+    text-transform: uppercase;
 
     img {
       filter: drop-shadow(0 0 5px $primary-color);
+      width: 60px;
+      height: 60px;
     }
   }
 
