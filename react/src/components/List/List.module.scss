@@ -1,6 +1,6 @@
 .list {
   width: 100%;
-  background-color: rgba(18, 18, 18, 0.9); /* Dark background for table */
+  background-color: rgba(18, 18, 18, 0.9);
   border-collapse: collapse;
   user-select: none;
   cursor: default;
@@ -19,19 +19,19 @@ th, td {
 th {
   text-transform: uppercase;
   letter-spacing: 1px;
-  background-color: rgba(0, 255, 255, 0.2); /* Glowing header background */
-  color: #00ffff; /* Glowing header text */
+  background-color: rgba(0, 255, 255, 0.2);
+  color: #00ffff;
 }
 
 .row {
   transition: background-color 0.3s ease;
 
   &.item:hover {
-    background-color: rgba(0, 255, 255, 0.1); /* Highlight on hover */
+    background-color: rgba(0, 255, 255, 0.1);
   }
 
   &.selected {
-    background-color: rgba(0, 255, 255, 0.3); /* Highlight for selected row */
+    background-color: rgba(0, 255, 255, 0.3);
   }
 
   & > td {
@@ -40,5 +40,5 @@ th {
 }
 
 .row:last-child td {
-  border-bottom: none; /* Remove bottom border for the last row */
+  border-bottom: none;
 }

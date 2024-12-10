@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import styles from "./Register.module.scss"; // import your new scss file
+import styles from "./Register.module.scss";
 
 const Register = ({ changeStatus, login_with_42 }) => {
   const [email, setEmail] = useState("");
