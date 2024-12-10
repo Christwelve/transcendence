@@ -9,7 +9,7 @@ const playerListLabels = ['Name', 'Status'];
 function Room() {
   const { getPlayer, getPlayerListForRoom, leaveRoom, toggleReady } = useDataContext();
   const player = getPlayer();
-  const playerList = getPlayerListForRoom(player.roomId);
+  const playerList = player ? getPlayerListForRoom(player.roomId) : [];
 
   return (
     <div className={scss.room}>

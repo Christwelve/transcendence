@@ -6,6 +6,7 @@ import Main from "../Main/Main";
 import Game from "../Game/Game";
 import FriendList from "../FriendList/FriendList";
 import styles from "./Home.module.scss";
+import Page from "../../pages/Page";
 
 const Home = ({ changeStatus, avatar }) => {
   const [mainComponent, setMainComponent] = useState("main");
@@ -29,6 +30,7 @@ const Home = ({ changeStatus, avatar }) => {
         {mainComponent === "game" && <Game />}
       </div>
       <FriendList />
+      <Page />
     </div>
   );
 };
