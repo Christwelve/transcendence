@@ -1,0 +1,85 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap");
+
+$primary-color: #00fff6;
+$background: #000000;
+$text-color: #ffffff;
+
+.customNavbar {
+  font-family: "Roboto", sans-serif;
+  background: $background !important; // Override bg-primary
+  border-bottom: 2px solid $primary-color;
+  box-shadow: 0 0 10px $primary-color;
+
+  .navbarBrand {
+    font-family: "Orbitron", sans-serif;
+    color: $primary-color !important;
+    text-shadow: 0 0 10px $primary-color;
+    cursor: pointer;
+
+    img {
+      filter: drop-shadow(0 0 5px $primary-color);
+    }
+  }
+
+  .navbarLink {
+    color: $text-color !important;
+    position: relative;
+    transition: color 0.3s;
+
+    &:hover {
+      color: lighten($text-color, 20%) !important;
+      text-shadow: 0 0 5px $primary-color;
+    }
+
+    &.active {
+      color: $primary-color !important;
+      text-shadow: 0 0 10px $primary-color;
+    }
+  }
+
+  .dropdownButton {
+    background: $primary-color !important;
+    border: none !important;
+    box-shadow: 0 0 10px $primary-color;
+    transition: 0.3s ease;
+
+    &:hover {
+      background: lighten($primary-color, 10%) !important;
+      box-shadow: 0 0 20px $primary-color;
+    }
+  }
+
+  .profile {
+    width: 50px;
+    height: 50px;
+    border: 2px solid $text-color;
+    border-radius: 50%;
+    transition: 0.3s;
+
+    &:hover {
+      box-shadow: 0 0 10px $primary-color !important;
+    }
+  }
+
+  .dropdownMenu {
+    background: $background !important;
+    border: 1px solid $primary-color;
+    box-shadow: 0 0 10px $primary-color;
+    border-radius: 5px;
+  }
+
+  .dropdownItem {
+    color: $text-color !important;
+    transition: background 0.3s;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1) !important;
+      color: $text-color !important;
+    }
+  }
+
+  .dropdownDivider {
+    border-top: 1px solid $primary-color !important;
+  }
+}
