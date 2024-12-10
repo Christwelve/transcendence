@@ -3,25 +3,25 @@ import "./App.css";
 import Register from "./components/Register/Register";
 import Login from "./components/Login/Login";
 import Home from "./components/Home/Home";
-import DataContextProvider from './components/DataContext'
+import DataContextProvider from './components/DataContext/DataContext'
 import Page from './pages/Page'
-import ModalPresenter from './components/ModalPresenter'
-import {closeModalTop} from './utils/modal'
+import ModalPresenter from './components/Modal/ModalPresenter'
+import { closeModalTop } from './utils/modal'
 
 function App() {
   useEffect(() => {
 
-		const onKeyDown = event => {
-			if(event.code !== 'Escape')
-				return;
+    const onKeyDown = event => {
+      if (event.code !== 'Escape')
+        return;
 
-			closeModalTop();
-		}
+      closeModalTop();
+    }
 
-		document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('keydown', onKeyDown);
 
-		return () => document.removeEventListener('keydown', onKeyDown);
-	}, []);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   useEffect(() => {
     // Check for `logged_in=true` in the query string
@@ -72,7 +72,7 @@ function App() {
         console.error("An unexpected error occurred:", response.statusText);
       }
     } else {
-      if(!userData.avatar)
+      if (!userData.avatar)
         setAvatar(`https://robohash.org/${userData.username}?200x200`);
       else {
         const avatarIcon = (userData.avatar).split('/').pop();
@@ -149,7 +149,7 @@ function App() {
         <DataContextProvider>
           <Page />
           <ModalPresenter />
-           <Home changeStatus={changeStatus} avatar={avatar} />
+          <Home changeStatus={changeStatus} avatar={avatar} />
         </DataContextProvider>
 
       )}

@@ -1,8 +1,8 @@
-import React, {useState} from 'react'
-import List from './List'
-import RoomListItem from './RoomListItem'
-import RoomListButtonBar from './RoomListButtonBar'
-import {useDataContext} from './DataContext'
+import React, { useState } from 'react'
+import List from '../List/List'
+import RoomListItem from '../Room/RoomListItem'
+import RoomListButtonBar from '../Room/RoomListButtonBar'
+import { useDataContext } from '../DataContext/DataContext'
 import scss from './Lobby.module.scss'
 
 const roomListLabels = ['Id', 'Name', 'Type', 'Status', 'Players'];
@@ -11,7 +11,7 @@ function Lobby() {
 
 	const [selectedRoomId, setSelectedRoomId] = useState(null);
 
-	const {getRoomList, getPlayerList, joinRoom} = useDataContext();
+	const { getRoomList, getPlayerList, joinRoom } = useDataContext();
 	const roomList = getRoomList();
 
 	const onClick = roomId => {

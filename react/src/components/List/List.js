@@ -1,9 +1,9 @@
 import React from 'react'
 import scss from './List.module.scss'
-import cls from '../utils/cls'
+import cls from '../../utils/cls'
 
 function List(props) {
-	const {columnNames, component: ItemComponent, items, onClick, onDoubleClick, isSelected = () => false} = props;
+	const { columnNames, component: ItemComponent, items, onClick, onDoubleClick, isSelected = () => false } = props;
 
 	return (
 		<table className={cls(scss.list)}>
