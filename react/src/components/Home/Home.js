@@ -30,7 +30,6 @@ const Home = ({ changeStatus, avatar }) => {
         {mainComponent === "game" && <Game />}
       </div>
       <FriendList />
-      <Page />
     </div>
   );
 };
