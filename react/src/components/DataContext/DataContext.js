@@ -139,7 +139,7 @@ function getEntity(state, path) {
 
 // api functions
 function getPlayer(data, userId) {
-	return data.players[userId];
+	return data.players[userId] || null;
 }
 
 function getRoomList(data) {
@@ -151,14 +151,10 @@ function getPlayerList(data) {
 };
 
 function getPlayerListForRoom(data, roomId) {
-	const room = data.rooms[roomId];
-
-	if(room == null)
-		return [];
-
-	const players = room.players.map(playerId => data.players[playerId]);
-
-	return players;
+  if (!roomId) return [];
+  const room = data.rooms[roomId];
+  if (!room) return [];
+  return room.players.map(playerId => data.players[playerId] || {});
 }
 
 function createRoom(send, options) {

@@ -1,13 +1,15 @@
 import React from "react";
-import FriendList from "../FriendList/FriendList";
+import Lobby from "../Lobby/Lobby";
+import Room from "../Room/Room";
+import scss from "./Main.module.scss";
 
 const Main = () => {
-	return (
-		<div>
-		<h1>Main</h1>
-		<FriendList />
-		</div>
-	);
+  return (
+    <div className={scss.mainContainer}>
+      <Lobby />
+      <Room />
+    </div>
+  );
 };
 
 export default Main;

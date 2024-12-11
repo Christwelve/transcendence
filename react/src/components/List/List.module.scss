@@ -1,0 +1,44 @@
+.list {
+  width: 100%;
+  background-color: rgba(18, 18, 18, 0.9);
+  border-collapse: collapse;
+  user-select: none;
+  cursor: default;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+}
+
+th, td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+th {
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  background-color: rgba(0, 255, 255, 0.2);
+  color: #00ffff;
+}
+
+.row {
+  transition: background-color 0.3s ease;
+
+  &.item:hover {
+    background-color: rgba(0, 255, 255, 0.1);
+  }
+
+  &.selected {
+    background-color: rgba(0, 255, 255, 0.3);
+  }
+
+  & > td {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
+.row:last-child td {
+  border-bottom: none;
+}
