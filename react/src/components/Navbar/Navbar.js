@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import "./Navbar.css";
+import styles from "./Navbar.module.scss";
 
 const Navbar = ({ changeStatus, changeComponent, avatar }) => {
   const [homeIsActive, setHomeIsActive] = useState(true);
   const [gameIsActive, setGameIsActive] = useState(false);
+
   const activateTab = (tab) => {
-    console.log(tab, homeIsActive, gameIsActive);
     if (tab === "main") {
       setHomeIsActive(true);
       setGameIsActive(false);
@@ -18,11 +18,14 @@ const Navbar = ({ changeStatus, changeComponent, avatar }) => {
     }
     changeComponent(tab);
   };
+
   return (
-    <nav className="navbar navbar-expand-lg bg-primary navbar-dark">
+    <nav
+      className={`navbar navbar-expand-lg navbar-dark ${styles.customNavbar}`}
+    >
       <div className="container-fluid">
         <p
-          className="navbar-brand navbar-link"
+          className={`navbar-brand ${styles.navbarBrand}`}
           onClick={() => {
             activateTab("home");
           }}
@@ -41,8 +44,8 @@ const Navbar = ({ changeStatus, changeComponent, avatar }) => {
           <ul className="navbar-nav me-auto">
             <li className="nav-item">
               <p
-                className={`nav-link navbar-link ${
-                  homeIsActive ? "active" : ""
+                className={`nav-link ${styles.navbarLink} ${
+                  homeIsActive ? styles.active : ""
                 }`}
                 onClick={() => {
                   activateTab("main");
@@ -53,8 +56,8 @@ const Navbar = ({ changeStatus, changeComponent, avatar }) => {
             </li>
             <li className="nav-item">
               <p
-                className={`nav-link navbar-link ${
-                  gameIsActive ? "active" : ""
+                className={`nav-link ${styles.navbarLink} ${
+                  gameIsActive ? styles.active : ""
                 }`}
                 onClick={() => {
                   activateTab("game");
@@ -67,16 +70,16 @@ const Navbar = ({ changeStatus, changeComponent, avatar }) => {
           <div className="btn-group dropstart">
             <button
               type="button"
-              className="btn btn-primary dropdown-toggle"
+              className={`btn dropdown-toggle ${styles.dropdownButton}`}
               data-bs-toggle="dropdown"
               aria-expanded="false"
             >
-              <img src={avatar} alt="profile" className="profile" />
+              <img src={avatar} alt="profile" className={styles.profile} />
             </button>
-            <ul className="dropdown-menu">
-              <li className="wd-25">
+            <ul className={`dropdown-menu ${styles.dropdownMenu}`}>
+              <li>
                 <button
-                  className="dropdown-item"
+                  className={`dropdown-item ${styles.dropdownItem}`}
                   onClick={() => {
                     activateTab("profile");
                   }}
@@ -84,9 +87,9 @@ const Navbar = ({ changeStatus, changeComponent, avatar }) => {
                   Settings
                 </button>
               </li>
-              <li className="wd-25">
+              <li>
                 <button
-                  className="dropdown-item"
+                  className={`dropdown-item ${styles.dropdownItem}`}
                   onClick={() => {
                     activateTab("stats");
                   }}
@@ -95,11 +98,11 @@ const Navbar = ({ changeStatus, changeComponent, avatar }) => {
                 </button>
               </li>
               <li>
-                <hr className="dropdown-divider" />
+                <hr className={`dropdown-divider ${styles.dropdownDivider}`} />
               </li>
               <li>
                 <button
-                  className="dropdown-item"
+                  className={`dropdown-item ${styles.dropdownItem}`}
                   onClick={() => {
                     changeStatus("login");
                   }}

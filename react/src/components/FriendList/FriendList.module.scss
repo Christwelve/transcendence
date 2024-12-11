@@ -1,28 +1,57 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap");
+
+$primary-color: #00fff6;
+$text-color: #ffffff;
+$background-color: #000000;
+
 .friendList {
   position: fixed;
-  top: 18%;
-  right: 0;
+  bottom: 20px;
+  right: 10px;
   width: 300px;
-  max-height: 80%;
-  background-color: #f8f9fa;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
-  overflow: hidden;
+  max-height: 70%;
+  background-color: $background-color;
+  border: 2px solid $primary-color;
+  border-radius: 10px;
+  box-shadow: 0 0 10px $primary-color;
+  z-index: 1;
   display: flex;
   flex-direction: column;
-  z-index: 1000;
+  opacity: 1;
+  transform: translateY(100%);
+  transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+
+  &.open {
+    opacity: 1;
+    transform: translateY(0);
+  }
 
   &__toggle {
-    padding: 8px;
-    background: #007bff;
-    color: #fff;
-    border: none;
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    padding: 10px 20px;
+    background: rgba(0, 255, 255, 0.2);
+    color: $primary-color;
+    border: 1px solid $primary-color;
+    border-radius: 8px;
     cursor: pointer;
-    text-align: center;
+    text-transform: uppercase;
+    font-family: "Orbitron", sans-serif;
+    font-size: 1rem;
+    z-index:1100;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+    transition: all 0.3s;
 
     &:hover {
-      background: #0056b3;
+      background: rgba(0, 255, 255, 0.4);
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
     }
+  }
+
+  &__close {
+    bottom: calc(10px + 300px);
   }
 
   &__box {
@@ -30,59 +59,51 @@
     overflow-y: auto;
     flex-grow: 1;
 
-    h2, h3 {
-      margin: 0 0 12px;
-      font-size: 1.25rem;
-      color: #343a40;
+    h2,
+    h3 {
+      font-family: "Orbitron", sans-serif;
+      color: $primary-color;
+      text-shadow: 0 0 10px $primary-color;
+      margin-bottom: 12px;
     }
 
     input {
-      width: calc(100% - 32px);
+      width: 100%;
       padding: 8px;
-      margin-bottom: 8px;
-      border: 1px solid #ced4da;
+      margin-bottom: 12px;
+      border: 1px solid $primary-color;
       border-radius: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      color: $text-color;
+      box-shadow: 0 0 5px $primary-color;
+
+      &:focus {
+        outline: none;
+        box-shadow: 0 0 10px $primary-color;
+      }
     }
 
-
-		
     button {
-      padding: 8px 16px;
-      background: #28a745;
-      color: #fff;
+      padding: 8px 12px;
+      background: $primary-color;
       border: none;
+      color: $background-color;
+      border-radius: 5px;
       cursor: pointer;
-      margin: 4px;
+      box-shadow: 0 0 5px $primary-color;
+      transition: background 0.3s;
 
       &:hover {
-        background: #218838;
+        background: lighten($primary-color, 10%);
+        box-shadow: 0 0 10px $primary-color;
       }
     }
+  }
+}
 
-    .friendList__user, .friendList__friend {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 0;
-      border-bottom: 1px solid #e9ecef;
-
-      span {
-        font-size: 1rem;
-      }
-
-      button {
-        padding: 4px 8px;
-        font-size: 0.875rem;
-        color: #fff;
-
-        &.remove {
-          background: #dc3545;
-
-          &:hover {
-            background: #c82333;
-          }
-        }
-      }
-    }
+@media screen and (max-width: 768px) {
+  .friendList {
+    width: 90%;
+    right: 5%;
   }
 }

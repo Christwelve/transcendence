@@ -1,12 +1,10 @@
 import React, {useEffect, useState, useReducer, useRef} from 'react'
 import {Canvas, useFrame} from '@react-three/fiber'
 import Game, {ENUM_SIDE_CLIENT} from '../game'
-import {useDataContext} from '../components/DataContext'
-import List from '../components/List'
-import Lobby from '../components/Lobby'
-import Room from '../components/Room'
-import PlayerListItem from '../components/PlayerListItem'
-import ENUM from '../data/enum'
+import Lobby from '../components/Lobby/Lobby'
+import Room from '../components/Room/Room'
+import PlayerListItem from '../components/PlayerListItem/PlayerListItem'
+import { useDataContext } from '../components/DataContext/DataContext';
 import cls from '../utils/cls'
 import scss from './Page.module.scss'
 
