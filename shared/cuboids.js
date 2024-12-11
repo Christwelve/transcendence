@@ -1,4 +1,5 @@
 import sizes from 'shared/sizes'
+import colors from 'shared/colors'
 
 const halfSize = sizes.boardSize / 2;
 const cornerSize = [sizes.borderSize, sizes.borderSize / 2, sizes.borderSize];
@@ -6,9 +7,9 @@ const cornerSize = [sizes.borderSize, sizes.borderSize / 2, sizes.borderSize];
 const borderLength = (sizes.boardSize - sizes.goalSize - sizes.borderSize) / 2;
 const borderCenter = (sizes.goalSize + borderLength) / 2;
 const borderSizeVertical = [borderLength, sizes.borderSize / 2, sizes.borderSize];
-const borderSizeHorizontal = [sizes.borderSize, sizes.borderSize / 2, borderLength];
+const borderSizeHorizontal = [sizes.borderSize, sizes.borderSize / 2, borderLength * 20];
 const paddleSizeVertical = [sizes.paddleSize, sizes.borderSize / 2, sizes.borderSize];
-const paddleSizeHorizontal = [sizes.borderSize, sizes.borderSize / 2, sizes.paddleSize];
+const paddleSizeHorizontal = [sizes.borderSize, sizes.borderSize / 2, sizes.paddleSize * 0];
 
 let boundingBoxesBorders = null;
 
@@ -39,10 +40,10 @@ function getBorders(borderRefs = []) {
 
 function getPaddles(paddleRefs = []) {
 	const paddles = [
-		{position: [0, 0, -halfSize], size: paddleSizeVertical, color: '#f00', axis: 'x', ref: paddleRefs[0]},
-		{position: [0, 0, halfSize], size: paddleSizeVertical, color: '#0f0', axis: 'x', ref: paddleRefs[1]},
-		{position: [-halfSize, 0, 0], size: paddleSizeHorizontal, color: '#00f', axis: 'z', ref: paddleRefs[2]},
-		{position: [halfSize, 0, 0], size: paddleSizeHorizontal, color: '#ff0', axis: 'z', ref: paddleRefs[3]},
+		{position: [0, 0, -halfSize], size: paddleSizeVertical, color: colors[0], axis: 'x', ref: paddleRefs[0]},
+		{position: [0, 0, halfSize], size: paddleSizeVertical, color: colors[1], axis: 'x', ref: paddleRefs[1]},
+		{position: [-halfSize, 0, 0], size: paddleSizeHorizontal, color: colors[2], axis: 'z', ref: paddleRefs[2]},
+		{position: [halfSize, 0, 0], size: paddleSizeHorizontal, color: colors[3], axis: 'z', ref: paddleRefs[3]},
 	];
 
 	return paddles;
@@ -102,8 +103,6 @@ function resolveCollision(ballData, ballBox, otherBox) {
 
 // helper functions
 function calculateBoundingBoxOverlap(box1, box2) {
-	// console.log(box1, box2);
-
 	if(
 		box1.max.x < box2.min.x || box2.max.x < box1.min.x ||
 		box1.max.z < box2.min.z || box2.max.z < box1.min.z

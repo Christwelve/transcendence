@@ -1,9 +1,9 @@
 import React, {useRef, useEffect, forwardRef} from 'react'
 import {Canvas, useThree, useFrame} from '@react-three/fiber'
-import {Box3} from 'three';
 import {useDataContext} from './DataContext'
 import {ClientTick} from 'shared/tick'
 import sizes from 'shared/sizes'
+import colors from 'shared/colors'
 import {getCuboids} from 'shared/cuboids'
 
 const keysDown = {};
@@ -55,150 +55,17 @@ function CameraLookAt() {
 	return null;
 }
 
-function CameraTurn() {
-	const {camera} = useThree();
-
-	useFrame(state => {
-		const {clock} = state;
-
-		const time = clock.getElapsedTime() * 0.1;
-		const x = Math.sin(time) * 100;
-		const z = Math.cos(time) * 100;
-
-		// camera.position.set(x, camera.position.y, z);
-		camera.position.set(0, camera.position.y, 0);
-		// camera.position.set(0, 50, -100);
-
-		const targetPosition = [0, 0, 0];
-		camera.lookAt(...targetPosition);
-	}, [camera]);
-
-	return null;
-}
-
-function BallMover(props) {
-	const {ball} = props;
-
-	useFrame((state, delta) => {
-		if(ball == null)
-			return;
-
-		const {position, velocity} = ball;
-		const [dx, dz] = velocity;
-
-		const limit = sizes.boardSize / 2 + sizes.borderSize;
-
-		position.x += dx * delta * 75;
-		position.z += dz * delta * 75;
-
-		if(Math.abs(position.x) > limit || Math.abs(position.z) > limit)
-			position.set(0, 0, 0);
-
-		// position.set(sizes.boardSize / 2 - 2, 0, sizes.boardSize / 4);
-
-		// changeDirection(position, velocity, limit, 'x');
-		// changeDirection(position, velocity, limit, 'z');
-
-	});
-
-	return null;
-}
-
-function CollisionDetector(props) {
-	const {borders, ball} = props;
-
-	useFrame(() => {
-		if(ball == null)
-			return;
-
-		const ballBox = new Box3();
-		ballBox.setFromObject(ball);
-
-		let i = -1;
-		for(const border of borders) {
-			i++;
-
-			if(border == null)
-				continue;
-
-			const borderBox = new Box3();
-			borderBox.setFromObject(border);
-
-			if(!borderBox.intersectsBox(ballBox))
-				continue;
-
-			const overlapX = calculateMinOverlap(borderBox, ballBox, 'x');
-			const overlapZ = calculateMinOverlap(borderBox, ballBox, 'z');
-
-			const overlapMin = Math.min(overlapX, overlapZ);
-
-			const diffA = borderBox.max.clone().sub(ballBox.min);
-			const diffB = ballBox.max.clone().sub(borderBox.min);
-
-			if(overlapMin === overlapX)
-				resolveCollision(diffA, diffB, borderBox, border, ball, 'x');
-			else if(overlapMin === overlapZ)
-				resolveCollision(diffA, diffB, borderBox, border, ball, 'z');
-		}
-	});
-
-	return null;
-}
-
-function calculateMinOverlap(boxA, boxB, axis) {
-	const overlap = Math.min(
-		boxA.max[axis] - boxB.min[axis],
-		boxB.max[axis] - boxA.min[axis],
-	);
-
-	return overlap;
-}
-
-function resolveCollision(diffA, diffB, borderBox, border, ball, axis) {
-	const axisIndex = {x: 0, z: 1}[axis];
-	const collisionBottom = diffA[axis] < diffB[axis];
-	const limit = collisionBottom ? borderBox.max[axis] : borderBox.min[axis];
-	const offset = (collisionBottom ? sizes.borderSize : -sizes.borderSize) / 2;
-
-	ball.position[axis] = limit + offset;
-	ball.velocity[axisIndex] *= -1;
-}
-
 function TickHandler(props) {
-	const {ballRef, paddleRefs, borderRefs, playerIndex} = props;
+	const {ballRef, paddleRefs} = props;
 
 	const {getPlayer, useListener, requestServerTick, requestTickAdjust, sendPlayerEvent} = useDataContext();
 
 	const tickRef = useRef(null);
 
 	const callback = tick => {
-
+		handleInput(tick, sendPlayerEvent);
+		updateEnemyPositions(tick);
 		tick.moveBall();
-
-		const entries = tick.getRelevantQueueEntries();
-
-		entries.forEach(entry => {
-			const {playerIndex, position} = entry;
-
-			tick.setPositionFor(playerIndex, position);
-		});
-
-		if(tick.getPlayerIndex() === -1)
-			return;
-
-		const left = isKeyDown('KeyA');
-		const right = isKeyDown('KeyD');
-
-		if(!(left || right))
-			return;
-
-		const input = right - left;
-
-		tick.applyInput(input);
-
-		const event = tick.createHistoryEvent('input', input);
-
-		sendPlayerEvent(event);
 	};
 
 	useEffect(() => {
@@ -239,9 +106,12 @@ function TickHandler(props) {
 		if(ball == null)
 			return;
 
-		const [x, z] = tick.getBallData();
+		const [x, z, dx, dz, lastHitIndex] = tick.getBallData();
 
 		ball.position.set(x, 0, z);
+
+		if(lastHitIndex !== -1)
+			ball.material.color.set(colors[lastHitIndex]);
 	});
 
 	useListener('player.index', index => {
@@ -281,32 +151,52 @@ function TickHandler(props) {
 				tick.clearOldHistory(verifiedEventId);
 				tick.reconcilePosition(position);
 			} else {
-				tick.queuePositionOther(position, i, tickServer);
+				const data = {
+					playerIndex: i,
+					position,
+				};
+
+				tick.queueUpdate('position', tickServer, data);
 			}
 		});
 	});
+
+	useListener('ball.collision', (tickServer, verifiedBallData) => {
+		const tick = tickRef.current;
+
+		console.log('collision', tickServer, verifiedBallData);
+
+		tick.reconcileBall(tickServer, verifiedBallData);
+	});
 }
 
-function updateBall(ballRef) {
-	const ball = ballRef.current;
-
-	if(ball == null)
+function handleInput(tick, sendPlayerEvent) {
+	if(tick.getPlayerIndex() === -1)
 		return;
 
-	// ball.rotation.y -= 0.01;
+	const left = isKeyDown('KeyA');
+	const right = isKeyDown('KeyD');
 
-	return;
+	if(!(left || right))
+		return;
 
-	const {position, velocity} = ball;
-	const [dx, dz] = velocity;
+	const input = right - left;
 
-	const limit = sizes.boardSize / 2 + sizes.borderSize;
+	tick.applyInput(input);
 
-	position.x += dx * 1.25;
-	position.z += dz * 1.25;
+	const event = tick.createHistoryEvent('input', input);
 
-	if(Math.abs(position.x) > limit || Math.abs(position.z) > limit)
-		position.set(0, 0, 0);
+	sendPlayerEvent(event);
+}
+
+function updateEnemyPositions(tick) {
+	const entries = tick.extractQueueEntries('position');
+
+	entries.forEach(entry => {
+		const {playerIndex, position} = entry.data;
+
+		tick.setPositionFor(playerIndex, position);
+	});
 }
 
 function onKeyAction(event) {
@@ -388,8 +278,7 @@ function Game(props) {
 			position: [0, sizes.boardSize, 0]
 		}}>
 			<ResizeListener />
-			{/* <CameraLookAt /> */}
-			<CameraTurn />
+			<CameraLookAt />
 			<TickHandler ballRef={ballRef} paddleRefs={paddleRefs} borderRefs={borderRefs} playerIndex={0} />
 			<ambientLight intensity={Math.PI / 2} />
 			<spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} decay={0} intensity={Math.PI} />

@@ -14,13 +14,15 @@ class Tick {
 		this._id = instanceId++;
 
 		this._tick = 0;
+		this._tickNextAmount = 0;
 		this._callback = callback;
 
 		this._queue = [];
 		this._positions = [0, 0, 0, 0];
 		// [x, z, dx, dy, lastContactPlayerIndex]
 		// this._ballData = [0, 0, 0.2, -1, 0];
-		this._ballData = [0, 0, 0.3, 1, 0];
+		this._ballData = [0, 0, 0.3, 1, -1];
+		this._countdown = -1;
 
 		this._detached = false;
 
@@ -60,23 +62,25 @@ class Tick {
 
 		const dot = this._dotVector(paddleVector, ballVector);
 
-		const t = dot / (sizes.paddleSize / 2);
+		const lerp = dot / (sizes.paddleSize / 2);
 
-		const theta = rotations[playerIndex] + (Math.PI / 4) * t;
+		const theta = rotations[playerIndex] + (Math.PI / 4) * lerp;
 
 		this._ballData[2] = Math.cos(theta);
 		this._ballData[3] = Math.sin(theta);
 	}
 
-	_normalizeVector(vector) {
-		const [x, z] = vector;
-		const length = Math.hypot(x, z);
-
-		return [x / length, z / length];
-	}
-
 	_dotVector(v1, v2) {
 		return v1[0] * v2[0] + v1[1] * v2[1];
+	}
+
+	_setBallPosition(x, z) {
+		this._ballData[0] = x;
+		this._ballData[1] = z;
+	}
+
+	_setBallData(ballData) {
+		this._ballData = ballData;
 	}
 
 	getTick() {
@@ -114,12 +118,8 @@ class Tick {
 
 		const limit = sizes.boardSize / 2 + sizes.borderSize;
 
-		if(Math.abs(px) > limit || Math.abs(pz) > limit) {
-			this._ballData[0] = 0;
-			this._ballData[1] = 0;
-
-			return;
-		}
+		if(Math.abs(px) > limit || Math.abs(pz) > limit)
+			return this._setBallPosition(0, 0);
 
 		const [boundingBoxesOther, boundingBoxBall] = getBoundingBoxes(this._positions, this._ballData);
 
@@ -132,8 +132,13 @@ class Tick {
 
 			this._calculateNewBallDirection(boundingBox.playerIndex);
 
-			break;
+			if(boundingBox.playerIndex != null)
+				this._ballData[4] = boundingBox.playerIndex;
+
+			return true;
 		}
+
+		return false;
 	}
 
 	getBallData() {
@@ -179,7 +184,7 @@ class ClientTick extends Tick {
 		this._assertDetached();
 
 		this._tickOffset += value;
-		this._tick += value;
+		this._tickNextAmount += value;
 	}
 
 	createHistoryEvent(name, data) {
@@ -230,6 +235,11 @@ class ClientTick extends Tick {
 		this._verifiedPosition = position;
 
 		this._history.forEach(entry => {
+			const type = entry[2];
+
+			if(type !== 'input')
+				return;
+
 			const input = entry[3];
 
 			this.applyInput(input);
@@ -258,33 +268,29 @@ class ClientTick extends Tick {
 		this._history.splice(0, end);
 	}
 
-	queuePositionOther(position, playerIndex, tickServer) {
+	queueUpdate(type, tickServer, data) {
 		this._assertDetached();
 
 		const applyAt = tickServer + this._tickOffset / 2;
 
 		const entry = {
+			type,
 			applyAt,
-			playerIndex,
-			position
+			data
 		};
 
 		this._queue.push(entry);
 	}
 
-	getRelevantQueueEntries() {
+	extractQueueEntries(type) {
 		this._assertDetached();
 
 		if(this._queue.length === 0)
 			return [];
 
-		const index = this._queue.findIndex(entry => entry.applyAt > this._tick);
+		const entries = this._queue.filter(entry => type === entry.type && entry.applyAt <= this._tick);
 
-		if(index !== -1)
-			return this._queue.splice(0, index);
-
-		const entries = [...this._queue];
-		this._queue.length = 0;
+		this._queue = this._queue.filter(entry => !entries.includes(entry));
 
 		return entries;
 	}
@@ -293,6 +299,21 @@ class ClientTick extends Tick {
 		this._assertDetached();
 
 		this._positions[playerIndex] = position;
+	}
+
+	reconcileBall(tickServer, verifiedBallData) {
+		const fastForwardAmount = this._tick - tickServer;
+		const ballDataBefore = [...this._ballData];
+
+		this._setBallData(verifiedBallData);
+
+		for(let i = 0; i < fastForwardAmount; i++)
+			this.moveBall();
+
+		const keep = this._ballData.every((value, i) => Math.abs(value - ballDataBefore[i]) <= 0.1);
+
+		if(keep)
+			this._setBallData(ballDataBefore);
 	}
 }
 
@@ -357,6 +378,12 @@ class ServerTick extends Tick {
 			io.sockets.sockets.get(player.id)?.emit('game.update', update);
 		});
 	}
+
+	sendCollisionToPlayers(io) {
+		this._players.forEach(player => {
+			io.sockets.sockets.get(player.id)?.emit('ball.collision', this._tick, this._ballData);
+		});
+	}
 }
 
 function tick(timeThen) {
@@ -368,11 +395,14 @@ function tick(timeThen) {
 
 	setTimeout(tick.bind(null, timeNow), Math.max(0, timeSleep));
 
-	const delta = intervalActual * 0.001;
-
 	instances.forEach(instance => {
-		instance._callback(instance, delta);
-		instance._tick++;
+		instance._tickNextAmount++;
+
+		while(instance._tickNextAmount > 0) {
+			instance._callback(instance);
+			instance._tick++;
+			instance._tickNextAmount--;
+		}
 	});
 }
 

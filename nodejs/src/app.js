@@ -87,7 +87,21 @@ function createRoom(player, options) {
 	};
 }
 
-const onTick = (tick) => {
+const onTick = tick => {
+	updatePlayers(tick);
+	updateBall(tick);
+}
+
+function updateBall(tick) {
+	const collided = tick.moveBall();
+
+	if(!collided)
+		return;
+
+	tick.sendCollisionToPlayers(io);
+}
+
+function updatePlayers(tick) {
 	const entries = tick.getQueueEntries();
 
 	if(entries.length === 0)
@@ -95,9 +109,11 @@ const onTick = (tick) => {
 
 	entries.forEach(entry => {
 		const {player, event} = entry;
+		const eventId = event[0];
+		const input = event[3];
 
-		tick.applyInput(event[3], player.index);
-		tick.updateVerifiedEventId(event[0], player.index);
+		tick.applyInput(input, player.index);
+		tick.updateVerifiedEventId(eventId, player.index);
 	});
 
 	tick.sendUpdateToPlayers(io);
