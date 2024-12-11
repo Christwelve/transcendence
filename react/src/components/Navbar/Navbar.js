@@ -103,10 +103,12 @@ const Navbar = ({ changeStatus, changeComponent, avatar }) => {
                   className="dropdown-item"
                   onClick={() => {
                     const authToken = Cookies.get('authToken');
-                    if (authToken) //add this check just for safety
+                    if (authToken) { //add this check just for safety
                       Cookies.remove('authToken');
-                      Cookies.remove('pga4_session');
-                    changeStatus("login"); 
+                      console.log('sessionid', Cookies.get('sessionid'));
+                      Cookies.remove('sessionid');
+                    }
+                    changeStatus("login");
                   }}
                 >
                   Logout

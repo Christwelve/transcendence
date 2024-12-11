@@ -61,6 +61,7 @@ function App() {
   const userLogin = async (user) => {
     const response = await fetch(`http://localhost:8000/api/login/`, {
       method: "POST",
+      credentials: 'include',
       body: user,
     });
 
@@ -126,7 +127,10 @@ function App() {
       }
 
       const user = await response.json();
-      setAvatar(user.avatar);
+      if (user.avatar)
+        setAvatar(user.avatar);
+      else
+        setAvatar(`https://robohash.org/${user.username}?200x200`);
       setUserStatus("logged");
       setErrorMessage(null);
     } catch (error) {

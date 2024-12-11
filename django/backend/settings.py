@@ -41,10 +41,21 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'corsheaders',
+
+    #for auth tokens
     'rest_framework',
 	'rest_framework.authtoken',
 	'rest_framework_simplejwt',
 	'oauth2_provider',
+
+    #for 2FA
+	'django_otp',
+    'django_otp.plugins.otp_totp',
+    'two_factor',
+    'two_factor.plugins.phonenumber',
+	'django.contrib.sites',
+
+    #local apps
     'api',
 ]
 
@@ -52,6 +63,7 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+	'django_otp.middleware.OTPMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -197,3 +209,11 @@ SESSION_SAVE_EVERY_REQUEST = True
 SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
 SESSION_COOKIE_SECURE = False
 SESSION_COOKIE_SAMESITE = None
+SESSION_COOKIE_HTTPONLY = True
+
+#multisite support
+SITE_ID = 1
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]

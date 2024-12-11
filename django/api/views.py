@@ -100,7 +100,6 @@ def get_user_data(request):
         return JsonResponse({'error': 'No user data found', 'session': request.session.get('user_data')}, status=404)
     return JsonResponse(user_data)
 
-@csrf_exempt
 @api_view(['POST'])
 def login_view(request):
     if request.method == 'POST':
