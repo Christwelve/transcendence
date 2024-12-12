@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',
+	'oauth2_provider',
     'api',
 ]
 
@@ -56,12 +57,24 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ORIGIN_WHITELIST = [
+    'http://localhost:3000'
+]
 
 # TODO:
-# CORS_ALLOWED_ORIGINS = [
-#     "http://localhost:3000", 
-# ]
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+]
+
+# Optional: Allow credentials (e.g., cookies, sessions)
+CORS_ALLOW_CREDENTIALS = True
+
+# Optional: Specify allowed headers
+CORS_ALLOW_HEADERS = [
+    "content-type",
+    "authorization",
+]
 
 ROOT_URLCONF = 'backend.urls'
 
@@ -139,3 +152,24 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+PASSWORD_HASHERS = [
+    "django.contrib.auth.hashers.BCryptSHA256PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher",
+    "django.contrib.auth.hashers.Argon2PasswordHasher",
+    "django.contrib.auth.hashers.ScryptPasswordHasher",
+]
+
+OAUTH2_PROVIDER = {
+    'BASE_DOMAIN': 'https://api.intra.42.fr',
+    'AUTH_LOGIN_URL': '/oauth/authorize',
+    'AUTH_ACCESS_TOKEN_URL': '/oauth/token',
+    'AUTH_USERINFO_URL': '/v2/me',
+    'CLIENT_ID': 'u-s4t2ud-35200b91dbc192b0409be4fe981c496c78f0d18c705602b771e804d09f4fabab',
+    'CLIENT_SECRET': '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',
+    'SCOPE': {'public': 'Public access'},  # Adjust scopes based on your needs
+}
+
+LOGIN_URL = '/admin/login/'
+URL_42 = 'https://api.intra.42.fr/oauth/authorize?client_id=u-s4t2ud-35200b91dbc192b0409be4fe981c496c78f0d18c705602b771e804d09f4fabab&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fapi%2F42%2Flogin%2Fcallback%2F&response_type=code'

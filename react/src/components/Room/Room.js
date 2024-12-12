@@ -1,7 +1,7 @@
-import React, {useState} from 'react'
-import List from './List'
-import PlayerListItem from './PlayerListItem'
-import {useDataContext} from './DataContext'
+import React from 'react'
+import List from '../List/List'
+import PlayerListItem from '../PlayerListItem/PlayerListItem'
+import {useDataContext} from '../DataContext/DataContext'
 import cls from '../utils/cls'
 import scss from './Room.module.scss'
 

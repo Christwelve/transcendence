@@ -1,0 +1,85 @@
+.room {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: rgba(18, 18, 18, 0.95);
+  padding: 2rem;
+  margin: 2rem auto;
+  max-width: 600px;
+  border-radius: 12px;
+  box-shadow: 0px 4px 20px rgba(0, 255, 255, 0.2);
+  color: #fff;
+  font-family: "Roboto", sans-serif;
+
+  @media (max-width: 768px) {
+    max-width: 90%;
+  }
+
+  .player {
+		color: #f80;
+	}
+
+	.master {
+		font-weight: 700;
+		text-decoration: underline;
+	}
+}
+
+.room h2 {
+  margin-bottom: 1rem;
+  color: #00ffff;
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+  font-size: 1.8rem;
+}
+
+.room .listContainer {
+  width: 100%;
+  max-height: 300px;
+  overflow-y: auto;
+  border-radius: 8px;
+  background-color: rgba(18, 18, 18, 0.8);
+  box-shadow: 0px 4px 10px rgba(0, 255, 255, 0.2);
+  margin-bottom: 1rem;
+}
+
+.room .listContainer::-webkit-scrollbar {
+  width: 8px;
+}
+
+.room .listContainer::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 255, 0.5);
+  border-radius: 4px;
+}
+
+.room .listContainer::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 255, 255, 0.8);
+}
+
+.room .listContainer::-webkit-scrollbar-track {
+  background: rgba(18, 18, 18, 0.5);
+  border-radius: 4px;
+}
+
+.room button {
+  background-color: rgba(0, 255, 255, 0.2);
+  color: #00ffff;
+  border: 1px solid #00ffff;
+  border-radius: 8px;
+  padding: 10px 20px;
+  margin: 0 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 1rem;
+}
+
+.room button:hover {
+  background-color: rgba(0, 255, 255, 0.4);
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.6);
+}
+
+.room .buttonBar {
+  display: flex;
+  justify-content: center; /* Center align buttons */
+  margin-top: 1rem;
+  width: 100%;
+}

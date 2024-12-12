@@ -1,0 +1,99 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap");
+
+$primary-color: #00fff6;
+$background: #000000;
+$text-color: #ffffff;
+
+.customNavbar {
+  font-family: "Roboto", sans-serif;
+  background: $background !important; 
+  border-bottom: 2px solid $primary-color;
+  box-shadow: 0 0 10px $primary-color;
+
+
+  .navbarBrand {
+    font-family: "Orbitron", sans-serif;
+    color: $primary-color !important;
+    text-shadow: 0 0 10px $primary-color;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 2rem;
+    font-weight: bold;
+    text-transform: uppercase;
+
+    img {
+      filter: drop-shadow(0 0 5px $primary-color);
+      width: 60px;
+      height: 60px;
+    }
+  }
+
+  .navbarLink {
+    color: $text-color !important;
+    position: relative;
+    transition: color 0.3s;
+
+    &:hover {
+      color: lighten($text-color, 20%) !important;
+      text-shadow: 0 0 5px $primary-color;
+    }
+
+    &.active {
+      color: $primary-color !important;
+      text-shadow: 0 0 10px $primary-color;
+    }
+  }
+
+  .dropdownButton {
+    background: $primary-color !important;
+    border: none !important;
+    box-shadow: 0 0 10px $primary-color;
+    transition: 0.3s ease;
+
+    &:hover {
+      background: lighten($primary-color, 10%) !important;
+      box-shadow: 0 0 20px $primary-color;
+    }
+  }
+
+  .profile {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 2px solid $primary-color;
+    box-shadow: 0 0 20px $primary-color, 0 0 40px $primary-color !important;
+    transition: 0.3s;
+    object-fit: cover !important;
+    object-position: center;
+
+    &:hover {
+      box-shadow: 0 0 30px $primary-color, 0 0 60px $primary-color;
+    }
+  }
+
+  .dropdownMenu {
+    background: $background !important;
+    border: 1px solid $primary-color;
+    box-shadow: 0 0 10px $primary-color;
+    border-radius: 5px;
+    justify-content: space-evenly !important;
+    padding: 10px 0;
+  }
+
+  .dropdownItem {
+    color: $text-color !important;
+    width: 100%;
+    text-align: center;
+    transition: background 0.3s, transform 0.2s;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1) !important;
+      color: $text-color !important;
+      transform: scale(1.05);
+    }
+  }
+}

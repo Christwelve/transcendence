@@ -1,8 +1,8 @@
-import React, {useEffect, useState, useReducer, useRef} from 'react'
-import {useDataContext} from '../components/DataContext'
-import Lobby from '../components/Lobby'
-import Room from '../components/Room'
-import Game from '../components/Game'
+import React, {useState} from 'react'
+import {useDataContext} from '../components/DataContext/DataContext'
+import Lobby from '../components/Lobby/Lobby'
+import Room from '../components/Room/Room'
+import Game from '../components/Game/Game'
 import cls from '../utils/cls'
 import scss from './Page.module.scss'
 
