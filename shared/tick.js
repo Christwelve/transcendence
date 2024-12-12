@@ -1,28 +1,32 @@
 import sizes from 'shared/sizes'
 import {getBoundingBoxes, resolveCollision} from 'shared/cuboids'
 
+const TICK_SPEED = 60;
 const TICK_DEFAULT_OFFSET = 5;
 
-const intervalTarget = 1000 / 60;
+const intervalTarget = 1000 / TICK_SPEED;
 let timeSleep = intervalTarget;
 let instanceId = 0;
 
 let instances = [];
 
 class Tick {
-	constructor(callback) {
+	constructor(playerCount, callback) {
 		this._id = instanceId++;
 
 		this._tick = 0;
 		this._tickNextAmount = 0;
 		this._callback = callback;
 
+		this._playerCount = playerCount;
+
 		this._queue = [];
 		this._positions = [0, 0, 0, 0];
 		// [x, z, dx, dy, lastContactPlayerIndex]
-		// this._ballData = [0, 0, 0.2, -1, 0];
-		this._ballData = [0, 0, 0.3, 1, -1];
-		this._countdown = -1;
+		this._ballData = [0, 0, 0, 0, -1];
+		this._countdown = 0;
+		this._direction = [0, 0];
+		this._starting = false;
 
 		this._detached = false;
 
@@ -60,7 +64,7 @@ class Tick {
 
 		const ballVector = [bx - px, bz - pz];
 
-		const dot = this._dotVector(paddleVector, ballVector);
+		const dot = dotVector(paddleVector, ballVector);
 
 		const lerp = dot / (sizes.paddleSize / 2);
 
@@ -70,10 +74,6 @@ class Tick {
 		this._ballData[3] = Math.sin(theta);
 	}
 
-	_dotVector(v1, v2) {
-		return v1[0] * v2[0] + v1[1] * v2[1];
-	}
-
 	_setBallPosition(x, z) {
 		this._ballData[0] = x;
 		this._ballData[1] = z;
@@ -81,6 +81,22 @@ class Tick {
 
 	_setBallData(ballData) {
 		this._ballData = ballData;
+	}
+
+	roundStart(countdown, direction) {
+		this._countdown = countdown;
+		this._direction = direction;
+		this._starting = true;
+	}
+
+	kickoff() {
+		this._starting = false;
+		const [dx, dz] = this._direction;
+
+		this._ballData[2] = dx;
+		this._ballData[3] = dz;
+
+		console.log('kickoff', this._direction, this._ballData);
 	}
 
 	getTick() {
@@ -121,7 +137,7 @@ class Tick {
 		if(Math.abs(px) > limit || Math.abs(pz) > limit)
 			return this._setBallPosition(0, 0);
 
-		const [boundingBoxesOther, boundingBoxBall] = getBoundingBoxes(this._positions, this._ballData);
+		const [boundingBoxesOther, boundingBoxBall] = getBoundingBoxes(this._playerCount, this._positions, this._ballData);
 
 		for(const boundingBox of boundingBoxesOther) {
 
@@ -155,8 +171,8 @@ class Tick {
 }
 
 class ClientTick extends Tick {
-	constructor(player, callback) {
-		super(callback);
+	constructor(player, playerCount, callback) {
+		super(playerCount, callback);
 
 		this._tickOffset = TICK_DEFAULT_OFFSET;
 
@@ -315,11 +331,15 @@ class ClientTick extends Tick {
 		if(keep)
 			this._setBallData(ballDataBefore);
 	}
+
+	getCountdownSeconds() {
+		return Math.ceil(this._countdown / TICK_SPEED);
+	}
 }
 
 class ServerTick extends Tick {
 	constructor(players, callback) {
-		super(callback);
+		super(players.length, callback);
 
 		this._players = players;
 		this._verifiedEventIds = [0, 0, 0, 0];
@@ -384,6 +404,19 @@ class ServerTick extends Tick {
 			io.sockets.sockets.get(player.id)?.emit('ball.collision', this._tick, this._ballData);
 		});
 	}
+
+	startGame(io) {
+		const countdown = 3 * TICK_SPEED;
+		const direction = randVector();
+
+		this.roundStart(countdown, direction);
+
+		this._players.forEach(player => {
+			console.log(player, io.sockets.sockets.get(player.id));
+
+			io.sockets.sockets.get(player.id)?.emit('round.start', countdown, direction);
+		});
+	}
 }
 
 function tick(timeThen) {
@@ -400,11 +433,45 @@ function tick(timeThen) {
 
 		while(instance._tickNextAmount > 0) {
 			instance._callback(instance);
+
+			if(instance._countdown > 0)
+				instance._countdown--;
+			else if(instance._starting)
+				instance.kickoff();
+
 			instance._tick++;
 			instance._tickNextAmount--;
 		}
 	});
 }
+
+// helper functions
+function dotVector(v1, v2) {
+	return v1[0] * v2[0] + v1[1] * v2[1];
+}
+
+function randVector() {
+	const v = [
+		Math.random() * 2 - 1,
+		Math.random() * 2 - 1,
+	];
+
+	return normalizeVector(v);
+}
+
+function normalizeVector(v) {
+	const [x, z] = v;
+
+	const length = Math.hypot(x, z);
+
+	const n = [
+		x / length,
+		z / length,
+	];
+
+	return n;
+}
+
 
 setTimeout(tick.bind(null, performance.now()), Math.max(0, timeSleep));
 

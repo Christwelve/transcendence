@@ -59,7 +59,7 @@ function DataContextProvider(props) {
 		toggleReady: toggleReady.bind(null, send),
 		gameStart: gameStart.bind(null, send),
 		sendPlayerEvent: sendPlayerEvent.bind(null, send),
-		useListener: useListener.bind(null, socketRef.current),
+		useListener: useListener.bind(null, socketRef),
 		requestServerTick: requestServerTick.bind(null, send),
 		requestTickAdjust: requestTickAdjust.bind(null, send),
 	};
@@ -194,7 +194,9 @@ function sendPlayerEvent(send, data) {
 	send('player.event', data);
 }
 
-function useListener(socket, name, callback) {
+function useListener(socketRef, name, callback) {
+	const socket = socketRef.current;
+
 	useEffect(() => {
 		socket.on(name, callback);
 

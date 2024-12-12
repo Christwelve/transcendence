@@ -225,15 +225,21 @@ io.on('connection', async socket => {
 
 		const players = getPlayersFromRoom(room);
 
-		console.log(players);
-
 		room.status = 1;
 
 		players.forEach(player => player.state = 2);
 
-		games[room.id] = new ServerTick(players, onTick);
+		const game = new ServerTick(players, onTick);
 
-		setTimeout(() => room.status = 2, 1000);
+		games[room.id] = game;
+
+		setTimeout(() => {
+
+			game.startGame(io);
+
+			setTimeout(() => room.status = 2, 3000);
+
+		}, 1000);
 	});
 
 	socket.on('game.tick', (tickClient) => {

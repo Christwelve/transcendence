@@ -4,47 +4,152 @@ import colors from 'shared/colors'
 const halfSize = sizes.boardSize / 2;
 const cornerSize = [sizes.borderSize, sizes.borderSize / 2, sizes.borderSize];
 
-const borderLength = (sizes.boardSize - sizes.goalSize - sizes.borderSize) / 2;
-const borderCenter = (sizes.goalSize + borderLength) / 2;
-const borderSizeVertical = [borderLength, sizes.borderSize / 2, sizes.borderSize];
-const borderSizeHorizontal = [sizes.borderSize, sizes.borderSize / 2, borderLength * 20];
+const borderLengthClosed = sizes.boardSize - sizes.borderSize;
+const borderLengthOpen = (sizes.boardSize - sizes.goalSize - sizes.borderSize) / 2;
+const borderCenterOpen = (sizes.goalSize + borderLengthOpen) / 2;
+const borderSizeClosedVertical = [borderLengthClosed, sizes.borderSize / 2, sizes.borderSize];
+const borderSizeClosedHorizontal = [sizes.borderSize, sizes.borderSize / 2, borderLengthClosed];
+const borderSizeOpenVertical = [borderLengthOpen, sizes.borderSize / 2, sizes.borderSize];
+const borderSizeOpenHorizontal = [sizes.borderSize, sizes.borderSize / 2, borderLengthOpen];
 const paddleSizeVertical = [sizes.paddleSize, sizes.borderSize / 2, sizes.borderSize];
-const paddleSizeHorizontal = [sizes.borderSize, sizes.borderSize / 2, sizes.paddleSize * 0];
+const paddleSizeHorizontal = [sizes.borderSize, sizes.borderSize / 2, sizes.paddleSize];
 
 let boundingBoxesBorders = null;
 
-function getBorders(borderRefs = []) {
+function getBorders(playerCount) {
 
 	const borders = [
 		// corners
-		{position: [-halfSize, 0, -halfSize], size: cornerSize, ref: borderRefs[0]},
-		{position: [halfSize, 0, -halfSize], size: cornerSize, ref: borderRefs[1]},
-		{position: [halfSize, 0, halfSize], size: cornerSize, ref: borderRefs[2]},
-		{position: [-halfSize, 0, halfSize], size: cornerSize, ref: borderRefs[3]},
+		{position: [-halfSize, 0, -halfSize], size: cornerSize},
+		{position: [halfSize, 0, -halfSize], size: cornerSize},
+		{position: [halfSize, 0, halfSize], size: cornerSize},
+		{position: [-halfSize, 0, halfSize], size: cornerSize},
+
+		...getBorderParts('top', playerCount >= 1),
+		...getBorderParts('bottom', playerCount >= 2),
+		...getBorderParts('left', playerCount >= 3),
+		...getBorderParts('right', playerCount >= 4),
+
 		// top
-		{position: [-borderCenter, 0, -halfSize], size: borderSizeVertical, ref: borderRefs[4]},
-		{position: [borderCenter, 0, -halfSize], size: borderSizeVertical, ref: borderRefs[5]},
-		// bottom
-		{position: [-borderCenter, 0, halfSize], size: borderSizeVertical, ref: borderRefs[6]},
-		{position: [borderCenter, 0, halfSize], size: borderSizeVertical, ref: borderRefs[7]},
-		// left
-		{position: [-halfSize, 0, -borderCenter], size: borderSizeHorizontal, ref: borderRefs[8]},
-		{position: [-halfSize, 0, borderCenter], size: borderSizeHorizontal, ref: borderRefs[9]},
-		// right
-		{position: [halfSize, 0, -borderCenter], size: borderSizeHorizontal, ref: borderRefs[10]},
-		{position: [halfSize, 0, borderCenter], size: borderSizeHorizontal, ref: borderRefs[11]},
+		// {position: [-borderCenterOpen, 0, -halfSize], size: borderSizeOpenVertical},
+		// {position: [borderCenterOpen, 0, -halfSize], size: borderSizeOpenVertical},
+		// // bottom
+		// {position: [-borderCenterOpen, 0, halfSize], size: borderSizeOpenVertical},
+		// {position: [borderCenterOpen, 0, halfSize], size: borderSizeOpenVertical},
+		// // left
+		// {position: [-halfSize, 0, -borderCenterOpen], size: borderSizeOpenHorizontal},
+		// {position: [-halfSize, 0, borderCenterOpen], size: borderSizeOpenHorizontal},
+		// // right
+		// {position: [halfSize, 0, -borderCenterOpen], size: borderSizeOpenHorizontal},
+		// {position: [halfSize, 0, borderCenterOpen], size: borderSizeOpenHorizontal},
 	];
 
 	return borders;
 }
 
-function getPaddles(paddleRefs = []) {
-	const paddles = [
-		{position: [0, 0, -halfSize], size: paddleSizeVertical, color: colors[0], axis: 'x', ref: paddleRefs[0]},
-		{position: [0, 0, halfSize], size: paddleSizeVertical, color: colors[1], axis: 'x', ref: paddleRefs[1]},
-		{position: [-halfSize, 0, 0], size: paddleSizeHorizontal, color: colors[2], axis: 'z', ref: paddleRefs[2]},
-		{position: [halfSize, 0, 0], size: paddleSizeHorizontal, color: colors[3], axis: 'z', ref: paddleRefs[3]},
-	];
+function getBorderParts(side, open) {
+	const sideIndex = ['top', 'bottom', 'left', 'right'].indexOf(side);
+
+	if(sideIndex === -1)
+		return [];
+
+	return open ?
+		[
+			getBorderPart(sideIndex, 0),
+			getBorderPart(sideIndex, 1),
+		] :
+		[
+			getBorderPart(sideIndex),
+		];
+}
+
+function getBorderPart(sideIndex, partIndex = null) {
+	const position = getBorderPartPosition(sideIndex, partIndex);
+	const size = getBorderPartSize(sideIndex, partIndex);
+
+	return {position, size};
+}
+
+function getBorderPartPosition(sideIndex, partIndex) {
+	const multiplierX = partIndex === 0 ? -1 : 1;
+	const multiplierZ = sideIndex % 2 === 0 ? -1 : 1;
+	const x = partIndex == null ? 0 : borderCenterOpen * multiplierX;
+	const z = halfSize * multiplierZ;
+	const position = [x, 0, z];
+
+	if(sideIndex > 1)
+		position.reverse();
+
+	return position;
+}
+
+function getBorderPartSize(sideIndex, partIndex) {
+	const borderLength = partIndex == null ? borderLengthClosed : borderLengthOpen;
+
+	const size = [borderLength, sizes.borderSize / 2, sizes.borderSize];
+
+	if(sideIndex > 1)
+		size.reverse();
+
+	return size;
+}
+
+function getBordersTop(open) {
+	return open ?
+		[
+			{position: [-borderCenterOpen, 0, -halfSize], size: borderSizeOpenVertical},
+			{position: [borderCenterOpen, 0, -halfSize], size: borderSizeOpenVertical},
+		]
+		:
+		[
+			{position: [0, 0, -halfSize], size: borderSizeClosedVertical},
+		];
+}
+
+function getBordersBottom(open) {
+	return open ?
+		[
+			{position: [-borderCenterOpen, 0, halfSize], size: borderSizeOpenVertical},
+			{position: [borderCenterOpen, 0, halfSize], size: borderSizeOpenVertical},
+		]
+		:
+		[
+		];
+}
+
+function getBordersLeft(open) {
+	return open ?
+		[
+			{position: [-halfSize, 0, -borderCenterOpen], size: borderSizeOpenHorizontal},
+			{position: [-halfSize, 0, borderCenterOpen], size: borderSizeOpenHorizontal},
+		]
+		:
+		[
+		];
+}
+
+function getBordersRight(open) {
+	return open ?
+		[
+			{position: [halfSize, 0, -borderCenterOpen], size: borderSizeOpenHorizontal},
+			{position: [halfSize, 0, borderCenterOpen], size: borderSizeOpenHorizontal},
+		]
+		:
+		[
+		];
+}
+
+function getPaddles(playerCount, paddleRefs = []) {
+	const paddles = [];
+
+	if(playerCount >= 1)
+		paddles.push({position: [0, 0, -halfSize], size: paddleSizeVertical, color: colors[0], axis: 'x', ref: paddleRefs[0]});
+	if(playerCount >= 2)
+		paddles.push({position: [0, 0, halfSize], size: paddleSizeVertical, color: colors[1], axis: 'x', ref: paddleRefs[1]});
+	if(playerCount >= 3)
+		paddles.push({position: [-halfSize, 0, 0], size: paddleSizeHorizontal, color: colors[2], axis: 'z', ref: paddleRefs[2]});
+	if(playerCount >= 4)
+		paddles.push({position: [halfSize, 0, 0], size: paddleSizeHorizontal, color: colors[3], axis: 'z', ref: paddleRefs[3]});
 
 	return paddles;
 }
@@ -55,17 +160,17 @@ function getBall(ballRef) {
 	return ball;
 }
 
-function getCuboids(borderRefs, paddleRefs, ballRef) {
-	const borders = getBorders(borderRefs);
-	const paddles = getPaddles(paddleRefs);
+function getCuboids(playerCount, paddleRefs, ballRef) {
+	const borders = getBorders(playerCount);
+	const paddles = getPaddles(playerCount, paddleRefs);
 	const ball = getBall(ballRef);
 
 	return [...borders, ...paddles, ball];
 }
 
-function getBoundingBoxes(playerPositions, ballData) {
-	const boundingBoxesBorders = getBoundingBoxesBorders();
-	const boundingBoxesPaddles = getBoundingBoxesPaddles(playerPositions);
+function getBoundingBoxes(playerCount, playerPositions, ballData) {
+	const boundingBoxesBorders = getBoundingBoxesBorders(playerCount);
+	const boundingBoxesPaddles = getBoundingBoxesPaddles(playerCount, playerPositions);
 	const boundingBoxBall = getBoundingBoxBall(ballData);
 
 	const boundingBoxesAll = [[...boundingBoxesBorders, ...boundingBoxesPaddles], boundingBoxBall];
@@ -123,15 +228,15 @@ function calculateBoundingBoxOverlap(box1, box2) {
 	return overlapBox;
 }
 
-function getBoundingBoxesBorders() {
+function getBoundingBoxesBorders(playerCount) {
 	if(boundingBoxesBorders == null)
-		boundingBoxesBorders = getBorders().map(calculateBoundingBox);
+		boundingBoxesBorders = getBorders(playerCount).map(calculateBoundingBox);
 
 	return boundingBoxesBorders;
 }
 
-function getBoundingBoxesPaddles(playerPositions) {
-	const paddles = getPaddles();
+function getBoundingBoxesPaddles(playerCount, playerPositions) {
+	const paddles = getPaddles(playerCount);
 
 	const boundingBoxesPaddles = paddles.map((paddle, i) => {
 		const {position, axis} = paddle;
