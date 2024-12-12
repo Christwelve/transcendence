@@ -237,6 +237,8 @@ io.on('connection', async socket => {
 
 			game.startGame(io);
 
+			setInterval(() => game.sendCollisionToPlayers(io), 300);
+
 			setTimeout(() => room.status = 2, 3000);
 
 		}, 1000);

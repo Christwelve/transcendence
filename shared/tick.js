@@ -341,6 +341,8 @@ class ServerTick extends Tick {
 	constructor(players, callback) {
 		super(players.length, callback);
 
+		console.log('players', players.length);
+
 		this._players = players;
 		this._verifiedEventIds = [0, 0, 0, 0];
 
@@ -412,8 +414,6 @@ class ServerTick extends Tick {
 		this.roundStart(countdown, direction);
 
 		this._players.forEach(player => {
-			console.log(player, io.sockets.sockets.get(player.id));
-
 			io.sockets.sockets.get(player.id)?.emit('round.start', countdown, direction);
 		});
 	}
