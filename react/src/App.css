@@ -8,15 +8,16 @@ body {
 	background-color: inherit !important;
 	color: #fff;
 	font-family: monospace;
+	overflow-x: hidden !important;
 }
 
 * {
-box-sizing: border-box;
+	box-sizing: border-box;
 }
 
 a {
-color: inherit;
-text-decoration: none;
+	color: inherit;
+	text-decoration: none;
 }
 
 button {

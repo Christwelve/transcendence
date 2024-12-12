@@ -2,7 +2,7 @@ import React from 'react'
 import List from '../List/List'
 import PlayerListItem from '../PlayerListItem/PlayerListItem'
 import {useDataContext} from '../DataContext/DataContext'
-import cls from '../utils/cls'
+import cls from '../../utils/cls'
 import scss from './Room.module.scss'
 
 const playerListLabels = ['Name', 'Status'];
@@ -12,6 +12,7 @@ function Room() {
 	const {getPlayer, getRoom, getPlayerListForRoom, leaveRoom, toggleReady, gameStart} = useDataContext();
 	const currentPlayer = getPlayer();
 	const room = getRoom(currentPlayer.roomId);
+
 	const playerList = getPlayerListForRoom(room.id);
 
 	const isMaster = room.masterId === currentPlayer.id;

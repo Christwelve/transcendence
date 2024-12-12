@@ -1,11 +1,11 @@
 import React, {useRef, useEffect, useState, forwardRef} from 'react'
 import {Canvas, useThree, useFrame} from '@react-three/fiber'
-import {useDataContext} from './DataContext'
+import {useDataContext} from '../DataContext/DataContext'
 import {ClientTick} from 'shared/tick'
 import sizes from 'shared/sizes'
 import colors from 'shared/colors'
 import {getCuboids} from 'shared/cuboids'
-import cls from '../utils/cls'
+import cls from '../../utils/cls'
 import scss from './Game.module.scss'
 
 const keysDown = {};
