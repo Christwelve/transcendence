@@ -8,7 +8,7 @@ import ModalPresenter from './components/Modal/ModalPresenter'
 import { closeModalTop } from './utils/modal'
 
 function App() {
-  useEffect(() => {
+	useEffect(() => {
 
     const onKeyDown = event => {
       if (event.code !== 'Escape')
@@ -32,28 +32,28 @@ function App() {
     }
   }, []);
 
-  const [userStatus, setUserStatus] = useState("register");
-  const [errorMessage, setErrorMessage] = useState(null);
-  const [database, setDatabase] = useState({});
-  const [avatar, setAvatar] = useState(null);
+	const [userStatus, setUserStatus] = useState("register");
+	const [errorMessage, setErrorMessage] = useState(null);
+	const [database, setDatabase] = useState({});
+	const [avatar, setAvatar] = useState(null);
 
-  const changeStatus = (status) => {
-    setUserStatus(status);
-  };
+	const changeStatus = (status) => {
+		setUserStatus(status);
+	};
 
-  const addUserToDatabase = (user) => {
-    if (!database[user.username]) {
-      const updatedDatabase = {
-        ...database,
-        [user.username]: { email: user.email, password: user.password },
-      };
-      setDatabase(updatedDatabase);
-      setUserStatus("login");
-      setErrorMessage(null);
-    } else {
-      setErrorMessage("User already exists");
-    }
-  };
+	const addUserToDatabase = (user) => {
+		if (!database[user.username]) {
+			const updatedDatabase = {
+				...database,
+				[user.username]: { email: user.email, password: user.password },
+			};
+			setDatabase(updatedDatabase);
+			setUserStatus("login");
+			setErrorMessage(null);
+		} else {
+			setErrorMessage("User already exists");
+		}
+	};
 
   const userLogin = async (user) => {
     const response = await fetch(`http://localhost:8000/api/login/`, {
@@ -150,9 +150,9 @@ function App() {
           <ModalPresenter />
         </DataContextProvider>
 
-      )}
-    </>
-  );
+			)}
+		</>
+	);
 }
 
 export default App;

@@ -5,6 +5,7 @@ WORKDIR /code/nodejs
 COPY ./package*.json ./
 COPY ./src ./
 RUN npm install
+RUN ln -s /shared /code/nodejs/node_modules/shared
 
 EXPOSE 4000
 
