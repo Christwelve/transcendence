@@ -18,7 +18,8 @@ function Page() {
 
 	const screens = [
 		<Lobby />,
-		<Room />,
+		<Lobby />,
+		// <Room />,
 		<Game />,
 	];
 

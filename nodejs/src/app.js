@@ -132,6 +132,9 @@ io.on('connection', async socket => {
 
 	data.players[player.id] = player;
 
+	const room = createRoom(player, {name: 'test', type: 0, playersMax: 4});
+	data.rooms[room.id] = room;
+
 	// ---- test
 	// const roomIds = Reflect.ownKeys(data.rooms);
 	// let room;
@@ -165,9 +168,6 @@ io.on('connection', async socket => {
 		const {id} = options;
 		const player = getPlayerFromSocket(socket);
 
-		if(player.state !== 0)
-			return socket.emit('notice', {type: 'error', title: 'Can not join room', message: 'Not in lobby.'});
-
 		const room = data.rooms[id];
 
 		if(room == null)
@@ -180,6 +180,11 @@ io.on('connection', async socket => {
 
 		if(players.length === playersMax)
 			return socket.emit('notice', {type: 'error', title: 'Can not join room', message: `Room is full.`});
+
+		const currentRoom = getRoomFromPlayer(player);
+
+		if(currentRoom != null)
+			removePlayerFromRoom(player, currentRoom);
 
 		player.state = 1;
 		player.roomId = room.id;

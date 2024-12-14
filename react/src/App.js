@@ -129,6 +129,13 @@ function App() {
   };
 
   return (
+    <DataContextProvider>
+      <Home changeStatus={changeStatus} avatar={avatar} />
+      <ModalPresenter />
+    </DataContextProvider>
+  );
+
+  return (
     <>
       {userStatus === "register" ? (
         <Register

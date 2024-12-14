@@ -1,6 +1,14 @@
 @import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap");
 
+:root {
+	--color-gray-dark: #111;
+	--color-gray-light: #333;
+
+	--color-primary-rgb: 0, 255, 246;
+	--color-primary: rgb(var(--color-primary-rgb));
+}
+
 html {
 	background-color: #000;
 }
