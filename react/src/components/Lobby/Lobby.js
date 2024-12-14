@@ -1,16 +1,15 @@
 import React, {useState} from 'react'
 import RoomList from '../RoomList/RoomList'
-// import RoomListItem from '../RoomList/RoomListItem'
-// import RoomListButtonBar from '../RoomList/RoomListButtonBar'
-import {useDataContext} from '../DataContext/DataContext'
+import Room from '../Room/Room'
 import cls from '../../utils/cls'
 import scss from './Lobby.module.scss'
 
-
-
 function Lobby() {
   return (
-    <RoomList />
+    <div className={scss.lobby}>
+      <RoomList />
+      <Room />
+    </div>
   )
 }
 

@@ -1,0 +1,17 @@
+.rooms {
+	padding: 36px;
+
+	.header {
+		padding: 6%;
+
+		.title {
+			line-height: 1;
+		}
+
+		.description {
+			font-size: 12px;
+			color: var(--color-gray-light);
+			line-height: 1;
+		}
+	}
+}

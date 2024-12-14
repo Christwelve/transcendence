@@ -1,0 +1,41 @@
+.player {
+	width: 180px;
+	padding: 6px;
+
+	.inner {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		position: relative;
+		padding: 12px;
+		background-color: var(--color-gray-dark);
+		border-radius: 6px;
+
+		.icon {
+			display: none;
+			align-items: center;
+			justify-content: center;
+
+			.out {
+				color: var(--color-primary);
+				stroke-width: 5px;
+			}
+
+			.in {
+				color: var(--color-black);
+				stroke-width: 2px;
+			}
+		}
+	}
+
+	&.ready {
+		.inner {
+			outline: 1px solid var(--color-primary);
+			box-shadow: 0 0 6px var(--color-primary);
+		}
+
+		.icon {
+			display: flex;
+		}
+	}
+}
