@@ -1,7 +1,7 @@
 .wrapper {
 	flex: 0 0 50%;
-	padding: 6px;
 	user-select: none;
+	margin-bottom: 12px;
 	cursor: default;
 
 	.room {
@@ -12,10 +12,7 @@
 		background-color: transparent;
 		border-radius: 6px;
 		transition: background-color 200ms ease-in-out;
-
-		&:hover, &.selected {
-			background-color: var(--color-gray-dark);
-		}
+		background-color: var(--color-gray-dark);
 
 		&.selected {
 			box-shadow: 0 0 6px var(--color-primary);

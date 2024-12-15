@@ -1,7 +1,10 @@
 import React from 'react'
 import {useDataContext} from '../DataContext/DataContext'
+import Card from '../Card/Card'
+import CardSection from '../Card/CardSection'
 import RoomListItem from './RoomListItem'
-import RoomCreateModal from '../Modal/Modal'
+import Icon from '../Icon/Icon'
+import RoomCreateModal from '../Modal/RoomCreateModal'
 import {showModal} from '../../utils/modal'
 import scss from './RoomList.module.scss'
 
@@ -26,23 +29,20 @@ function RoomList() {
 		createRoom(data);
 	}
 
+	const titleAction = (
+		<div className={scss.create} onClick={createRoomButtonCallback}>
+			<Icon type='plus' size='18' />
+		</div>
+	);
+
 	return (
-		<div className={scss.rooms}>
-			<div className={scss.header}>
-				<h2 className={scss.title}>Rooms</h2>
-				<div className={scss.create} onClick={createRoomButtonCallback}>
-					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-						<line x1="12" y1="5" x2="12" y2="19"/>
-						<line x1="5" y1="12" x2="19" y2="12"/>
-					</svg>
-				</div>
-			</div>
-			<div className={scss.list}>
+		<Card title='Rooms' action={titleAction}>
+			<CardSection title='Available'>
 				{
 					rooms.map(room => <RoomListItem key={room.id} {...room} selected={player.roomId === room.id} onClick={joinRoom.bind(null, room.id)} />)
 				}
-			</div>
-		</div>
+			</CardSection>
+		</Card>
 	);
 }
 

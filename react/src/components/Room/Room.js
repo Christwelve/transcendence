@@ -1,5 +1,8 @@
 import React from 'react'
+import Card from '../Card/Card'
+import CardSection from '../Card/CardSection'
 import PlayerList from './PlayerList'
+import Icon from '../Icon/Icon'
 import {useDataContext} from '../DataContext/DataContext'
 import cls from '../../utils/cls'
 import scss from './Room.module.scss'
@@ -10,8 +13,13 @@ function Room() {
 	const currentPlayer = getPlayer();
 	const room = getRoom(currentPlayer.roomId);
 
-	if(room == null)
-		return null;
+	if(room == null) {
+		return (
+			<Card title='Room'>
+				<p className={scss.empty}>Click on a room to join or create one.</p>
+			</Card>
+		);
+	}
 
 	const playerList = getPlayerListForRoom(room.id);
 
@@ -22,23 +30,20 @@ function Room() {
 	const startButton = (<button className={cls(scss.primary, scss.start, canStart && scss.highlight)} disabled={!canStart} onClick={gameStart}>Start</button>);
 
 	return (
-		<div className={scss.room}>
-			<div className={scss.header}>
-				<div className={scss.title}>
-					<h2>{room.name}</h2>
-				</div>
-			</div>
-			<div className={scss.body}>
-				<div className={scss.players}>
-					<PlayerList players={playerList} currentPlayer={currentPlayer} masterId={room.masterId} />
-				</div>
+		<Card title={`Room · ${room.name}`}>
+			<CardSection title='Players'>
+				<PlayerList players={playerList} currentPlayer={currentPlayer} masterId={room.masterId} />
+			</CardSection>
+			<CardSection title='Controls'>
 				<div className={scss.controls}>
-					<button onClick={leaveRoom}>Leave</button>
+					<div className={scss.leave} title='Leave Room' onClick={leaveRoom}>
+						<Icon type='chevron_left' size='18' />
+					</div>
 					{isMaster ? startButton : readyButton}
 				</div>
-			</div>
-		</div>
-	)
+			</CardSection>
+		</Card>
+	);
 }
 
 

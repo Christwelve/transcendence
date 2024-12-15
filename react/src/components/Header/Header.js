@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import styles from "./Navbar.module.scss";
+import styles from "./Header.module.scss";
 
-const Navbar = ({ changeStatus, changeComponent, avatar }) => {
+const Header = ({ changeStatus, changeComponent, avatar }) => {
   const [homeIsActive, setHomeIsActive] = useState(true);
   const [gameIsActive, setGameIsActive] = useState(false);
 
@@ -20,12 +20,12 @@ const Navbar = ({ changeStatus, changeComponent, avatar }) => {
   };
 
   return (
-    <nav
+    <header
       className={`navbar navbar-expand-lg navbar-dark ${styles.customNavbar}`}
     >
-      <div className="container-fluid">
-        <p
-          className={`navbar-brand ${styles.navbarBrand}`}
+      <div className={styles.inner}>
+        <div
+          className={styles.navbarBrand}
           onClick={() => {
             activateTab("home");
           }}
@@ -38,35 +38,9 @@ const Navbar = ({ changeStatus, changeComponent, avatar }) => {
             className="d-inline-block align-text-top"
           />
           Transcendence
-        </p>
+        </div>
 
-        <div className="collapse navbar-collapse" id="navbarNav">
-          <ul className="navbar-nav me-auto">
-            <li className="nav-item">
-              <p
-                className={`nav-link ${styles.navbarLink} ${
-                  homeIsActive ? styles.active : ""
-                }`}
-                onClick={() => {
-                  activateTab("main");
-                }}
-              >
-                Home
-              </p>
-            </li>
-            <li className="nav-item">
-              <p
-                className={`nav-link ${styles.navbarLink} ${
-                  gameIsActive ? styles.active : ""
-                }`}
-                onClick={() => {
-                  activateTab("game");
-                }}
-              >
-                Game
-              </p>
-            </li>
-          </ul>
+        <div id="navbarNav">
           <div className="btn-group dropstart">
             <button
               type="button"
@@ -114,8 +88,8 @@ const Navbar = ({ changeStatus, changeComponent, avatar }) => {
           </div>
         </div>
       </div>
-    </nav>
+    </header>
   );
 };
 
-export default Navbar;
+export default Header;

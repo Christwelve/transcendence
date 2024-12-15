@@ -1,29 +1,19 @@
-.rooms {
-	padding: 36px;
+.create {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	margin-left: 12px;
+	background-color: var(--color-gray-dark);
+	color: var(--color-primary);
+	border-radius: 50%;
+	transition: all 200ms ease-in-out;
+	cursor: pointer;
 
-	.header {
-		display: flex;
-		align-items: center;
-		justify-content: flex-start;
-		padding: 6px;
-
-		.create {
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			width: 24px;
-			height: 24px;
-			margin-left: 12px;
-			background-color: var(--color-gray-dark);
-			color: var(--color-primary);
-			border-radius: 50%;
-			transition: all 200ms ease-in-out;
-
-			&:hover {
-				background-color: var(--color-primary);
-				color: var(--color-black);
-				box-shadow: 0 0 6px var(--color-primary);
-			}
-		}
+	&:hover {
+		background-color: var(--color-primary);
+		color: var(--color-black);
+		box-shadow: 0 0 6px var(--color-primary);
 	}
 }

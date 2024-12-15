@@ -64,12 +64,23 @@ function removePlayerFromRoom(player, room) {
 		delete games[id];
 		delete data.rooms[id];
 	}
-	else if(player.id === masterId)
-		room.masterId = players[0];
+	else if(player.id === masterId) {
+		const newMasterId = players[0];
+
+		data.players[newMasterId].ready = false;
+
+		room.masterId = newMasterId;
+	}
+
+	player.roomId = null;
+	player.ready = false;
+	player.index = -1;
 }
 
 function createRoom(player, options) {
-	const {name, type, playersMax} = options;
+	const {name: nameRaw, type, playersMax} = options;
+
+	const name = nameRaw == null || nameRaw === '' ? Math.random().toString(36).substring(2, 9) : nameRaw.trim().substring(0, 16);
 
 	const id = roomId++;
 	const status = 0;
@@ -157,6 +168,11 @@ io.on('connection', async socket => {
 
 	socket.on('room.create', options => {
 		const player = getPlayerFromSocket(socket);
+
+		const currentRoom = getRoomFromPlayer(player);
+
+		removePlayerFromRoom(player, currentRoom);
+
 		const room = createRoom(player, options);
 
 		data.rooms[room.id] = room;
@@ -173,6 +189,9 @@ io.on('connection', async socket => {
 		if(room == null)
 			return socket.emit('notice', {type: 'error', title: 'Can not join room', message: `Room with id ${id} does not exist.`});
 
+		if(player.roomId === room.id)
+			return;
+
 		const {status, players, playersMax} = room;
 
 		if(status !== 0)
@@ -183,8 +202,7 @@ io.on('connection', async socket => {
 
 		const currentRoom = getRoomFromPlayer(player);
 
-		if(currentRoom != null)
-			removePlayerFromRoom(player, currentRoom);
+		removePlayerFromRoom(player, currentRoom);
 
 		player.state = 1;
 		player.roomId = room.id;
@@ -200,9 +218,6 @@ io.on('connection', async socket => {
 
 		removePlayerFromRoom(player, room);
 
-		player.roomId = null;
-		player.ready = false;
-		player.index = -1;
 		player.state = 0;
 	});
 

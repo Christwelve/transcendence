@@ -1,0 +1,15 @@
+.card {
+
+	.title {
+		display: flex;
+		align-items: center;
+		margin-bottom: 12px;
+		line-height: 1;
+		color: var(--color-white);
+	}
+
+	.body {
+		display: flex;
+		align-items: flex-start;
+	}
+}

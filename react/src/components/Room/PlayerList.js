@@ -1,4 +1,5 @@
 import React from 'react'
+import Icon from '../Icon/Icon'
 import cls from '../../utils/cls'
 import scss from './PlayerList.module.scss'
 
@@ -12,10 +13,8 @@ function Player(props) {
 					{name}
 				</div>
 				<div className={scss.icon}>
-					<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="feather feather-check">
-						<polyline className={scss.out} points="20 6 9 17 4 12" />
-						<polyline className={scss.in} points="20 6 9 17 4 12" />
-					</svg>
+					<Icon type='award' size='14' classes={scss.award} />
+					<Icon type='check' size='18' classes={scss.check} />
 				</div>
 
 			</div>

@@ -2,8 +2,6 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 2rem;
-  padding: 2rem;
 
   @media (max-width: 768px) {
     flex-direction: column;

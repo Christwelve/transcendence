@@ -1,0 +1,28 @@
+.control {
+	display: flex;
+	align-items: center;
+	justify-content: flex-start;
+
+	.segment {
+		flex: 1;
+		background-color: var(--color-gray-dark);
+		color: var(--color-white);
+		padding: 3px 24px;
+		white-space: nowrap;
+
+		&.active {
+			background-color: var(--color-primary);
+			color: var(--color-black);
+		}
+
+		&:first-child {
+			border-top-left-radius: 6px;
+			border-bottom-left-radius: 6px;
+		}
+
+		&:last-child {
+			border-top-right-radius: 6px;
+			border-bottom-right-radius: 6px;
+		}
+	}
+}
