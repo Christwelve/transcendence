@@ -132,8 +132,8 @@ io.on('connection', async socket => {
 
 	data.players[player.id] = player;
 
-	const room = createRoom(player, {name: 'test', type: 0, playersMax: 4});
-	data.rooms[room.id] = room;
+	// const room = createRoom(player, {name: 'test', type: 0, playersMax: 4});
+	// data.rooms[room.id] = room;
 
 	// ---- test
 	// const roomIds = Reflect.ownKeys(data.rooms);
