@@ -1,11 +1,11 @@
 import React from 'react'
-import List from '../List/List'
-import PlayerListItem from '../PlayerListItem/PlayerListItem'
+import Card from '../Card/Card'
+import CardSection from '../Card/CardSection'
+import PlayerList from './PlayerList'
+import Icon from '../Icon/Icon'
 import {useDataContext} from '../DataContext/DataContext'
 import cls from '../../utils/cls'
 import scss from './Room.module.scss'
-
-const playerListLabels = ['Name', 'Status'];
 
 function Room() {
 
@@ -13,30 +13,38 @@ function Room() {
 	const currentPlayer = getPlayer();
 	const room = getRoom(currentPlayer.roomId);
 
+	if(room == null) {
+		return (
+			<Card title='Room'>
+				<p className={scss.empty}>Click on a room to join or create one.</p>
+			</Card>
+		);
+	}
+
 	const playerList = getPlayerListForRoom(room.id);
 
-	const isMaster = room.masterId === currentPlayer.id;
-	const canStart = playerList.filter(player => player.id !== currentPlayer.id).every(player => player.ready);
+	const isMaster = currentPlayer.id === room.masterId;
+	const canStart = playerList.filter(player => player.id !== room.masterId).every(player => player.ready);
 
-	const rowClasses = player => {
-		const isPlayer = player.id === currentPlayer.id;
-		const isMaster = room.masterId === player.id;
-
-		return cls(isPlayer && scss.player, isMaster && scss.master);
-	};
+	const readyButton = (<button className={cls(scss.primary, scss.ready, currentPlayer.ready && scss.highlight)} onClick={toggleReady}>Ready</button>);
+	const startButton = (<button className={cls(scss.primary, scss.start, canStart && scss.highlight)} disabled={!canStart} onClick={gameStart}>Start</button>);
 
 	return (
-		<div className={scss.room}>
-			<List columnNames={playerListLabels} component={PlayerListItem} items={playerList} rowClasses={rowClasses} />
-			<button onClick={leaveRoom}>Leave</button>
-			{
-				isMaster ?
-					<button disabled={!canStart} onClick={gameStart}>Start</button>
-				:
-					<button onClick={toggleReady}>Ready</button>
-			}
-		</div>
-	)
+		<Card title={`Room · ${room.name}`}>
+			<CardSection title='Players'>
+				<PlayerList players={playerList} currentPlayer={currentPlayer} masterId={room.masterId} />
+			</CardSection>
+			<CardSection title='Controls'>
+				<div className={scss.controls}>
+					<div className={scss.leave} title='Leave Room' onClick={leaveRoom}>
+						<Icon type='chevron_left' size='18' />
+					</div>
+					{isMaster ? startButton : readyButton}
+				</div>
+			</CardSection>
+		</Card>
+	);
 }
+
 
 export default Room;

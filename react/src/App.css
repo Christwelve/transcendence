@@ -1,6 +1,17 @@
 @import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap");
 
+:root {
+	--color-gray-dark: #222;
+	--color-gray-light: #666;
+
+	--color-primary-rgb: 0, 255, 246;
+	--color-primary: rgb(var(--color-primary-rgb));
+
+	--color-white: #fff;
+	--color-black: #000;
+}
+
 html {
 	background-color: #000;
 }
@@ -29,16 +40,29 @@ button {
 	outline: none;
 }
 
+h1, h2, h3, h4, h5, h6 {
+	line-height: 1 !important;
+	margin: 0 !important;
+}
+
 #root {
 	height: 100vh;
 }
 
-#stats {
-	position: fixed;
-	top: 0;
-	left: 0;
+*::-webkit-scrollbar {
+	width: 8px;
 }
 
-#stats > * {
-	padding: 3px;
+*::-webkit-scrollbar-thumb {
+	background: rgba(0, 255, 255, 0.5);
+	border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+	background: rgba(0, 255, 255, 0.8);
+}
+
+*::-webkit-scrollbar-track {
+	background: rgba(18, 18, 18, 0.5);
+	border-radius: 4px;
 }

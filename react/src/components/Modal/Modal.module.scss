@@ -10,14 +10,15 @@
 	backdrop-filter: blur(10px);
 	background-color: rgba(0, 0, 0, 0.1);
 
-	.header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		user-select: none;
-		cursor: default;
+	.modal {
+		background-color: #111;
+		padding: 36px;
+		border-radius: 18px;
 
 		.close {
+			margin-left: auto;
+			color: var(--color-gray-light);
+			transform: rotate(45deg);
 			cursor: pointer;
 		}
 	}
