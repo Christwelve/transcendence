@@ -64,6 +64,13 @@ function TickHandler(props) {
 
 	const tickRef = useRef(null);
 
+	const player = getPlayer();
+	const room = getRoom(player.roomId);
+
+	tickRef.current?.setPlayerIds(room.activePlayers);
+
+	console.log('room', room);
+
 	const callback = tick => {
 		handleInput(tick, sendPlayerEvent);
 		updateEnemyPositions(tick);
@@ -71,12 +78,9 @@ function TickHandler(props) {
 	};
 
 	useEffect(() => {
-		const player = getPlayer();
-		const room = getRoom(player.roomId);
-
 		// TODO: change to reflect actually playing players in tournament mode
 		// TODO: when state changes this will be recreated which might cause issues, or not i think because of [] in dependencies. but if player leaves. view should update, so something needs to change
-		const tick = new ClientTick(player, room.players.length, callback);
+		const tick = new ClientTick(player, room.activePlayers, callback);
 
 		tickRef.current = tick;
 
@@ -250,7 +254,6 @@ function Game(props) {
 
 	const player = getPlayer();
 	const room = getRoom(player.roomId);
-	const playerCount = Math.min(room.players.length, 4);
 
 	const paddleRefs = [
 		useRef(null),
@@ -261,7 +264,7 @@ function Game(props) {
 
 	const ballRef = useRef(null);
 
-	const cuboids = getCuboids(playerCount, paddleRefs, ballRef);
+	const cuboids = getCuboids(room.activePlayers, paddleRefs, ballRef);
 
 	useEffect(() => {
 

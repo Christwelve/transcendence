@@ -11,14 +11,14 @@ let instanceId = 0;
 let instances = [];
 
 class Tick {
-	constructor(playerCount, callback) {
+	constructor(playerIds, callback) {
 		this._id = instanceId++;
 
 		this._tick = 0;
 		this._tickNextAmount = 0;
 		this._callback = callback;
 
-		this._playerCount = playerCount;
+		this._playerIds = playerIds;
 
 		this._queue = [];
 		this._positions = [0, 0, 0, 0];
@@ -137,7 +137,7 @@ class Tick {
 		if(Math.abs(px) > limit || Math.abs(pz) > limit)
 			return this._setBallPosition(0, 0);
 
-		const [boundingBoxesOther, boundingBoxBall] = getBoundingBoxes(this._playerCount, this._positions, this._ballData);
+		const [boundingBoxesOther, boundingBoxBall] = getBoundingBoxes(this._playerIds, this._positions, this._ballData);
 
 		for(const boundingBox of boundingBoxesOther) {
 
@@ -171,8 +171,8 @@ class Tick {
 }
 
 class ClientTick extends Tick {
-	constructor(player, playerCount, callback) {
-		super(playerCount, callback);
+	constructor(player, playerIds, callback) {
+		super(playerIds, callback);
 
 		this._tickOffset = TICK_DEFAULT_OFFSET;
 
@@ -182,6 +182,12 @@ class ClientTick extends Tick {
 		this._history = [];
 
 		this._verifiedPosition = 0;
+	}
+
+	setPlayerIds(playerIds) {
+		this._assertDetached();
+
+		this._playerIds = playerIds;
 	}
 
 	getPlayerIndex() {
@@ -338,10 +344,8 @@ class ClientTick extends Tick {
 }
 
 class ServerTick extends Tick {
-	constructor(players, callback) {
-		super(players.length, callback);
-
-		console.log('players', players.length);
+	constructor(players, playerIds, callback) {
+		super(playerIds, callback);
 
 		this._players = players;
 		this._verifiedEventIds = [0, 0, 0, 0];
@@ -416,6 +420,17 @@ class ServerTick extends Tick {
 		this._players.forEach(player => {
 			io.sockets.sockets.get(player.id)?.emit('round.start', countdown, direction);
 		});
+	}
+
+	removePlayer(player) {
+		this._players = this._players.filter(p => p !== player);
+
+		const index = this._playerIds.indexOf(player.id);
+
+		if(index === -1)
+			return;
+
+		this._playerIds[index] = null;
 	}
 }
 

@@ -58,6 +58,11 @@ function removePlayerFromRoom(player, room) {
 	const playerIndex = players.findIndex(playerId => playerId === player.id);
 	players.splice(playerIndex, 1);
 
+	const game = games[id];
+
+	if(game != null)
+		game.removePlayer(player);
+
 	if(players.length === 0) {
 		games[id]?.detach();
 
@@ -94,6 +99,7 @@ function createRoom(player, options) {
 		status,
 		players,
 		playersMax,
+		activePlayers: [],
 		masterId,
 	};
 }
@@ -245,11 +251,15 @@ io.on('connection', async socket => {
 
 		const players = getPlayersFromRoom(room);
 
+		const activePlayers = players.slice(0, 4);
+		const activePlayerIds = activePlayers.map(player => player.id);
+
 		room.status = 1;
+		room.activePlayers = activePlayerIds;
 
 		players.forEach(player => player.state = 2);
 
-		const game = new ServerTick(players, onTick);
+		const game = new ServerTick(activePlayers, room.activePlayers, onTick);
 
 		games[room.id] = game;
 
