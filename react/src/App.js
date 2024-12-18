@@ -8,6 +8,7 @@ import Page from './pages/Page'
 import ModalPresenter from './components/ModalPresenter'
 import {closeModalTop} from './utils/modal'
 import Cookies from 'js-cookie';
+import TwoFactor from "./components/TwoFactor/TwoFactor";
 
 function App() {
   useEffect(() => {
@@ -30,7 +31,6 @@ function App() {
     const loggedIn = params.get("logged_in");
     console.log("hey");
     if (loggedIn === "true" || Cookies.get('authToken')) {
-      console.log("haaaa");
       fetchUserData(); // Call the function to fetch user data
     }
   }, []);
@@ -39,6 +39,7 @@ function App() {
   const [errorMessage, setErrorMessage] = useState(null);
   const [database, setDatabase] = useState({});
   const [avatar, setAvatar] = useState(null);
+  const [user, setUser] = useState(null);
 
   const changeStatus = (status) => {
     setUserStatus(status);
@@ -58,35 +59,46 @@ function App() {
     }
   };
 
-  const userLogin = async (user) => {
-    const response = await fetch(`http://localhost:8000/api/login/`, {
-      method: "POST",
-      credentials: 'include',
-      body: user,
-    });
+  const userLogin = async (user, authenticated) => {
+    if (authenticated) {
+      const response = await fetch(`http://localhost:8000/api/login/`, {
+        method: "POST",
+        credentials: 'include',
+        body: user,
+      });
 
-    const userData = await response.json();
+      const userData = await response.json();
 
-    if (!response.ok) {
-      if (response.status === 400 || response.status === 404) {
-        setErrorMessage("Wrong credentials!");
-        console.log("hey");
+      if (!response.ok) {
+        if (response.status === 400 || response.status === 404) {
+          setErrorMessage("Wrong credentials!");
+          console.log("hey");
+        } else if (response.status === 401) {
+          setErrorMessage("Unable to authenticate!");
+        } else {
+          console.error("An unexpected error occurred:", response.statusText);
+        }
       } else {
-        console.error("An unexpected error occurred:", response.statusText);
+        console.log("user:", userData.user);
+        if(!userData.user.avatar)
+          setAvatar(`https://robohash.org/${userData.username}?200x200`);
+        else {
+          const avatarIcon = (userData.user.avatar).split('/').pop();
+          setAvatar(`http://localhost:8000/media/avatars/${avatarIcon}`);
+        }
+
+        //when we change the domain to a secure one we must add { secure: true } as 3rd parameter
+        Cookies.set('authToken', userData.token);
+        setUserStatus("logged");
+        setErrorMessage(null);
+        setUser(userData.user);
       }
     } else {
-      console.log("user:", userData.user);
-      if(!userData.user.avatar)
-        setAvatar(`https://robohash.org/${userData.username}?200x200`);
-      else {
-        const avatarIcon = (userData.avatar).split('/').pop();
-        setAvatar(`http://localhost:8000/media/avatars/${avatarIcon}`);
-      }
-
-      //when we change the domain to a secure one we must add { secure: true } as 3rd parameter
-      Cookies.set('authToken', userData.token);
-      setUserStatus("logged");
+      setUserStatus("2fa");
       setErrorMessage(null);
+      const userObject = Object.fromEntries(user.entries());
+      console.log("user:", userObject);
+      setUser(userObject);
     }
   };
 
@@ -127,8 +139,15 @@ function App() {
       }
 
       const user = await response.json();
-      if (user.avatar)
-        setAvatar(user.avatar);
+      if (user.avatar) {
+        if (user.avatar.includes('avatars/')) {
+          const avatarIcon = (user.avatar).split('/').pop();
+          setAvatar(`http://localhost:8000/media/avatars/${avatarIcon}`);
+        } else {
+          setAvatar(user.avatar);
+        }
+
+      }
       else
         setAvatar(`https://robohash.org/${user.username}?200x200`);
       setUserStatus("logged");
@@ -154,8 +173,14 @@ function App() {
           userLogin={userLogin}
           errorMessage={errorMessage}
         />
+      ) : userStatus === "2fa" ? (
+        <TwoFactor
+          changeStatus={changeStatus}
+          userLogin={userLogin}
+          errorMessage={errorMessage}
+          user={user}
+        />
       ) : (
-
         <DataContextProvider>
           <Page />
           <ModalPresenter />

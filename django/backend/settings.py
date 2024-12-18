@@ -50,10 +50,9 @@ INSTALLED_APPS = [
 
     #for 2FA
 	'django_otp',
+    'django_otp.plugins.otp_static',
     'django_otp.plugins.otp_totp',
     'two_factor',
-    'two_factor.plugins.phonenumber',
-	'django.contrib.sites',
 
     #local apps
     'api',
@@ -63,10 +62,10 @@ MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-	'django_otp.middleware.OTPMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+	'django_otp.middleware.OTPMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -188,7 +187,7 @@ OAUTH2_PROVIDER = {
     'SCOPE': {'public': 'Public access'},  # Adjust scopes based on your needs
 }
 
-LOGIN_URL = '/admin/login/'
+# LOGIN_URL = '/admin/login/'
 URL_42 = 'https://api.intra.42.fr/oauth/authorize?client_id=u-s4t2ud-35200b91dbc192b0409be4fe981c496c78f0d18c705602b771e804d09f4fabab&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fapi%2F42%2Flogin%2Fcallback%2F&response_type=code'
 
 #needed for authentication
@@ -217,3 +216,5 @@ SITE_ID = 1
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
+
+LOGIN_URL = 'two_factor:login'

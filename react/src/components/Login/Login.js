@@ -25,7 +25,7 @@ const Login = ({ changeStatus, userLogin, errorMessage }) => {
   const _onFormSubmit = (event) => {
     event.preventDefault();
     const user = createUser();
-    userLogin(user);
+    userLogin(user, false);
   };
   return (
     <div className="container">

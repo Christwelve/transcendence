@@ -2,17 +2,56 @@ import requests
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from .models import User, Match, Statistic
 from .serializers import UserSerializer, MatchSerializer, StatisticSerializer
 from django.contrib.auth.hashers import make_password, check_password
-from django.shortcuts import get_object_or_404, redirect, render
-from django.http import HttpResponseRedirect, JsonResponse
+from django.shortcuts import get_object_or_404, redirect
+from django.http import JsonResponse
 
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
+from django_otp.plugins.otp_totp.models import TOTPDevice
+import qrcode
+import io
+import base64
+from django_otp import devices_for_user
+
+@api_view(['POST'])
+def setup_2fa(request):
+    username = request.data['username']
+    user = get_object_or_404(User, username=username)  # Assuming the user is authenticated
+
+    existing_device = TOTPDevice.objects.filter(user=user, confirmed=False).first()
+    confirmed_device = TOTPDevice.objects.filter(user=user, confirmed=True).first()
+    if existing_device or confirmed_device:
+        if confirmed_device:
+            device = confirmed_device  # Reuse the existing unconfirmed device
+        else:
+            device = existing_device
+    else:
+        # Create a new TOTP device
+        device = TOTPDevice.objects.create(user=user, name=username, confirmed=False)
+
+    # Generate a QR code for the TOTP device
+    qr_code_data = device.config_url
+    qr = qrcode.QRCode(version=1, box_size=10, border=5)
+    qr.add_data(qr_code_data)
+    qr.make(fit=True)
+
+    # Convert QR code to an image
+    img = io.BytesIO()
+    qr.make_image(fill="black", back_color="white").save(img, format="PNG")
+    img.seek(0)
+
+    # Encode QR code as Base64
+    qr_code_base64 = base64.b64encode(img.getvalue()).decode()
+
+    # Return the QR code as a response
+    return Response({
+        "qr_code": f"data:image/png;base64,{qr_code_base64}",  # Frontend-friendly QR code
+        "manual_entry_key": device.key  # Manual entry key for users without QR code scanning
+    }, status=200)
 
 @api_view(['GET'])
 def login_with_42(request):
@@ -100,18 +139,37 @@ def get_user_data(request):
         return JsonResponse({'error': 'No user data found', 'session': request.session.get('user_data')}, status=404)
     return JsonResponse(user_data)
 
+
 @api_view(['POST'])
 def login_view(request):
     if request.method == 'POST':
         username = request.data['username']
         password = request.data['password']
+        otp_token = request.data['otp_token']
         user = get_object_or_404(User, username=username)
         if check_password(password, user.password):
+            totp_device = TOTPDevice.objects.filter(user=user, confirmed=True).first()
+            if not totp_device:
+                 # Retrieve the unconfirmed TOTP device
+                totp_device = TOTPDevice.objects.filter(user=user, confirmed=False).first()
+                if not totp_device:
+                    return Response({'error': 'No 2FA device found'}, status=status.HTTP_401_UNAUTHORIZED)
+                else:
+                    totp_device.confirmed = True
+                    totp_device.save()
+
+            if totp_device:  # If user has a TOTP device, validate the token
+                if not otp_token:  # If no 2FA token is provided, return an error
+                    return Response({'error': '2FA token is required'}, status=status.HTTP_401_UNAUTHORIZED)
+                if not totp_device.verify_token(otp_token):  # Validate the token
+                    return Response({'error': 'Invalid 2FA token'}, status=status.HTTP_401_UNAUTHORIZED)
+
             token, _ = Token.objects.get_or_create(user=user)  # Efficient token retrieval
             serializer = UserSerializer(user)
             request.session['user_data'] = {
                 'username': user.username,
                 'email': user.email,
+                'avatar': str(user.avatar),
             }
             request.session.save()
             return Response({

@@ -11,5 +11,6 @@ urlpatterns = [
     path('login/', views.login_view, name='login_view'),
 	path('auth/42/login/', views.login_with_42, name='login_with_42'),
     path('42/login/callback/', views.login_with_42_callback, name='login_with_42_callback'),
+	path('2fa/generate/', views.setup_2fa, name='2fa_setup'),
 	path('o/', include(oauth2_urls)),
 ]
