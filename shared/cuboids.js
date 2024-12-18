@@ -79,13 +79,13 @@ function getPaddles(playerIds, paddleRefs = []) {
 	const paddles = [];
 
 	if(playerIds[0])
-		paddles.push({position: [0, 0, -halfSize], size: paddleSizeVertical, color: colors[0], axis: 'x', ref: paddleRefs[0]});
+		paddles.push({position: [0, 0, -halfSize], size: paddleSizeVertical, color: colors[0], axis: 'x', playerIndex: 0, ref: paddleRefs[0]});
 	if(playerIds[1])
-		paddles.push({position: [0, 0, halfSize], size: paddleSizeVertical, color: colors[1], axis: 'x', ref: paddleRefs[1]});
+		paddles.push({position: [0, 0, halfSize], size: paddleSizeVertical, color: colors[1], axis: 'x', playerIndex: 1, ref: paddleRefs[1]});
 	if(playerIds[2])
-		paddles.push({position: [-halfSize, 0, 0], size: paddleSizeHorizontal, color: colors[2], axis: 'z', ref: paddleRefs[2]});
+		paddles.push({position: [-halfSize, 0, 0], size: paddleSizeHorizontal, color: colors[2], axis: 'z', playerIndex: 2, ref: paddleRefs[2]});
 	if(playerIds[3])
-		paddles.push({position: [halfSize, 0, 0], size: paddleSizeHorizontal, color: colors[3], axis: 'z', ref: paddleRefs[3]});
+		paddles.push({position: [halfSize, 0, 0], size: paddleSizeHorizontal, color: colors[3], axis: 'z', playerIndex: 3, ref: paddleRefs[3]});
 
 	return paddles;
 }
@@ -174,16 +174,17 @@ function getBoundingBoxesBorders(playerIds) {
 function getBoundingBoxesPaddles(playerIds, playerPositions) {
 	const paddles = getPaddles(playerIds);
 
-	const boundingBoxesPaddles = paddles.map((paddle, i) => {
+	const boundingBoxesPaddles = paddles.map(paddle => {
 		const {position, axis} = paddle;
+		const playerIndex = paddle.playerIndex;
 		const axisIndex = {x: 0, z: 2}[axis];
-		const playerPosition = playerPositions[i];
+		const playerPosition = playerPositions[playerIndex];
 
 		position[axisIndex] = playerPosition;
 
 		const boundingBox = calculateBoundingBox(paddle);
 
-		boundingBox.playerIndex = i;
+		boundingBox.playerIndex = playerIndex;
 
 		return boundingBox;
 	});

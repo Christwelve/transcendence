@@ -11,14 +11,12 @@ let instanceId = 0;
 let instances = [];
 
 class Tick {
-	constructor(playerIds, callback) {
+	constructor(callback) {
 		this._id = instanceId++;
 
 		this._tick = 0;
 		this._tickNextAmount = 0;
 		this._callback = callback;
-
-		this._playerIds = playerIds;
 
 		this._queue = [];
 		this._positions = [0, 0, 0, 0];
@@ -121,8 +119,13 @@ class Tick {
 			this._positions[playerIndex] = -limit;
 	}
 
-	moveBall() {
+	moveBall(activePlayers) {
 		this._assertDetached();
+
+		if(activePlayers == null)
+			return;
+
+		// console.log('moveBall', activePlayers);
 
 		const [x, z, dx, dz] = this._ballData;
 
@@ -137,7 +140,7 @@ class Tick {
 		if(Math.abs(px) > limit || Math.abs(pz) > limit)
 			return this._setBallPosition(0, 0);
 
-		const [boundingBoxesOther, boundingBoxBall] = getBoundingBoxes(this._playerIds, this._positions, this._ballData);
+		const [boundingBoxesOther, boundingBoxBall] = getBoundingBoxes(activePlayers, this._positions, this._ballData);
 
 		for(const boundingBox of boundingBoxesOther) {
 
@@ -171,8 +174,8 @@ class Tick {
 }
 
 class ClientTick extends Tick {
-	constructor(player, playerIds, callback) {
-		super(playerIds, callback);
+	constructor(player, callback) {
+		super(callback);
 
 		this._tickOffset = TICK_DEFAULT_OFFSET;
 
@@ -344,9 +347,10 @@ class ClientTick extends Tick {
 }
 
 class ServerTick extends Tick {
-	constructor(players, playerIds, callback) {
-		super(playerIds, callback);
+	constructor(roomId, players, callback) {
+		super(callback);
 
+		this._roomId = roomId;
 		this._players = players;
 		this._verifiedEventIds = [0, 0, 0, 0];
 
@@ -422,15 +426,8 @@ class ServerTick extends Tick {
 		});
 	}
 
-	removePlayer(player) {
-		this._players = this._players.filter(p => p !== player);
-
-		const index = this._playerIds.indexOf(player.id);
-
-		if(index === -1)
-			return;
-
-		this._playerIds[index] = null;
+	getRoomId() {
+		return this._roomId;
 	}
 }
 

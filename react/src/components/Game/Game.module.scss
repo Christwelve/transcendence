@@ -24,21 +24,21 @@
 			font-weight: 900;
 
 			&.n3 {
-				color: hsla(4deg, 90%, 58%, 0.5);
-				-webkit-text-stroke: 3px hsl(4deg, 90%, 58%);
-				text-shadow: 0 0 8px hsl(4deg, 90%, 58%);
+				color: var(--color-red-trans);
+				-webkit-text-stroke: 3px var(--color-red);
+				text-shadow: 0 0 8px var(--color-red);
 			}
 
 			&.n2 {
-				color: hsla(36deg, 100%, 50%, 0.5);
-				-webkit-text-stroke: 3px hsl(36deg, 100%, 50%);
-				text-shadow: 0 0 8px hsl(36deg, 100%, 50%);
+				color: var(--color-orange-trans);
+				-webkit-text-stroke: 3px var(--color-orange);
+				text-shadow: 0 0 8px var(--color-orange);
 			}
 
 			&.n1 {
-				color: hsla(54deg, 100%, 62%, 0.5);
-				-webkit-text-stroke: 3px hsl(54deg, 100%, 62%);
-				text-shadow: 0 0 8px hsl(54deg, 100%, 62%);
+				color: var(--color-yellow-trans);
+				-webkit-text-stroke: 3px var(--color-yellow);
+				text-shadow: 0 0 8px var(--color-yellow);
 			}
 
 			&.n0 {

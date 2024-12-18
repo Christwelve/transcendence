@@ -1,8 +1,8 @@
 import React, {createContext, useContext, useState, useReducer, useEffect, useRef} from 'react'
 import io from 'socket.io-client'
+import {showToast} from '../Toast/ToastPresenter'
 
 const SOCKET_SERVER_URL = `http://${window.location.hostname}:4000`;
-// const SOCKET_SERVER_URL = `http://192.168.86.218:4000`;
 
 
 const DataContext = createContext();
@@ -17,12 +17,14 @@ function DataContextProvider(props) {
 	const {children} = props;
 
 	const dataDefault = {
-		rooms: [],
-		players: [],
+		rooms: {},
+		players: {},
 	};
 
 	const [userId, setUserId] = useState(null);
 	const [data, setData] = useReducer(dataReducer, dataDefault);
+
+	console.log('data', data.rooms);
 
 	const socketRef = useRef(null);
 	const send = socketRef.current?.emit?.bind(socketRef.current);
@@ -36,16 +38,32 @@ function DataContextProvider(props) {
 			console.log('Connected to server');
 		});
 
-		// const game = new Game(ENUM_SIDE_CLIENT, {statsUpdate});
+		socket.on('reconnect', () => {
+			socket.emit('initial');
+		});
 
-		socket.on('user.id', id => setUserId(id));
+		socket.on('initial', payload => {
+			const {id, data} = payload;
+
+			setUserId(id);
+			setData([{action: 'overwrite', value: data}]);
+		});
+
 		socket.on('instruction', instructions => setData(instructions));
+
+		socket.on('notice', showToast);
+
+		socket.emit('initial');
 
 		return () => {
 			socket.disconnect();
 		};
 
 	}, []);
+
+	useEffect(() => {
+		console.log('DataContextProvider re-rendered');
+	});
 
 	const fns = {
 		getPlayer: getPlayer.bind(null, data, userId),
@@ -55,6 +73,7 @@ function DataContextProvider(props) {
 		getPlayerListForRoom: getPlayerListForRoom.bind(null, data),
 		createRoom: createRoom.bind(null, send),
 		joinRoom: joinRoom.bind(null, send),
+		quickJoinRoom: quickJoinRoom.bind(null, send),
 		leaveRoom: leaveRoom.bind(null, send),
 		toggleReady: toggleReady.bind(null, send),
 		gameStart: gameStart.bind(null, send),
@@ -77,22 +96,27 @@ function dataReducer(state, instructions) {
 	if(instructions === lastInstructions)
 		return state;
 
-	console.log(instructions);
-
 	const fns = {
 		object: applyStateObject,
 		array: applyStateArray,
 	};
 
+	console.log('state', state);
+	console.log('inst', instructions);
+
+	let newState = {...state};
+
 	for(const instruction of instructions) {
 		const {type, action, path, value} = instruction;
 
 		if(action === 'overwrite') {
-			state = value;
+			newState = {...newState, ...value};
 			continue;
 		}
 
-		const [entity, property] = getEntity(state, path);
+		const [entity, property] = getEntity(newState, path);
+
+		console.log(entity, property, action, value);
 
 		if(entity == null)
 			continue;
@@ -102,7 +126,9 @@ function dataReducer(state, instructions) {
 
 	lastInstructions = instructions;
 
-	return {...state};
+	console.log('newState', newState);
+
+	return {...newState};
 }
 
 function applyStateObject(entity, property, action, value) {
@@ -152,6 +178,7 @@ function getRoom(data, roomId) {
 }
 
 function getRoomList(data) {
+	console.log('getRoomList', data);
 	return Object.values(data.rooms);
 }
 
@@ -160,10 +187,15 @@ function getPlayerList(data) {
 };
 
 function getPlayerListForRoom(data, roomId) {
-  if (!roomId) return [];
-  const room = data.rooms[roomId];
-  if (!room) return [];
-  return room.players.map(playerId => data.players[playerId] || {});
+	if(roomId == null)
+		return [];
+
+	const room = data.rooms[roomId];
+
+	if(room == null)
+		return [];
+
+	return room.players.map(playerId => data.players[playerId]);
 }
 
 function createRoom(send, options) {
@@ -172,6 +204,10 @@ function createRoom(send, options) {
 
 function joinRoom(send, roomId) {
 	send('room.join', {id: roomId});
+}
+
+function quickJoinRoom(send) {
+	send('room.join.quick');
 }
 
 function leaveRoom(send) {

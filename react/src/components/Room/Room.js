@@ -1,4 +1,4 @@
-import React from 'react'
+import React, {useEffect} from 'react'
 import Card from '../Card/Card'
 import CardSection from '../Card/CardSection'
 import PlayerList from './PlayerList'
@@ -13,10 +13,33 @@ function Room() {
 	const currentPlayer = getPlayer();
 	const room = getRoom(currentPlayer.roomId);
 
+	useEffect(() => {
+		const onKeydown = event => {
+			const {code} = event;
+
+			const isMaster = currentPlayer.id === room?.masterId;
+
+			if(code !== 'KeyR')
+				return;
+
+			if(isMaster)
+				gameStart();
+			else
+				toggleReady();
+		};
+
+		window.addEventListener('keydown', onKeydown);
+
+		return () => {
+			window.removeEventListener('keydown', onKeydown);
+		}
+
+	}, [room]);
+
 	if(room == null) {
 		return (
 			<Card title='Room'>
-				<p className={scss.empty}>Click on a room to join or create one.</p>
+				<p className={scss.empty}>Create a room or click on an existing one to join it.</p>
 			</Card>
 		);
 	}

@@ -5,6 +5,7 @@ import Login from "./components/Login/Login";
 import Home from "./components/Home/Home";
 import DataContextProvider from './components/DataContext/DataContext'
 import ModalPresenter from './components/Modal/ModalPresenter'
+import ToastPresenter from './components/Toast/ToastPresenter'
 import { closeModalTop } from './utils/modal'
 
 function App() {
@@ -155,6 +156,7 @@ function App() {
         <DataContextProvider>
           <Home changeStatus={changeStatus} avatar={avatar} />
           <ModalPresenter />
+          <ToastPresenter />
         </DataContextProvider>
 
 			)}

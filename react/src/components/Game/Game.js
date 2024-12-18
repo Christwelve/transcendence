@@ -46,13 +46,23 @@ function ResizeListener() {
 	return null;
 }
 
-function CameraLookAt() {
+function CameraLookAt(props) {
+	const {playerIndex} = props;
 	const {camera} = useThree();
 
 	useEffect(() => {
+		const multiplier = playerIndex % 2 === 0 ? -1 : 1;
+		const distance = sizes.boardSize * 1.5;
+		const axis = playerIndex > 1 ? 'x' : 'z';
+		const position = distance * multiplier;
+
+		camera.position.y = sizes.boardSize / 1.5;
+		camera.position[axis] = position;
+
 		const targetPosition = [0, 0, 0];
 		camera.lookAt(...targetPosition);
-	}, [camera]);
+
+	}, [camera, playerIndex]);
 
 	return null;
 }
@@ -63,24 +73,27 @@ function TickHandler(props) {
 	const {getPlayer, getRoom, useListener, requestServerTick, requestTickAdjust, sendPlayerEvent} = useDataContext();
 
 	const tickRef = useRef(null);
+	const roomRef = useRef(null);
 
 	const player = getPlayer();
 	const room = getRoom(player.roomId);
 
+	roomRef.current = room;
+
 	tickRef.current?.setPlayerIds(room.activePlayers);
 
-	console.log('room', room);
+	console.log('activePlayers', room.activePlayers, 'i', player.index);
 
 	const callback = tick => {
 		handleInput(tick, sendPlayerEvent);
 		updateEnemyPositions(tick);
-		tick.moveBall();
+		tick.moveBall(roomRef.current?.activePlayers);
 	};
 
 	useEffect(() => {
 		// TODO: change to reflect actually playing players in tournament mode
 		// TODO: when state changes this will be recreated which might cause issues, or not i think because of [] in dependencies. but if player leaves. view should update, so something needs to change
-		const tick = new ClientTick(player, room.activePlayers, callback);
+		const tick = new ClientTick(player, callback);
 
 		tickRef.current = tick;
 
@@ -124,11 +137,11 @@ function TickHandler(props) {
 
 		// TODO: add fast forward or wait if tick adjusted
 
-		console.log('before: t', type, 'st', value, 'ct', tick.getTick());
+		// console.log('before: t', type, 'st', value, 'ct', tick.getTick());
 
 		fn.call(tick, value);
 
-		console.log(' after: t', type, 'ad', value, 'ct', tick.getTick());
+		// console.log(' after: t', type, 'ad', value, 'ct', tick.getTick());
 	});
 
 	useListener('game.update', payload => {
@@ -154,7 +167,7 @@ function TickHandler(props) {
 	useListener('ball.collision', (tickServer, verifiedBallData) => {
 		const tick = tickRef.current;
 
-		console.log('collision', tickServer, verifiedBallData);
+		// console.log('collision', tickServer, verifiedBallData);
 
 		tick.reconcileBall(tickServer, verifiedBallData);
 	});
@@ -289,7 +302,7 @@ function Game(props) {
 				}
 			}>
 				<ResizeListener />
-				<CameraLookAt />
+				<CameraLookAt playerIndex={player.index} />
 				<TickHandler paddleRefs={paddleRefs} ballRef={ballRef} countdownState={[countdown, setCountdown]} />
 				<ambientLight intensity={Math.PI / 2} />
 				<spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} decay={0} intensity={Math.PI} />
