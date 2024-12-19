@@ -1,18 +1,20 @@
-import React from "react";
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styles from "./Statistics.module.scss";
 
-// const Statistics = () => {
-//   return (
-//     <div>
-//       <h1>Statistics</h1>
-//     </div>
-//   );
-// };
-
-// export default Statistics;
 const Statistics = () => {
   const [isStatisticsOpen, setIsStatisticsOpen] = useState(false);
+  const [isMatchHistoryOpen, setIsMatchHistoryOpen] = useState(false);
+  const [winRate, setWinRate] = useState(33);
+  const [wins, setWins] = useState(531);
+  const [losses, setLosses] = useState(32);
+  const [totalGoalsScored, setTotalGoalsScored] = useState(400);
+  const [totalGoalsReceived, setTotalGoalsReceived] = useState(200);
+
+  useEffect(() => {
+    if (!isStatisticsOpen) {
+      setIsMatchHistoryOpen(false);
+    }
+  }, [isStatisticsOpen]);
 
   return (
     <div
@@ -30,15 +32,28 @@ const Statistics = () => {
       </button>
       {isStatisticsOpen && (
         <div className={styles.statistics__box}>
-          <h2>Statistics</h2>
           <div>
-            <h3>Data Overview:</h3>
-            <p>Here is some filler text for the data overview section.</p>
+            <h3>User data Overview:</h3>
+            <p>WINRATE: {winRate}</p>
+            <p>WINS: {wins}</p>
+            <p>LOSSES: {losses}</p>
+            <p>Total goals scored: {totalGoalsScored}</p>
+            <p>Total goals received: {totalGoalsReceived}</p>
           </div>
-          <div>
-            <h3>Detailed Analysis:</h3>
-            <p>Here is some filler text for the detailed analysis section.</p>
-          </div>
+          <button
+            className={`${styles.matchHistory__box__toggle} ${
+              isMatchHistoryOpen ? styles.statistics__close : ""
+            }`}
+            onClick={() => setIsMatchHistoryOpen((prev) => !prev)}
+          >
+            {isMatchHistoryOpen ? "Close Match History" : "View Match History"}
+          </button>
+          {isMatchHistoryOpen && (
+            <div className={styles.matchHistory__box}>
+              <h3>Match History</h3>
+              {/* Add match history content here */}
+            </div>
+          )}
         </div>
       )}
     </div>
