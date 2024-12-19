@@ -10,6 +10,24 @@ const Statistics = () => {
   const [totalGoalsScored, setTotalGoalsScored] = useState(400);
   const [totalGoalsReceived, setTotalGoalsReceived] = useState(200);
 
+  const mockMatchHistory = [
+    {
+      matchId: 1,
+      goalsScored: 5,
+      goalsReceived: 3,
+    },
+    {
+      matchId: 2,
+      goalsScored: 2,
+      goalsReceived: 4,
+    },
+    {
+      matchId: 3,
+      goalsScored: 6,
+      goalsReceived: 6,
+    },
+  ];
+
   useEffect(() => {
     if (!isStatisticsOpen) {
       setIsMatchHistoryOpen(false);
@@ -50,8 +68,34 @@ const Statistics = () => {
           </button>
           {isMatchHistoryOpen && (
             <div className={styles.matchHistory__box}>
-              <h3>Match History</h3>
-              {/* Add match history content here */}
+              <div className={styles.matchHistory__box__content}>
+                <h3>Match History</h3>
+                <ul>
+                  {mockMatchHistory.map((match) => (
+                    <li key={match.matchId}>
+                      <p>Match ID: {match.matchId}</p>
+                      <p>Goals Scored: {match.goalsScored}</p>
+                      <p>Goals Received: {match.goalsReceived}</p>
+                      <p
+                        className={`${styles.result} ${
+                          match.goalsScored > match.goalsReceived
+                            ? styles.win
+                            : match.goalsScored < match.goalsReceived
+                            ? styles.loss
+                            : styles.draw
+                        }`}
+                      >
+                        Result:{" "}
+                        {match.goalsScored > match.goalsReceived
+                          ? "Win"
+                          : match.goalsScored < match.goalsReceived
+                          ? "Loss"
+                          : "Draw"}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           )}
         </div>

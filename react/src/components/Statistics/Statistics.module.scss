@@ -78,6 +78,7 @@ $background-color: #000000;
 
 .matchHistory__box {
     margin-left: 10px;
+    margin-top: -250px;
     position: absolute;
     top: 0;
     left: 100%;
@@ -93,6 +94,7 @@ $background-color: #000000;
     opacity: 1;
     transform: translateY(100%);
     transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+    overflow: hidden;
 
     &.open {
         opacity: 1;
@@ -140,6 +142,39 @@ $background-color: #000000;
             margin-bottom: 12px;
         }
     }
+    
+    &__content {
+        padding: 20px;
+        overflow-y: auto;
+        flex-grow: 1;
+
+        h3 {
+            font-family: "Orbitron", sans-serif;
+            color: $primary-color;
+            text-shadow: 0 0 10px $primary-color;
+            margin-bottom: 12px;
+        }
+
+        p {
+            font-family: "Roboto", sans-serif;
+            color: $text-color;
+            margin-bottom: 12px;
+        }
+    }
+}
+
+.result {
+  font-size: 1.5rem;
+  font-weight: bold;
+  &.win {
+    color: green;
+  }
+  &.loss {
+    color: red;
+  }
+  &.draw {
+    color: yellow;
+  }
 }
 
 @media screen and (max-width: 768px) {
