@@ -72,7 +72,8 @@ const Statistics = () => {
                 <h3>Match History</h3>
                 <ul>
                   {mockMatchHistory.map((match) => (
-                    <li key={match.matchId}>
+                    <li key={match.matchId} className={styles.list}>
+                      {/* <li key={match.matchId}> */}
                       <p>Match ID: {match.matchId}</p>
                       <p>Goals Scored: {match.goalsScored}</p>
                       <p>Goals Received: {match.goalsReceived}</p>

@@ -177,6 +177,24 @@ $background-color: #000000;
   }
 }
 
+.list {
+    position: relative;
+    bottom: -30px;
+    left: -25px;
+    padding: 10px 35px;
+    background: rgba(212, 17, 192, 0.295);
+    color: $primary-color;
+    border: 1px solid $primary-color;
+    border-radius: 8px;
+    cursor: pointer;
+    text-transform: uppercase;
+    font-family: "Orbitron", sans-serif;
+    font-size: 1rem;
+    z-index: 1100;
+    box-shadow: 0 0 10px rgba(117, 17, 112, 0.8);
+  }
+
+
 @media screen and (max-width: 768px) {
     .statistics {
         width: 90%;
