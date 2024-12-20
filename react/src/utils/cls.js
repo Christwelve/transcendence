@@ -1,3 +1,3 @@
-const cls = (...clss) => clss.filter(cls => cls != null).join(' ');
+const cls = (...classes) => classes.flat(Infinity).filter(cls => cls).join(' ');
 
 export default cls;

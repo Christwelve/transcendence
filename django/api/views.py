@@ -3,8 +3,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.authtoken.models import Token
-from .models import User, Match, Statistic
-from .serializers import UserSerializer, MatchSerializer, StatisticSerializer
+from .models import User, Match, Statistic, Friend
+from .serializers import UserSerializer, MatchSerializer, StatisticSerializer, FriendSerializer
 from django.contrib.auth.hashers import make_password, check_password
 from django.shortcuts import get_object_or_404, redirect
 from django.http import JsonResponse
@@ -189,7 +189,6 @@ def user_view(request, username=None):
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             users = User.objects.all()
-            print(request)
             serializer = UserSerializer(users, many=True, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
     elif request.method == 'POST':
@@ -226,3 +225,73 @@ def statistic_view(request):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+def fetch_friends(request):
+    try:
+        # Hardcode the user for testing purposes,
+        # bypassing permissions and authentications issues
+        # TODO: This must be changed, once the auth is done!        
+        user = User.objects.first()
+        if not user:
+            return Response({'error': 'No users found'}, status=404)
+
+        friends = Friend.objects.filter(user=user)
+        serializer = FriendSerializer(friends, many=True)
+        return Response({'friends': serializer.data}, status=200)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+
+@api_view(['GET'])
+def search_users(request):
+    try:
+        query = request.GET.get('query', '').strip()
+        if not query:
+            return Response({'error': 'Query parameter is required'}, status=400)
+        users = User.objects.filter(username__icontains=query)
+        if not users.exists():
+            return Response({'detail': 'No User matches the given query.'}, status=200)
+        results = [{'id': user.id, 'username': user.username} for user in users]
+        return Response({'users': results}, status=200)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+
+@api_view(['POST'])
+def add_friend(request):
+    try:
+        # Hardcode the user for testing purposes,
+        # bypassing permissions and authentications issues
+        # TODO: This must be changed, once the auth is done!
+        user = User.objects.get(username='fvoicu') 
+        
+        friend_username = request.data.get('username')
+        if not friend_username:
+            return Response({'error': 'Username is required'}, status=400)
+        
+        friend = User.objects.filter(username=friend_username).first()
+        if not friend:
+            return Response({'error': 'User not found'}, status=404)
+
+        # TODO: Add "already friends" scenario
+        Friend.objects.get_or_create(user=user, friend=friend)
+        return Response({'message': f'{friend_username} added as a friend!'}, status=201)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+
+
+@api_view(['POST'])
+def remove_friend(request):
+    # Hardcode the user for testing purposes,
+    # bypassing permissions and authentications issues
+    # TODO: This must be changed, once the auth is done!
+    user = User.objects.get(username='fvoicu') 
+    friend_username = request.data.get('username')
+    try:
+        friend = User.objects.get(username=friend_username)
+        Friend.objects.filter(user=user, friend=friend).delete()
+        return Response({'message': f'{friend_username} removed from your friends!'}, status=200)
+    except User.DoesNotExist:
+        return Response({'error': 'User not found'}, status=404)

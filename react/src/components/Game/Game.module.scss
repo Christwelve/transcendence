@@ -1,0 +1,49 @@
+.wrapper {
+	position: relative;
+
+	.canvas, .ui {
+		position: absolute;
+		top: 0;
+		left: 0;
+	}
+
+	.ui {
+		font-family: 'Orbitron', sans-serif;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 100%;
+		height: 100vh;
+
+		&.darken {
+			background-color: rgba(0, 0, 0, 0.8);
+		}
+
+		.countdown {
+			font-size: 120px;
+			font-weight: 900;
+
+			&.n3 {
+				color: hsla(4deg, 90%, 58%, 0.5);
+				-webkit-text-stroke: 3px hsl(4deg, 90%, 58%);
+				text-shadow: 0 0 8px hsl(4deg, 90%, 58%);
+			}
+
+			&.n2 {
+				color: hsla(36deg, 100%, 50%, 0.5);
+				-webkit-text-stroke: 3px hsl(36deg, 100%, 50%);
+				text-shadow: 0 0 8px hsl(36deg, 100%, 50%);
+			}
+
+			&.n1 {
+				color: hsla(54deg, 100%, 62%, 0.5);
+				-webkit-text-stroke: 3px hsl(54deg, 100%, 62%);
+				text-shadow: 0 0 8px hsl(54deg, 100%, 62%);
+			}
+
+			&.n0 {
+				display: none;
+			}
+		}
+	}
+}
