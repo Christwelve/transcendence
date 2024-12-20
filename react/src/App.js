@@ -3,34 +3,29 @@ import "./App.css";
 import Register from "./components/Register/Register";
 import Login from "./components/Login/Login";
 import Home from "./components/Home/Home";
-import DataContextProvider from './components/DataContext'
-import Page from './pages/Page'
-import ModalPresenter from './components/ModalPresenter'
-import {closeModalTop} from './utils/modal'
 import Cookies from 'js-cookie';
 import TwoFactor from "./components/TwoFactor/TwoFactor";
+import DataContextProvider from './components/DataContext/DataContext';
+import ModalPresenter from './components/Modal/ModalPresenter';
+import { closeModalTop } from './utils/modal';
 
 function App() {
+	useEffect(() => {
+
+    const onKeyDown = event => {
+      if (event.code !== 'Escape')
+        return;
+
+      closeModalTop();
+    }
+
+    document.addEventListener('keydown', onKeyDown);
+
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, []);
+
   useEffect(() => {
-
-		const onKeyDown = event => {
-			if(event.code !== 'Escape')
-				return;
-
-			closeModalTop();
-		}
-
-		document.addEventListener('keydown', onKeyDown);
-
-		return () => document.removeEventListener('keydown', onKeyDown);
-	}, []);
-
-  useEffect(() => {
-    // Check for `logged_in=true` in the query string
-    const params = new URLSearchParams(window.location.search);
-    const loggedIn = params.get("logged_in");
-    console.log("hey");
-    if (loggedIn === "true" || Cookies.get('authToken')) {
+    if (Cookies.get('login')) {
       fetchUserData(); // Call the function to fetch user data
     }
   }, []);
@@ -41,23 +36,23 @@ function App() {
   const [avatar, setAvatar] = useState(null);
   const [user, setUser] = useState(null);
 
-  const changeStatus = (status) => {
-    setUserStatus(status);
-  };
+	const changeStatus = (status) => {
+		setUserStatus(status);
+	};
 
-  const addUserToDatabase = (user) => {
-    if (!database[user.username]) {
-      const updatedDatabase = {
-        ...database,
-        [user.username]: { email: user.email, password: user.password },
-      };
-      setDatabase(updatedDatabase);
-      setUserStatus("login");
-      setErrorMessage(null);
-    } else {
-      setErrorMessage("User already exists");
-    }
-  };
+	const addUserToDatabase = (user) => {
+		if (!database[user.username]) {
+			const updatedDatabase = {
+				...database,
+				[user.username]: { email: user.email, password: user.password },
+			};
+			setDatabase(updatedDatabase);
+			setUserStatus("login");
+			setErrorMessage(null);
+		} else {
+			setErrorMessage("User already exists");
+		}
+	};
 
   const userLogin = async (user, authenticated) => {
     if (authenticated) {
@@ -72,14 +67,13 @@ function App() {
       if (!response.ok) {
         if (response.status === 400 || response.status === 404) {
           setErrorMessage("Wrong credentials!");
-          console.log("hey");
         } else if (response.status === 401) {
           setErrorMessage("Unable to authenticate!");
         } else {
           console.error("An unexpected error occurred:", response.statusText);
         }
       } else {
-        console.log("user:", userData.user);
+        Cookies.set('login', 'manual');
         if(!userData.user.avatar)
           setAvatar(`https://robohash.org/${userData.username}?200x200`);
         else {
@@ -97,7 +91,6 @@ function App() {
       setUserStatus("2fa");
       setErrorMessage(null);
       const userObject = Object.fromEntries(user.entries());
-      console.log("user:", userObject);
       setUser(userObject);
     }
   };
@@ -118,6 +111,7 @@ function App() {
       }
 
       const data = await response.json();
+      Cookies.set('login', '42');
       window.location.href = data.authorization_url; // Redirect the user
     } catch (error) {
       console.error("Network error:", error.message);
@@ -139,6 +133,10 @@ function App() {
       }
 
       const user = await response.json();
+      const authToken = Cookies.get('authToken');
+      if (!authToken) {
+        Cookies.set('authToken', user.token);
+      }
       if (user.avatar) {
         if (user.avatar.includes('avatars/')) {
           const avatarIcon = (user.avatar).split('/').pop();
@@ -157,6 +155,13 @@ function App() {
       setErrorMessage("An unexpected error occurred");
     }
   };
+
+  // return (
+  //   <DataContextProvider>
+  //     <Home changeStatus={changeStatus} avatar={avatar} />
+  //     <ModalPresenter />
+  //   </DataContextProvider>
+  // );
 
   return (
     <>
@@ -182,14 +187,13 @@ function App() {
         />
       ) : (
         <DataContextProvider>
-          <Page />
+          <Home changeStatus={changeStatus} avatar={avatar} />
           <ModalPresenter />
-           <Home changeStatus={changeStatus} avatar={avatar} />
         </DataContextProvider>
 
-      )}
-    </>
-  );
+			)}
+		</>
+	);
 }
 
 export default App;

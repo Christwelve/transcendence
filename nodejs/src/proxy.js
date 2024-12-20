@@ -185,7 +185,7 @@ function joinPath(...parts) {
 	return parts.join('.');
 }
 
-module.exports = {
+export {
 	createProxy,
 	sendInstructions,
 };
