@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import "../genericStyles.css";
-import Cookies from 'js-cookie';
+import styles from "./Register.module.scss";
 
 const Register = ({ changeStatus, login_with_42 }) => {
   const [email, setEmail] = useState("");
@@ -116,18 +115,17 @@ const Register = ({ changeStatus, login_with_42 }) => {
     addUserToDatabase(user);
   };
 
-
   return (
-    <div className="container">
+    <div className={styles.container}>
       <h1>Register</h1>
-      <form className="wd-25 pd-3">
-        <div className="mb-3">
-          <label htmlFor="username" className="form-label">
+      <form className={styles.form} onSubmit={_onFormSubmit}>
+        <div className={styles["form-group"]}>
+          <label htmlFor="username" className={styles["form-label"]}>
             Username
           </label>
           <input
             type="text"
-            className={`form-control ${usernameError ? "is-invalid" : ""}`}
+            className={`${styles["form-control"]} ${usernameError ? "is-invalid" : ""}`}
             id="username"
             placeholder="example"
             value={username}
@@ -135,13 +133,13 @@ const Register = ({ changeStatus, login_with_42 }) => {
           />
           {usernameError && <div className="invalid-feedback">{usernameError}</div>}
         </div>
-        <div className="mb-3">
-          <label htmlFor="email" className="form-label">
+        <div className={styles["form-group"]}>
+          <label htmlFor="email" className={styles["form-label"]}>
             Email address
           </label>
           <input
             type="email"
-            className={`form-control ${emailError ? "is-invalid" : ""}`}
+            className={`${styles["form-control"]} ${emailError ? "is-invalid" : ""}`}
             id="email"
             placeholder="name@example.com"
             value={email}
@@ -149,61 +147,60 @@ const Register = ({ changeStatus, login_with_42 }) => {
           />
           {emailError && <div className="invalid-feedback">{emailError}</div>}
         </div>
-        <div className="mb-3">
-          <label htmlFor="password" className="form-label">
+        <div className={styles["form-group"]}>
+          <label htmlFor="password" className={styles["form-label"]}>
             Password
           </label>
           <input
             type="password"
             id="password"
-            className={`form-control ${passwordError ? "is-invalid" : ""}`}
+            className={`${styles["form-control"]} ${passwordError ? "is-invalid" : ""}`}
             value={password}
             onChange={_onPasswordChange}
           />
           {passwordError && <div className="invalid-feedback">{passwordError}</div>}
         </div>
-        <div className="mb-3">
-          <label htmlFor="avatar" className="form-label">
+        <div className={styles["form-group"]}>
+          <label htmlFor="avatar" className={styles["form-label"]}>
             Upload Avatar (optional)
           </label>
           <input
             type="file"
-            className={`form-control ${avatarError ? "is-invalid" : ""}`}
+            className={`${styles["form-control"]} ${avatarError ? "is-invalid" : ""}`}
             id="avatar"
             accept="image/jpeg, image/png"
             onChange={_onAvatarChange}
           />
           {avatarError && <div className="invalid-feedback">{avatarError}</div>}
         </div>
-        <div className="mb-3">
+        <div className={styles["form-group"]}>
           <button
             type="submit"
-            className="btn btn-primary mb-3"
-            onClick={_onFormSubmit}
+            className={styles["btn-primary"]}
           >
             Register
           </button>
         </div>
-        <div className="mb-3">
-          <p>
-            Do you have an account?{" "}
+        <div className={styles["form-group"]}>
+          <p>Do you have an account?{" "}</p>
             <span
-              className="link"
+              className={styles.link}
               onClick={() => {
                 changeStatus("login");
               }}
             >
-              Login now
+              <p>Login now</p>
             </span>
-          </p>
           <br />
           <p>--or--</p>
           <br />
           <button
             type="button"
-            className="btn btn-primary"
+            className={styles["btn-primary"]}
             onClick={login_with_42}
-            >Login with 42</button>
+          >
+            Login with 42
+          </button>
         </div>
       </form>
     </div>

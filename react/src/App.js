@@ -3,27 +3,26 @@ import "./App.css";
 import Register from "./components/Register/Register";
 import Login from "./components/Login/Login";
 import Home from "./components/Home/Home";
-import DataContextProvider from './components/DataContext'
-import Page from './pages/Page'
-import ModalPresenter from './components/ModalPresenter'
-import {closeModalTop} from './utils/modal'
+import DataContextProvider from './components/DataContext/DataContext'
+import ModalPresenter from './components/Modal/ModalPresenter'
+import { closeModalTop } from './utils/modal'
 import Cookies from 'js-cookie';
 import TwoFactor from "./components/TwoFactor/TwoFactor";
 
 function App() {
-  useEffect(() => {
+	useEffect(() => {
 
-		const onKeyDown = event => {
-			if(event.code !== 'Escape')
-				return;
+    const onKeyDown = event => {
+      if (event.code !== 'Escape')
+        return;
 
-			closeModalTop();
-		}
+      closeModalTop();
+    }
 
-		document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('keydown', onKeyDown);
 
-		return () => document.removeEventListener('keydown', onKeyDown);
-	}, []);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, []);
 
   useEffect(() => {
     // Check for `logged_in=true` in the query string
@@ -41,23 +40,23 @@ function App() {
   const [avatar, setAvatar] = useState(null);
   const [user, setUser] = useState(null);
 
-  const changeStatus = (status) => {
-    setUserStatus(status);
-  };
+	const changeStatus = (status) => {
+		setUserStatus(status);
+	};
 
-  const addUserToDatabase = (user) => {
-    if (!database[user.username]) {
-      const updatedDatabase = {
-        ...database,
-        [user.username]: { email: user.email, password: user.password },
-      };
-      setDatabase(updatedDatabase);
-      setUserStatus("login");
-      setErrorMessage(null);
-    } else {
-      setErrorMessage("User already exists");
-    }
-  };
+	const addUserToDatabase = (user) => {
+		if (!database[user.username]) {
+			const updatedDatabase = {
+				...database,
+				[user.username]: { email: user.email, password: user.password },
+			};
+			setDatabase(updatedDatabase);
+			setUserStatus("login");
+			setErrorMessage(null);
+		} else {
+			setErrorMessage("User already exists");
+		}
+	};
 
   const userLogin = async (user, authenticated) => {
     if (authenticated) {
@@ -97,7 +96,6 @@ function App() {
       setUserStatus("2fa");
       setErrorMessage(null);
       const userObject = Object.fromEntries(user.entries());
-      console.log("user:", userObject);
       setUser(userObject);
     }
   };
@@ -158,6 +156,13 @@ function App() {
     }
   };
 
+  // return (
+  //   <DataContextProvider>
+  //     <Home changeStatus={changeStatus} avatar={avatar} />
+  //     <ModalPresenter />
+  //   </DataContextProvider>
+  // );
+
   return (
     <>
       {userStatus === "register" ? (
@@ -182,14 +187,13 @@ function App() {
         />
       ) : (
         <DataContextProvider>
-          <Page />
+          <Home changeStatus={changeStatus} avatar={avatar} />
           <ModalPresenter />
-           <Home changeStatus={changeStatus} avatar={avatar} />
         </DataContextProvider>
 
-      )}
-    </>
-  );
+			)}
+		</>
+	);
 }
 
 export default App;

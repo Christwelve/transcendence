@@ -1,5 +1,5 @@
 import React from 'react'
-import {updateModalList} from '../components/ModalPresenter';
+import { updateModalList } from '../components/Modal/ModalPresenter';
 
 let modalIdCounter = 0;
 const modals = new Map();
@@ -7,7 +7,7 @@ const modals = new Map();
 async function showModal(Component, defaultValues = {}) {
 	return new Promise(resolve => {
 		const id = modalIdCounter++;
-		const data = {...defaultValues};
+		const data = { ...defaultValues };
 
 		const modal = {
 			Component,
@@ -26,7 +26,7 @@ async function showModal(Component, defaultValues = {}) {
 // helper functions
 function createModalElement(id) {
 	const modal = modals.get(id);
-	const {Component, data} = modal;
+	const { Component, data } = modal;
 
 	const element = <Component key={id} data={data} updateModal={updateModal.bind(null, id)} closeModal={closeModal.bind(null, id)} />
 
@@ -34,7 +34,7 @@ function createModalElement(id) {
 }
 
 function updateModal(id, key, value) {
-	const {data} = modals.get(id);
+	const { data } = modals.get(id);
 
 	data[key] = value;
 
@@ -43,7 +43,7 @@ function updateModal(id, key, value) {
 }
 
 function closeModal(id, action = 'close') {
-	const {data, resolve} = modals.get(id);
+	const { data, resolve } = modals.get(id);
 
 	modals.delete(id);
 
@@ -58,7 +58,7 @@ function closeModalTop() {
 
 	console.log(ids, count);
 
-	if(count === 0)
+	if (count === 0)
 		return;
 
 	const idTop = ids[count - 1];
@@ -67,9 +67,9 @@ function closeModalTop() {
 }
 
 function pushModalList() {
-	const modalList = [...modals.values()].map(({element}) => element);
+	const modalList = [...modals.values()].map(({ element }) => element);
 
 	updateModalList(modalList);
 }
 
-export {showModal, closeModalTop};
+export { showModal, closeModalTop };
