@@ -10,7 +10,7 @@ import ModalPresenter from './components/Modal/ModalPresenter';
 import { closeModalTop } from './utils/modal';
 
 function App() {
-	useEffect(() => {
+  useEffect(() => {
 
     const onKeyDown = event => {
       if (event.code !== 'Escape')
@@ -30,29 +30,29 @@ function App() {
     }
   }, []);
 
-  const [userStatus, setUserStatus] = useState("register");
+  const [userStatus, setUserStatus] = useState("login");
   const [errorMessage, setErrorMessage] = useState(null);
   const [database, setDatabase] = useState({});
   const [avatar, setAvatar] = useState(null);
   const [user, setUser] = useState(null);
 
-	const changeStatus = (status) => {
-		setUserStatus(status);
-	};
+  const changeStatus = (status) => {
+    setUserStatus(status);
+  };
 
-	const addUserToDatabase = (user) => {
-		if (!database[user.username]) {
-			const updatedDatabase = {
-				...database,
-				[user.username]: { email: user.email, password: user.password },
-			};
-			setDatabase(updatedDatabase);
-			setUserStatus("login");
-			setErrorMessage(null);
-		} else {
-			setErrorMessage("User already exists");
-		}
-	};
+  const addUserToDatabase = (user) => {
+    if (!database[user.username]) {
+      const updatedDatabase = {
+        ...database,
+        [user.username]: { email: user.email, password: user.password },
+      };
+      setDatabase(updatedDatabase);
+      setUserStatus("login");
+      setErrorMessage(null);
+    } else {
+      setErrorMessage("User already exists");
+    }
+  };
 
   const userLogin = async (user, authenticated) => {
     if (authenticated) {
@@ -74,7 +74,7 @@ function App() {
         }
       } else {
         Cookies.set('login', 'manual');
-        if(!userData.user.avatar)
+        if (!userData.user.avatar)
           setAvatar(`https://robohash.org/${userData.username}?200x200`);
         else {
           const avatarIcon = (userData.user.avatar).split('/').pop();
@@ -156,26 +156,19 @@ function App() {
     }
   };
 
-  // return (
-  //   <DataContextProvider>
-  //     <Home changeStatus={changeStatus} avatar={avatar} />
-  //     <ModalPresenter />
-  //   </DataContextProvider>
-  // );
-
   return (
     <>
       {userStatus === "register" ? (
         <Register
           changeStatus={changeStatus}
           addUserToDatabase={addUserToDatabase}
-          login_with_42={login_with_42}
           errorMessage={errorMessage}
         />
       ) : userStatus === "login" ? (
         <Login
           changeStatus={changeStatus}
           userLogin={userLogin}
+          login_with_42={login_with_42}
           errorMessage={errorMessage}
         />
       ) : userStatus === "2fa" ? (
@@ -191,9 +184,9 @@ function App() {
           <ModalPresenter />
         </DataContextProvider>
 
-			)}
-		</>
-	);
+      )}
+    </>
+  );
 }
 
 export default App;

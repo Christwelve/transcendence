@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import styles from "./Register.module.scss";
 
-const Register = ({ changeStatus, login_with_42 }) => {
+const Register = ({ changeStatus }) => {
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -183,24 +183,14 @@ const Register = ({ changeStatus, login_with_42 }) => {
         </div>
         <div className={styles["form-group"]}>
           <p>Do you have an account?{" "}</p>
-            <span
-              className={styles.link}
-              onClick={() => {
-                changeStatus("login");
-              }}
-            >
-              <p>Login now</p>
-            </span>
-          <br />
-          <p>--or--</p>
-          <br />
-          <button
-            type="button"
-            className={styles["btn-primary"]}
-            onClick={login_with_42}
+          <span
+            className={styles.link}
+            onClick={() => {
+              changeStatus("login");
+            }}
           >
-            Login with 42
-          </button>
+            <p>Login now</p>
+          </span>
         </div>
       </form>
     </div>
