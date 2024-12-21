@@ -142,6 +142,7 @@ function App() {
           const avatarIcon = (user.avatar).split('/').pop();
           setAvatar(`http://localhost:8000/media/avatars/${avatarIcon}`);
         } else {
+          console.log("ADD FILE TO BACKEND AND STORE PATH: ", user.avatar);
           setAvatar(user.avatar);
         }
 

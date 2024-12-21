@@ -40,7 +40,7 @@ $background-color: #000000;
     text-transform: uppercase;
     font-family: "Orbitron", sans-serif;
     font-size: 1rem;
-    z-index:1100;
+    z-index: 1100;
     box-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
     transition: all 0.3s;
 
@@ -97,6 +97,13 @@ $background-color: #000000;
         background: lighten($primary-color, 10%);
         box-shadow: 0 0 10px $primary-color;
       }
+    }
+
+    .searchMessage {
+      color: #ff3333;
+      margin-top: 8px;
+      font-size: 0.9rem;
+      text-shadow: 0 0 5px lighten(#ff3333, 20%);
     }
   }
 }

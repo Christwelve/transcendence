@@ -1,4 +1,4 @@
-import React, {createContext, useContext, useState, useReducer, useEffect, useRef} from 'react'
+import React, { createContext, useContext, useState, useReducer, useEffect, useRef } from 'react'
 import io from 'socket.io-client'
 
 const SOCKET_SERVER_URL = `http://${window.location.hostname}:4000`;
@@ -11,10 +11,10 @@ let lastInstructions = null;
 
 const useDataContext = () => {
 	return useContext(DataContext);
-  };
+};
 
 function DataContextProvider(props) {
-	const {children} = props;
+	const { children } = props;
 
 	const dataDefault = {
 		rooms: [],
@@ -74,27 +74,27 @@ function DataContextProvider(props) {
 // reducer functions
 function dataReducer(state, instructions) {
 
-	if(instructions === lastInstructions)
+	if (instructions === lastInstructions)
 		return state;
 
-	console.log(instructions);
+	// console.log(instructions);
 
 	const fns = {
 		object: applyStateObject,
 		array: applyStateArray,
 	};
 
-	for(const instruction of instructions) {
-		const {type, action, path, value} = instruction;
+	for (const instruction of instructions) {
+		const { type, action, path, value } = instruction;
 
-		if(action === 'overwrite') {
+		if (action === 'overwrite') {
 			state = value;
 			continue;
 		}
 
 		const [entity, property] = getEntity(state, path);
 
-		if(entity == null)
+		if (entity == null)
 			continue;
 
 		fns[type](entity, property, action, value);
@@ -102,11 +102,11 @@ function dataReducer(state, instructions) {
 
 	lastInstructions = instructions;
 
-	return {...state};
+	return { ...state };
 }
 
 function applyStateObject(entity, property, action, value) {
-	switch(action) {
+	switch (action) {
 		case 'set':
 			return entity[property] = value;
 		case 'unset':
@@ -117,7 +117,7 @@ function applyStateObject(entity, property, action, value) {
 }
 
 function applyStateArray(entity, property, action, value) {
-	switch(action) {
+	switch (action) {
 		case 'push':
 			return entity[property].push(value);
 		case 'pop':
@@ -160,10 +160,10 @@ function getPlayerList(data) {
 };
 
 function getPlayerListForRoom(data, roomId) {
-  if (!roomId) return [];
-  const room = data.rooms[roomId];
-  if (!room) return [];
-  return room.players.map(playerId => data.players[playerId] || {});
+	if (!roomId) return [];
+	const room = data.rooms[roomId];
+	if (!room) return [];
+	return room.players.map(playerId => data.players[playerId] || {});
 }
 
 function createRoom(send, options) {
@@ -171,7 +171,7 @@ function createRoom(send, options) {
 }
 
 function joinRoom(send, roomId) {
-	send('room.join', {id: roomId});
+	send('room.join', { id: roomId });
 }
 
 function leaveRoom(send) {

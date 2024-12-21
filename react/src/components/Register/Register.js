@@ -71,17 +71,6 @@ const Register = ({ changeStatus }) => {
     return valid;
   };
 
-  const createUser = () => {
-    const formData = new FormData();
-    formData.append("email", email);
-    formData.append("username", username);
-    formData.append("password", password);
-    if (avatar) {
-      formData.append("avatar", avatar);
-    }
-    return formData;
-  };
-
   const addUserToDatabase = async (formData) => {
     try {
       const response = await fetch("http://localhost:8000/api/users/", {
@@ -106,13 +95,35 @@ const Register = ({ changeStatus }) => {
     }
   };
 
-  const _onFormSubmit = (event) => {
+  const _onFormSubmit = async (event) => {
     event.preventDefault();
     const isValid = validateFieldsOnSubmit();
     if (!isValid) return;
 
-    const user = createUser();
-    addUserToDatabase(user);
+    let avatarFile = avatar;
+
+    if (!avatarFile && username) {
+      const robothashUrl = `https://robohash.org/${username}?200x200`;
+      try {
+        const response = await fetch(robothashUrl);
+        const blob = await response.blob();
+        avatarFile = new File([blob], `${username}.png`, { type: blob.type });
+      } catch (error) {
+        console.error("Error downloading Robohash avatar:", error);
+        return;
+      }
+    }
+
+    const formData = new FormData();
+    formData.append("email", email);
+    formData.append("username", username);
+    formData.append("password", password);
+
+    if (avatarFile) {
+      formData.append("avatar", avatarFile);
+    }
+
+    addUserToDatabase(formData);
   };
 
   return (
