@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import Cookies from 'js-cookie';
 import styles from "./Header.module.scss";
 
 const Header = ({ changeStatus, changeComponent, avatar }) => {
@@ -18,6 +19,28 @@ const Header = ({ changeStatus, changeComponent, avatar }) => {
     }
     changeComponent(tab);
   };
+
+  const logout = async () => {
+    const response = await fetch(`http://localhost:8000/api/logout/`, {
+      method: "POST",
+      // headers: {
+      //   Authorization: `Token ${Cookies.get('authToken')}`
+      // }
+    });
+
+    if (response.ok) {
+      console.log("Logged out successfully");
+      const authToken = Cookies.get('authToken');
+      if (authToken) { //add this check just for safety
+        Cookies.remove('authToken');
+      }
+      Cookies.remove('login');
+      const url = new URL(window.location);
+      url.searchParams.delete('logged_in'); // Remove the logged_in query parameter
+      window.history.pushState({}, '', url); // Update the URL without reloading the page
+      changeStatus("login");
+    }
+  }
 
   return (
     <header
@@ -78,7 +101,7 @@ const Header = ({ changeStatus, changeComponent, avatar }) => {
                 <button
                   className={`dropdown-item ${styles.dropdownItem}`}
                   onClick={() => {
-                    changeStatus("login");
+                    logout();
                   }}
                 >
                   Logout

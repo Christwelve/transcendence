@@ -17,8 +17,13 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path as url
 from django.http import HttpResponse
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
+from two_factor.urls import urlpatterns as tf_urls
 
 def home(request):
     return HttpResponse("Welcome to the Django Backend")
@@ -26,5 +31,7 @@ def home(request):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
-    path('', home),
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    url(r'', include(tf_urls)),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import styles from "./Login.module.scss";
 
+
 const Login = ({ changeStatus, userLogin, errorMessage }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -25,7 +26,7 @@ const Login = ({ changeStatus, userLogin, errorMessage }) => {
   const _onFormSubmit = (event) => {
     event.preventDefault();
     const user = createUser();
-    userLogin(user);
+    userLogin(user, false);
   };
 
   const circleBgClasses = [
