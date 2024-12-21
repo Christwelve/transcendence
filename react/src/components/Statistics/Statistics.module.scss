@@ -79,11 +79,12 @@ $background-color: #000000;
 .matchHistory__box {
     margin-left: 10px;
     margin-top: -250px;
+    // padding: -130px 300px;
     position: absolute;
     top: 0;
     left: 100%;
-    width: 300px;
-    max-height: 70%;
+    width: 800px;//300 is good
+    max-height: 71%;
     background-color: $background-color;
     border: 2px solid $primary-color;
     border-radius: 10px;

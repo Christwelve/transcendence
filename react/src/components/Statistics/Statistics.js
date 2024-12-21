@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import styles from "./Statistics.module.scss";
+import { Line } from 'react-chartjs-2';
+import 'chart.js/auto';
 
 const Statistics = () => {
   const [isStatisticsOpen, setIsStatisticsOpen] = useState(false);
@@ -11,22 +13,34 @@ const Statistics = () => {
   const [totalGoalsReceived, setTotalGoalsReceived] = useState(200);
 
   const mockMatchHistory = [
-    {
-      matchId: 1,
-      goalsScored: 5,
-      goalsReceived: 3,
-    },
-    {
-      matchId: 2,
-      goalsScored: 2,
-      goalsReceived: 4,
-    },
-    {
-      matchId: 3,
-      goalsScored: 6,
-      goalsReceived: 6,
-    },
+    { matchId: 1, goalsScored: 5, goalsReceived: 3 },
+    { matchId: 2, goalsScored: 2, goalsReceived: 4 },
+    { matchId: 3, goalsScored: 6, goalsReceived: 6 },
+    // Add more match data as needed
   ];
+
+  const averageGoalsScored = mockMatchHistory.reduce((acc, match) => acc + match.goalsScored, 0) / mockMatchHistory.length;
+  const averageGoalsReceived = mockMatchHistory.reduce((acc, match) => acc + match.goalsReceived, 0) / mockMatchHistory.length;
+
+  const chartData = {
+    labels: mockMatchHistory.map(match => `Match ${match.matchId}`),
+    datasets: [
+      {
+        label: 'Goals Scored',
+        data: mockMatchHistory.map(match => match.goalsScored),
+        borderColor: 'rgba(75, 192, 192, 1)',
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        fill: true,
+      },
+      {
+        label: 'Goals Received',
+        data: mockMatchHistory.map(match => match.goalsReceived),
+        borderColor: 'rgba(255, 99, 132, 1)',
+        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+        fill: true,
+      },
+    ],
+  };
 
   useEffect(() => {
     if (!isStatisticsOpen) {
@@ -35,15 +49,9 @@ const Statistics = () => {
   }, [isStatisticsOpen]);
 
   return (
-    <div
-      className={`${styles.statistics} ${
-        isStatisticsOpen ? styles.open : ""
-      }`}
-    >
+    <div className={`${styles.statistics} ${isStatisticsOpen ? styles.open : ""}`}>
       <button
-        className={`${styles.statistics__toggle} ${
-          isStatisticsOpen ? styles.statistics__close : ""
-        }`}
+        className={`${styles.statistics__toggle} ${isStatisticsOpen ? styles.statistics__close : ""}`}
         onClick={() => setIsStatisticsOpen((prev) => !prev)}
       >
         {isStatisticsOpen ? "Close Statistics" : "Open Statistics"}
@@ -57,11 +65,12 @@ const Statistics = () => {
             <p>LOSSES: {losses}</p>
             <p>Total goals scored: {totalGoalsScored}</p>
             <p>Total goals received: {totalGoalsReceived}</p>
+            <p>Average goals scored: {averageGoalsScored.toFixed(2)}</p>
+            <p>Average goals received: {averageGoalsReceived.toFixed(2)}</p>
           </div>
+          <Line data={chartData} />
           <button
-            className={`${styles.matchHistory__box__toggle} ${
-              isMatchHistoryOpen ? styles.statistics__close : ""
-            }`}
+            className={`${styles.matchHistory__box__toggle} ${isMatchHistoryOpen ? styles.statistics__close : ""}`}
             onClick={() => setIsMatchHistoryOpen((prev) => !prev)}
           >
             {isMatchHistoryOpen ? "Close Match History" : "View Match History"}
@@ -73,7 +82,6 @@ const Statistics = () => {
                 <ul>
                   {mockMatchHistory.map((match) => (
                     <li key={match.matchId} className={styles.list}>
-                      {/* <li key={match.matchId}> */}
                       <p>Match ID: {match.matchId}</p>
                       <p>Goals Scored: {match.goalsScored}</p>
                       <p>Goals Received: {match.goalsReceived}</p>
