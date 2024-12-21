@@ -82,7 +82,7 @@ def login_with_42_callback(request):
             'redirect_uri': 'http://localhost:8000/api/42/login/callback/',
         }
 
-        # post request to get the access token
+        # Post request to get the access token
         token_response = requests.post(access_token_url, data=data)
 
         # Handle potential errors in the token request
@@ -109,22 +109,23 @@ def login_with_42_callback(request):
         username = user_info_data.get('login')
         email = user_info_data.get('email')
         avatar = user_info_data.get('image')['link']
-        password = make_password('')
+        password = make_password('')  # Empty password as it is OAuth-based login
 
-        userData = {'email': email, 'username': username, 'password': password}
-
-        # Authenticate or create user based on retrieved information
         user = User.objects.filter(username=username).first()
-        data = {'user': 'empty'}
-        if not user:
-            serializer = UserSerializer(data=userData)
-            data = {'user': 'serialized'}
-            if serializer.is_valid():
-                serializer.save()
-                data = {'user': 'created'}
 
+        if not user:
+            # Create a new user if not exists
+            user_data = {'email': email, 'username': username, 'password': password}
+            serializer = UserSerializer(data=user_data)
+            if serializer.is_valid():
+                user = serializer.save()
+            else:
+                return JsonResponse({'error': 'User creation failed', 'details': serializer.errors}, status=400)
+
+        # Create or retrieve the token for the user
         token, _ = Token.objects.get_or_create(user=user)
 
+        # Store user session data
         request.session['user_data'] = {
             'username': username,
             'email': email,
