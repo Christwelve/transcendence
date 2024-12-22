@@ -1,6 +1,7 @@
 import React from 'react'
 import {useDataContext} from '../DataContext/DataContext'
 import cls from '../../utils/cls'
+import padNumber from '../../utils/padNumber'
 import scss from './Brackets.module.scss'
 
 function Player(props) {
@@ -53,11 +54,6 @@ function Brackets(props) {
 			{brackets.map((groups, i) => <Groups key={i} groups={groups} />)}
 		</div>
 	);
-}
-
-// helper functions
-function padNumber(num, padding) {
-	return num.toString().padStart(padding, '0');
 }
 
 export default Brackets;

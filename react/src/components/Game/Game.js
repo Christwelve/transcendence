@@ -1,11 +1,14 @@
 import React, {useRef, useEffect, useState, forwardRef} from 'react'
 import {Canvas, useThree, useFrame} from '@react-three/fiber'
+import * as THREE from 'three'
+import {Text} from '@react-three/drei'
 import {useDataContext} from '../DataContext/DataContext'
 import {ClientTick} from 'shared/tick'
 import sizes from 'shared/sizes'
 import colors from 'shared/colors'
 import {getCuboids} from 'shared/cuboids'
 import cls from '../../utils/cls'
+import padNumber from '../../utils/padNumber'
 import scss from './Game.module.scss'
 
 const keysDown = {};
@@ -68,9 +71,9 @@ function CameraLookAt(props) {
 }
 
 function TickHandler(props) {
-	const {paddleRefs, ballRef, goalRef, countdownState, setGoalScored} = props;
+	const {paddleRefs, ballRef, goalRef, timeRef, countdownState, setGoalScored, setWinners} = props;
 
-	const {getPlayer, getRoom, useListener, requestServerTick, requestTickAdjust, sendPlayerEvent} = useDataContext();
+	const {getPlayer, getPlayerById, getRoom, useListener, requestServerTick, requestTickAdjust, sendPlayerEvent} = useDataContext();
 
 	const tickRef = useRef(null);
 	const roomRef = useRef(null);
@@ -83,9 +86,19 @@ function TickHandler(props) {
 	tickRef.current?.setPlayerIds(room.activePlayers);
 
 	const callback = tick => {
+		const room = roomRef.current;
+
 		handleInput(tick, sendPlayerEvent);
 		updateEnemyPositions(tick);
-		tick.moveBall(roomRef.current?.activePlayers);
+		tick.moveBall(room.activePlayers);
+
+		const seconds = Math.ceil(room.timer / 60);
+		const minutes = Math.floor(seconds / 60);
+
+		timeRef.current.textContent = room.timer ? `${padNumber(minutes, 2)}:${padNumber(seconds % 60, 2)}` : '';
+
+		if(room.running && room.timer > 0)
+			room.timer--;
 	};
 
 	useEffect(() => {
@@ -181,11 +194,27 @@ function TickHandler(props) {
 
 		setTimeout(() => {
 			setGoalScored(null);
+
+			const room = roomRef.current;
+
+			if(room.running)
+				return;
+
+			const maxScore = room.scores.reduce((acc, {scored}) => Math.max(acc, scored), 0);
+
+			const winners = room.activePlayers.filter((_, i) => room.scores[i].scored === maxScore).filter(player => player);
+
+			setWinners(winners);
+
 		}, 2500);
 
 		setTimeout(() => {
+			const room = roomRef.current;
+
+			if(!room.running)
+				return;
+
 			tick.roundStart(0, direction);
-			console.log('ROUND START', tick._ballData);
 		}, 3000);
 	});
 }
@@ -288,10 +317,40 @@ function isKeyDown(code) {
 	return +!!keysDown[code];
 }
 
+function getScoreDisplay(room, getPlayerById, highlightWinners) {
+	const {activePlayers} = room;
+
+	const maxScore = highlightWinners ? room.scores.reduce((acc, {scored}) => Math.max(acc, scored), 0) : -1;
+
+	return activePlayers.reduce((acc, id, i) => {
+		if(id == null)
+			return acc;
+
+		const player = getPlayerById(id);
+		const colorClass = scss[`c${i + 1}`];
+		const {scored, received} = room.scores[i];
+		const fade = scored < maxScore;
+
+		return [
+			...acc,
+			<div key={i} className={cls(scss.score, colorClass, highlightWinners && scss.highlight, fade && scss.fade)}>
+				<div className={scss.name}>{player.name}</div>
+				<div className={scss.value}>
+					<span className={scss.scored}>{padNumber(scored, 2)}</span>
+					<span className={scss.divider}>/</span>
+					<span className={scss.received}>{padNumber(received, 2)}</span>
+				</div>
+			</div>
+		];
+
+	}, []);
+}
+
 function Game(props) {
 
 	const [countdown, setCountdown] = useState(0);
 	const [goalScored, setGoalScored] = useState(null);
+	const [winners, setWinners] = useState(null);
 
 	const {getPlayer, getPlayerById, getRoom} = useDataContext();
 
@@ -307,6 +366,8 @@ function Game(props) {
 
 	const ballRef = useRef(null);
 	const goalRef = useRef(null);
+
+	const timeRef = useRef(null);
 
 	const scorerIndex = goalScored ? goalScored.scorer : null;
 	const scorerName = goalScored ? getPlayerById(room.activePlayers[scorerIndex])?.name : null;
@@ -332,6 +393,8 @@ function Game(props) {
 
 	const cuboids = getCuboids(room.activePlayers, paddleRefs, ballRef);
 
+	const scores = getScoreDisplay(room, getPlayerById, !!winners);
+
 	useEffect(() => {
 
 		window.addEventListener('keydown', onKeyAction);
@@ -351,12 +414,12 @@ function Game(props) {
 					fov: 75,
 					near: 0.1,
 					far: 1000,
-					position: [0, sizes.boardSize, 0]
+					position: [0, sizes.boardSize * 2, 0]
 				}
 			}>
 				<ResizeListener />
 				<CameraLookAt playerIndex={player.index} />
-				<TickHandler paddleRefs={paddleRefs} ballRef={ballRef} goalRef={goalRef} countdownState={[countdown, setCountdown]} setGoalScored={setGoalScored} />
+				<TickHandler paddleRefs={paddleRefs} ballRef={ballRef} goalRef={goalRef} timeRef={timeRef} countdownState={[countdown, setCountdown]} setGoalScored={setGoalScored} setWinners={setWinners} />
 				<ambientLight intensity={Math.PI / 2} />
 				<spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} decay={0} intensity={Math.PI} />
 				<pointLight position={[-10, -10, -10]} decay={0} intensity={Math.PI} />
@@ -368,12 +431,17 @@ function Game(props) {
 					cuboids.map((cuboid, i) => <Cuboid key={i} {...cuboid} />)
 				}
 			</Canvas>
-			<div className={cls(scss.ui, (countdown > 0 || goalScored) && scss.darken)}>
+			<div className={cls(scss.ui, (countdown > 0 || goalScored || winners) && scss.darken)}>
 				<div className={cls(scss.countdown, scss[`n${countdown}`])}>{countdown}</div>
 				<div className={cls(scss.goal, goalScored && scss.show)}>
 					<div className={cls(scss.title, scorerColorClass)}>GOAL!</div>
 					<div className={scss.message}>{scorerIndex === -1 ? messageFumbled : messageScored}</div>
 				</div>
+				<div className={scss.time} ref={timeRef}></div>
+				<div className={scss.scores}>
+					{scores}
+				</div>
+				<div className={cls(scss.gameover, !winners && scss.hide)}>GAME OVER!</div>
 			</div>
 		</div>
 	);

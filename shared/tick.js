@@ -419,6 +419,7 @@ class ServerTick extends Tick {
 	startGame(io) {
 		const countdown = 3 * TICK_SPEED;
 		const direction = randVector(this._room.activePlayers);
+		// const direction = [0, 0];
 
 		this.roundStart(countdown, direction);
 
@@ -445,14 +446,16 @@ class ServerTick extends Tick {
 		return null;
 	}
 
-	sendGoalToPlayers(io, updateState) {
+	sendGoalToPlayers(io, updateState, room) {
 		const goal = this.getGoal();
 
 		if(goal == null || this._goal)
 			return;
 
 		this._goal = true;
-		this._room.scores[goal.scorer]++;
+		if(goal.scorer !== -1)
+			this._room.scores[goal.scorer].scored++;
+		this._room.scores[goal.target].received++;
 		this.stopBall();
 
 		const direction = randVector(this._room.activePlayers, goal.target);
@@ -470,7 +473,16 @@ class ServerTick extends Tick {
 
 		setTimeout(() => {
 			this._goal = false;
-			this.roundStart(0, direction);
+
+			if(room.running)
+				this.roundStart(0, direction);
+			else {
+				this._ballData = [0, 0, 0, 0, -1];
+				this.sendCollisionToPlayers(io);
+			}
+
+			updateState();
+
 		}, 3000);
 	}
 

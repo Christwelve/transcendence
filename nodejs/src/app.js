@@ -131,7 +131,7 @@ function createRoom(player, options) {
 	const players = [player.id];
 	const masterId = player.id;
 
-	return {
+	const room = {
 		id,
 		name,
 		type,
@@ -140,8 +140,19 @@ function createRoom(player, options) {
 		playersMax,
 		activePlayers: [],
 		masterId,
-		scores: [0, 0, 0, 0],
+		scores: null,
+		timer: 0,
+		running: false,
 	};
+
+	resetRoom(room);
+
+	return room;
+}
+
+function resetRoom(room) {
+	room.scores = [...Array(4)].map(() => ({scored: 0, received: 0}));
+	room.timer = 60 * 60;
 }
 
 function createTournament(room) {
@@ -237,10 +248,49 @@ function extractPlayer(players) {
 }
 
 const onTick = tick => {
+	const room = tick.getRoom();
+
 	updatePlayers(tick);
 	updateBall(tick);
 
-	tick.sendGoalToPlayers(io, updateState);
+	tick.sendGoalToPlayers(io, updateState, room)
+
+	if(tick.getTick() % 300 === 0)
+		updateState();
+
+	if(room.running && room.timer > 0)
+		room.timer--;
+
+	if(tick.getTick() % 20 === 0) {
+		const roomId = room.id;
+		const game = games[roomId];
+		game.sendCollisionToPlayers(io);
+	}
+
+	if(room.timer === 0 && room.running) {
+		room.running = false;
+		room.status = 3;
+
+		setTimeout(() => {
+			room.status = 0;
+			room.players.forEach(id => {
+				const player = data.players[id];
+
+				if(player == null)
+					return;
+
+				player.state = 1;
+				player.ready = false;
+				player.index = -1;
+			});
+
+			resetRoom(room);
+
+			updateState();
+		}, 10000);
+
+		updateState();
+	}
 };
 
 function updateBall(tick) {
@@ -457,10 +507,9 @@ io.on('connection', async socket => {
 
 			game.startGame(io);
 
-			setInterval(() => game.sendCollisionToPlayers(io), 300);
-
 			setTimeout(() => {
 				room.status = 2;
+				room.running = true;
 
 				updateState();
 			}, 3000);
