@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import styles from "./Statistics.module.scss";
 import { Line } from 'react-chartjs-2';
 import 'chart.js/auto';
-
-const Statistics = () => {
+// to do:
+// 2. add list of players to match history elements
+// 3.change mock data to real data from the server
+function Statistics() {
   const [isStatisticsOpen, setIsStatisticsOpen] = useState(false);
   const [isMatchHistoryOpen, setIsMatchHistoryOpen] = useState(false);
   const [isChartBoxOpen, setIsChartBoxOpen] = useState(false);
@@ -73,7 +75,10 @@ const Statistics = () => {
           </div>
           <button
             className={`${styles.chartBox__toggle} ${isChartBoxOpen ? styles.statistics__close : ""}`}
-            onClick={() => setIsChartBoxOpen((prev) => !prev)}
+            onClick={() => {
+              setIsChartBoxOpen((prev) => !prev);
+              setIsMatchHistoryOpen(false);
+            }}
           >
             {isChartBoxOpen ? "Close Player Chart" : "View Player Chart"}
           </button>
@@ -84,7 +89,10 @@ const Statistics = () => {
           )}
           <button
             className={`${styles.matchHistory__box__toggle} ${isMatchHistoryOpen ? styles.statistics__close : ""}`}
-            onClick={() => setIsMatchHistoryOpen((prev) => !prev)}
+            onClick={() => {
+              setIsMatchHistoryOpen((prev) => !prev);
+              setIsChartBoxOpen(false);
+            }}
           >
             {isMatchHistoryOpen ? "Close Match History" : "View Match History"}
           </button>
@@ -99,20 +107,18 @@ const Statistics = () => {
                       <p>Goals Scored: {match.goalsScored}</p>
                       <p>Goals Received: {match.goalsReceived}</p>
                       <p
-                        className={`${styles.result} ${
-                          match.goalsScored > match.goalsReceived
+                        className={`${styles.result} ${match.goalsScored > match.goalsReceived
                             ? styles.win
                             : match.goalsScored < match.goalsReceived
-                            ? styles.loss
-                            : styles.draw
-                        }`}
+                              ? styles.loss
+                              : styles.draw}`}
                       >
                         Result:{" "}
                         {match.goalsScored > match.goalsReceived
                           ? "Win"
                           : match.goalsScored < match.goalsReceived
-                          ? "Loss"
-                          : "Draw"}
+                            ? "Loss"
+                            : "Draw"}
                       </p>
                     </li>
                   ))}
@@ -124,6 +130,6 @@ const Statistics = () => {
       )}
     </div>
   );
-};
+}
 
 export default Statistics;

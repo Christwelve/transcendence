@@ -79,12 +79,13 @@ $background-color: #000000;
 .matchHistory__box {
     margin-left: 10px;
     margin-top: -250px;
-    // padding: -130px 300px;
     position: absolute;
-    top: 0;
+    top: -100px;
     left: 100%;
-    width: 800px;//300 is good
-    max-height: 71%;
+    // width: 675px;
+    height: 350px !important;
+    width: 800px;
+    // height: 350px !important;
     background-color: $background-color;
     border: 2px solid $primary-color;
     border-radius: 10px;
@@ -103,8 +104,8 @@ $background-color: #000000;
     }
     &__toggle{
         position: relative;
-        bottom: 10px;
-        left: 10px;
+        bottom: -20px;
+        left: -10px;
         padding: 10px 20px;
         background: rgba(0, 255, 255, 0.2);
         color: $primary-color;
@@ -206,8 +207,8 @@ $background-color: #000000;
 
 .chartBox__toggle {
     position: relative;
-    bottom: 20px;
-    left: 10px;
+    bottom: -10px;
+    left: -10px;
     padding: 10px 20px;
     background: rgba(0, 255, 255, 0.2);
     color: $primary-color;
