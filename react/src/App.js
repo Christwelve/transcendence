@@ -129,13 +129,13 @@ function App() {
     }
   };
 
-  return (
-    <DataContextProvider>
-      <Home changeStatus={changeStatus} avatar={avatar} />
-      <ModalPresenter />
-      <ToastPresenter />
-    </DataContextProvider>
-  );
+  // return (
+  //   <DataContextProvider>
+  //     <Home changeStatus={changeStatus} avatar={avatar} />
+  //     <ModalPresenter />
+  //     <ToastPresenter />
+  //   </DataContextProvider>
+  // );
 
   return (
     <>
