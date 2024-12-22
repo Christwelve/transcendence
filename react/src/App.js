@@ -88,10 +88,28 @@ function App() {
         setUser(userData.user);
       }
     } else {
-      setUserStatus("2fa");
-      setErrorMessage(null);
-      const userObject = Object.fromEntries(user.entries());
-      setUser(userObject);
+      try {
+        const response = await fetch(`http://localhost:8000/api/login/`, {
+          method: "POST",
+          credentials: 'include',
+          body: user,
+        });
+
+        if (response.status === 400 || response.status === 404) {
+          setErrorMessage("Wrong credentials!");
+          return;
+        } else if (response.status === 401 ) {
+          setUserStatus("2fa");
+          setErrorMessage(null);
+          const userObject = Object.fromEntries(user.entries());
+          setUser(userObject);
+        } else {
+          setErrorMessage("An unexpected error occurred");
+        }
+      } catch (error) {
+        console.error("Network error:", error.message);
+      }
+
     }
   };
 
