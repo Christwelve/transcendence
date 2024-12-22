@@ -2,18 +2,58 @@ import requests
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.authtoken.models import Token
 from .models import User, Match, Statistic, Friend
 from .serializers import UserSerializer, MatchSerializer, StatisticSerializer, FriendSerializer
 from django.contrib.auth.hashers import make_password, check_password
-from django.shortcuts import get_object_or_404, redirect, render
-from django.http import HttpResponseRedirect, JsonResponse
+from django.shortcuts import get_object_or_404, redirect
+from django.http import JsonResponse
 
 from django.conf import settings
-from django.views.decorators.csrf import csrf_exempt
+from django_otp.plugins.otp_totp.models import TOTPDevice
+import qrcode
+import io
+import base64
 
-from api.models import User, Friend
+@api_view(['POST'])
+def setup_2fa(request):
+    username = request.data['username']
+    user = get_object_or_404(User, username=username)  # Assuming the user is authenticated
 
-@csrf_exempt
+    existing_device = TOTPDevice.objects.filter(user=user, confirmed=False).first()
+    confirmed_device = TOTPDevice.objects.filter(user=user, confirmed=True).first()
+    if existing_device or confirmed_device:
+        if confirmed_device:
+            device = confirmed_device  # Reuse the existing unconfirmed device
+        else:
+            device = existing_device
+    else:
+        # Create a new TOTP device
+        device = TOTPDevice.objects.create(user=user, name=username, confirmed=False)
+
+    # Generate a QR code for the TOTP device
+    qr_code_data = device.config_url
+    qr = qrcode.QRCode(version=1, box_size=10, border=5)
+    qr.add_data(qr_code_data)
+    qr.make(fit=True)
+
+    # Convert QR code to an image
+    img = io.BytesIO()
+    qr.make_image(fill="black", back_color="white").save(img, format="PNG")
+    img.seek(0)
+
+    # Encode QR code as Base64
+    qr_code_base64 = base64.b64encode(img.getvalue()).decode()
+
+    # Return the QR code as a response
+    return Response({
+        "qr_code": f"data:image/png;base64,{qr_code_base64}",  # Frontend-friendly QR code
+        "manual_entry_key": device.key  # Manual entry key for users without QR code scanning
+    }, status=200)
+
+# from api.models import User, Friend
+
+# @csrf_exempt
 @api_view(['GET'])
 def login_with_42(request):
     authorization_url = (
@@ -25,7 +65,6 @@ def login_with_42(request):
     )
     return JsonResponse({'authorization_url': authorization_url})
 
-@csrf_exempt
 @api_view(['GET'])
 def login_with_42_callback(request):
     if request.method == 'GET':
@@ -43,7 +82,7 @@ def login_with_42_callback(request):
             'redirect_uri': 'http://localhost:8000/api/42/login/callback/',
         }
 
-        # post request to get the access token
+        # Post request to get the access token
         token_response = requests.post(access_token_url, data=data)
 
         # Handle potential errors in the token request
@@ -70,37 +109,41 @@ def login_with_42_callback(request):
         username = user_info_data.get('login')
         email = user_info_data.get('email')
         avatar = user_info_data.get('image')['link']
-        password = make_password('')
+        password = make_password('')  # Empty password as it is OAuth-based login
 
-        userData = {'email': email, 'username': username, 'password': password}
-
-        # Authenticate or create user based on retrieved information
         user = User.objects.filter(username=username).first()
-        data = {'user': 'empty'}
-        if not user:
-            serializer = UserSerializer(data=userData)
-            data = {'user': 'serialized'}
-            if serializer.is_valid():
-                serializer.save()
-                data = {'user': 'created'}
 
+        if not user:
+            # Create a new user if not exists
+            user_data = {'email': email, 'username': username, 'password': password}
+            serializer = UserSerializer(data=user_data)
+            if serializer.is_valid():
+                user = serializer.save()
+            else:
+                return JsonResponse({'error': 'User creation failed', 'details': serializer.errors}, status=400)
+
+        # Create or retrieve the token for the user
+        token, _ = Token.objects.get_or_create(user=user)
+
+        # Store user session data
         request.session['user_data'] = {
             'username': username,
             'email': email,
             'avatar': avatar,
+            'token': token.key,
         }
 
         return redirect(f"http://localhost:3000?logged_in=true")
 
     return redirect(f"http://localhost:3000?logged_in=false")
 
-@csrf_exempt
 @api_view(['GET'])
 def get_user_data(request):
     user_data = request.session.get('user_data', None)
     if not user_data:
-        return JsonResponse({'error': 'No user data found'}, status=404)
+        return JsonResponse({'error': 'No user data found', 'session': request.session.get('user_data')}, status=404)
     return JsonResponse(user_data)
+
 
 @api_view(['POST'])
 def login_view(request):
@@ -109,8 +152,36 @@ def login_view(request):
         password = request.data['password']
         user = get_object_or_404(User, username=username)
         if check_password(password, user.password):
+            totp_device = TOTPDevice.objects.filter(user=user, confirmed=True).first()
+            if not totp_device:
+                 # Retrieve the unconfirmed TOTP device
+                totp_device = TOTPDevice.objects.filter(user=user, confirmed=False).first()
+                if not totp_device:
+                    return Response({'error': 'No 2FA device found'}, status=status.HTTP_401_UNAUTHORIZED)
+                else:
+                    totp_device.confirmed = True
+                    totp_device.save()
+
+            if totp_device:  # If user has a TOTP device, validate the token
+                otp_token = request.data.get('otp_token')
+                if not otp_token:  # If no 2FA token is provided, return an error
+                    return Response({'error': '2FA token is required'}, status=status.HTTP_401_UNAUTHORIZED)
+                if not totp_device.verify_token(otp_token):  # Validate the token
+                    return Response({'error': 'Invalid 2FA token'}, status=status.HTTP_401_UNAUTHORIZED)
+
+            token, _ = Token.objects.get_or_create(user=user)  # Efficient token retrieval
             serializer = UserSerializer(user)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            request.session['user_data'] = {
+                'username': user.username,
+                'email': user.email,
+                'avatar': str(user.avatar),
+            }
+            request.session.save()
+            return Response({
+                'user': serializer.data,
+                'token': token.key,  # Include authToken in response
+                'user_data': request.session['user_data'],
+            }, status=status.HTTP_200_OK)
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -165,7 +236,7 @@ def fetch_friends(request):
     try:
         # Hardcode the user for testing purposes,
         # bypassing permissions and authentications issues
-        # TODO: This must be changed, once the auth is done!        
+        # TODO: This must be changed, once the auth is done!
         user = User.objects.first()
         if not user:
             return Response({'error': 'No users found'}, status=404)
@@ -198,12 +269,12 @@ def add_friend(request):
         # Hardcode the user for testing purposes,
         # bypassing permissions and authentications issues
         # TODO: This must be changed, once the auth is done!
-        user = User.objects.get(username='fvoicu') 
-        
+        user = User.objects.get(username='fvoicu')
+
         friend_username = request.data.get('username')
         if not friend_username:
             return Response({'error': 'Username is required'}, status=400)
-        
+
         friend = User.objects.filter(username=friend_username).first()
         if not friend:
             return Response({'error': 'User not found'}, status=404)
@@ -221,7 +292,7 @@ def remove_friend(request):
     # Hardcode the user for testing purposes,
     # bypassing permissions and authentications issues
     # TODO: This must be changed, once the auth is done!
-    user = User.objects.get(username='fvoicu') 
+    user = User.objects.get(username='fvoicu')
     friend_username = request.data.get('username')
     try:
         friend = User.objects.get(username=friend_username)
@@ -229,3 +300,8 @@ def remove_friend(request):
         return Response({'message': f'{friend_username} removed from your friends!'}, status=200)
     except User.DoesNotExist:
         return Response({'error': 'User not found'}, status=404)
+
+@api_view(['POST'])
+def logout_view(request):
+    request.session.flush()
+    return Response({"message": "Logged out successfully"})
