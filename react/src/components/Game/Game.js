@@ -68,7 +68,7 @@ function CameraLookAt(props) {
 }
 
 function TickHandler(props) {
-	const {paddleRefs, ballRef, countdownState} = props;
+	const {paddleRefs, ballRef, goalRef, countdownState, setGoalScored} = props;
 
 	const {getPlayer, getRoom, useListener, requestServerTick, requestTickAdjust, sendPlayerEvent} = useDataContext();
 
@@ -82,8 +82,6 @@ function TickHandler(props) {
 
 	tickRef.current?.setPlayerIds(room.activePlayers);
 
-	console.log('activePlayers', room.activePlayers, 'i', player.index);
-
 	const callback = tick => {
 		handleInput(tick, sendPlayerEvent);
 		updateEnemyPositions(tick);
@@ -92,7 +90,6 @@ function TickHandler(props) {
 
 	useEffect(() => {
 		// TODO: change to reflect actually playing players in tournament mode
-		// TODO: when state changes this will be recreated which might cause issues, or not i think because of [] in dependencies. but if player leaves. view should update, so something needs to change
 		const tick = new ClientTick(player, callback);
 
 		tickRef.current = tick;
@@ -108,13 +105,13 @@ function TickHandler(props) {
 		}
 	}, []);
 
-	useFrame(() => {
+	useFrame((_, delta) => {
 		const tick = tickRef.current;
 
 		renderPaddles(tick, paddleRefs);
 		renderBall(tick, ballRef);
+		renderGoal(tick, goalRef, delta);
 		renderCountdown(tick, countdownState);
-
 	});
 
 	useListener('player.index', index => {
@@ -124,8 +121,6 @@ function TickHandler(props) {
 	});
 
 	useListener('packet.dropped', id => {
-		console.log('packet dropped', id);
-
 		const tick = tickRef.current;
 
 		tick.handleDroppedPacket(id);
@@ -135,13 +130,7 @@ function TickHandler(props) {
 		const tick = tickRef.current;
 		const fn = type === 'set' ? tick.setTick : tick.adjustTick;
 
-		// TODO: add fast forward or wait if tick adjusted
-
-		// console.log('before: t', type, 'st', value, 'ct', tick.getTick());
-
 		fn.call(tick, value);
-
-		// console.log(' after: t', type, 'ad', value, 'ct', tick.getTick());
 	});
 
 	useListener('game.update', payload => {
@@ -167,17 +156,37 @@ function TickHandler(props) {
 	useListener('ball.collision', (tickServer, verifiedBallData) => {
 		const tick = tickRef.current;
 
-		// console.log('collision', tickServer, verifiedBallData);
-
 		tick.reconcileBall(tickServer, verifiedBallData);
 	});
 
 	useListener('round.start', (countdown, direction) => {
 		const tick = tickRef.current;
 
-		console.log('round.start', countdown, direction);
-
 		tick.roundStart(countdown, direction);
+	});
+
+	useListener('goal', payload => {
+		const {goal, direction} = payload;
+		const tick = tickRef.current;
+
+		setGoalScored(goal);
+
+		const mesh = goalRef.current;
+		const [x, z] = tick.getBallPosition();
+		mesh.position.set(x, 0, z);
+		mesh.material.color.set(colors[goal.scorer + 1]);
+		mesh.timer = 500;
+
+		tick.stopBall();
+
+		setTimeout(() => {
+			setGoalScored(null);
+		}, 2500);
+
+		setTimeout(() => {
+			tick.roundStart(0, direction);
+			console.log('ROUND START', tick._ballData);
+		}, 3000);
 	});
 }
 
@@ -234,9 +243,29 @@ function renderBall(tick, ballRef) {
 	const [x, z, dx, dz, lastHitIndex] = tick.getBallData();
 
 	ball.position.set(x, 0, z);
+	ball.material.color.set(colors[lastHitIndex + 1]);
+}
 
-	if(lastHitIndex !== -1)
-		ball.material.color.set(colors[lastHitIndex]);
+function renderGoal(tick, goalRef, delta) {
+	const goal = goalRef.current;
+
+	if(goal == null)
+		return;
+
+	if(goal.timer <= 0) {
+		goal.scale.set(0, 0, 0);
+		goal.timer = 0;
+		return;
+	}
+
+	const maxTimer = 500;
+	const t = (maxTimer - goal.timer) / maxTimer;
+	const scale = 50 * t;
+
+	goal.scale.set(scale, 1, scale);
+	goal.material.opacity = 1 - t;
+
+	goal.timer -= delta * 1000;
 }
 
 function renderCountdown(tick, countdownState) {
@@ -262,8 +291,9 @@ function isKeyDown(code) {
 function Game(props) {
 
 	const [countdown, setCountdown] = useState(0);
+	const [goalScored, setGoalScored] = useState(null);
 
-	const {getPlayer, getRoom} = useDataContext();
+	const {getPlayer, getPlayerById, getRoom} = useDataContext();
 
 	const player = getPlayer();
 	const room = getRoom(player.roomId);
@@ -276,6 +306,29 @@ function Game(props) {
 	];
 
 	const ballRef = useRef(null);
+	const goalRef = useRef(null);
+
+	const scorerIndex = goalScored ? goalScored.scorer : null;
+	const scorerName = goalScored ? getPlayerById(room.activePlayers[scorerIndex])?.name : null;
+	const scorerColorClass = scss[`c${scorerIndex + 1}`];
+	const targetIndex = goalScored ? goalScored.target : null;
+	const targetName = goalScored ? getPlayerById(room.activePlayers[targetIndex])?.name : null;
+	const targetColorClass = scss[`c${targetIndex + 1}`];
+
+	const messageFumbled = (
+		<>
+			<span className={targetColorClass}>{targetName}</span>
+			<span> fumbled the ball</span>
+		</>
+	);
+
+	const messageScored = (
+		<>
+			<span className={scorerColorClass}>{scorerName}</span>
+			<span> scored on </span>
+			<span className={targetColorClass}>{targetName}</span>
+		</>
+	);
 
 	const cuboids = getCuboids(room.activePlayers, paddleRefs, ballRef);
 
@@ -303,16 +356,24 @@ function Game(props) {
 			}>
 				<ResizeListener />
 				<CameraLookAt playerIndex={player.index} />
-				<TickHandler paddleRefs={paddleRefs} ballRef={ballRef} countdownState={[countdown, setCountdown]} />
+				<TickHandler paddleRefs={paddleRefs} ballRef={ballRef} goalRef={goalRef} countdownState={[countdown, setCountdown]} setGoalScored={setGoalScored} />
 				<ambientLight intensity={Math.PI / 2} />
 				<spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} decay={0} intensity={Math.PI} />
 				<pointLight position={[-10, -10, -10]} decay={0} intensity={Math.PI} />
+				<mesh position={[0, -sizes.borderSize / 2, 0]} timer={0} ref={goalRef}>
+					<cylinderGeometry args={[1, 1, 0.01, 128]} />
+					<meshStandardMaterial transparent={true} />
+				</mesh>
 				{
 					cuboids.map((cuboid, i) => <Cuboid key={i} {...cuboid} />)
 				}
 			</Canvas>
-			<div className={cls(scss.ui, countdown > 0 && scss.darken)}>
+			<div className={cls(scss.ui, (countdown > 0 || goalScored) && scss.darken)}>
 				<div className={cls(scss.countdown, scss[`n${countdown}`])}>{countdown}</div>
+				<div className={cls(scss.goal, goalScored && scss.show)}>
+					<div className={cls(scss.title, scorerColorClass)}>GOAL!</div>
+					<div className={scss.message}>{scorerIndex === -1 ? messageFumbled : messageScored}</div>
+				</div>
 			</div>
 		</div>
 	);

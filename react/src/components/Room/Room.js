@@ -15,7 +15,10 @@ function Room() {
 
 	useEffect(() => {
 		const onKeydown = event => {
-			const {code} = event;
+			const {target, code} = event;
+
+			if(target !== document.body)
+				return;
 
 			const isMaster = currentPlayer.id === room?.masterId;
 
@@ -47,7 +50,7 @@ function Room() {
 	const playerList = getPlayerListForRoom(room.id);
 
 	const isMaster = currentPlayer.id === room.masterId;
-	const canStart = playerList.filter(player => player.id !== room.masterId).every(player => player.ready);
+	const canStart = playerList.length >= 2 && playerList.filter(player => player.id !== room.masterId).every(player => player.ready);
 
 	const readyButton = (<button className={cls(scss.primary, scss.ready, currentPlayer.ready && scss.highlight)} onClick={toggleReady}>Ready</button>);
 	const startButton = (<button className={cls(scss.primary, scss.start, canStart && scss.highlight)} disabled={!canStart} onClick={gameStart}>Start</button>);

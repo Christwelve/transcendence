@@ -82,6 +82,7 @@ class Tick {
 	}
 
 	roundStart(countdown, direction) {
+		this._ballData = [0, 0, 0, 0, -1];
 		this._countdown = countdown;
 		this._direction = direction;
 		this._starting = true;
@@ -97,6 +98,11 @@ class Tick {
 		console.log('kickoff', this._direction, this._ballData);
 	}
 
+	stopBall() {
+		this._ballData[2] = 0;
+		this._ballData[3] = 0;
+	}
+
 	getTick() {
 		this._assertDetached();
 
@@ -108,8 +114,9 @@ class Tick {
 
 		const limit = (sizes.goalSize - sizes.paddleSize) / 2;
 		const direction = playerIndex % 2 == 0 ? -1 : 1;
+		const invert = playerIndex < 2 ? 1 : -1;
 
-		const value = Math.sign(input) * direction;
+		const value = Math.sign(input) * direction * invert;
 
 		this._positions[playerIndex] += value;
 
@@ -125,8 +132,6 @@ class Tick {
 		if(activePlayers == null)
 			return;
 
-		// console.log('moveBall', activePlayers);
-
 		const [x, z, dx, dz] = this._ballData;
 
 		const px = x + dx;
@@ -134,11 +139,6 @@ class Tick {
 
 		this._ballData[0] = px;
 		this._ballData[1] = pz;
-
-		const limit = sizes.boardSize / 2 + sizes.borderSize;
-
-		if(Math.abs(px) > limit || Math.abs(pz) > limit)
-			return this._setBallPosition(0, 0);
 
 		const [boundingBoxesOther, boundingBoxBall] = getBoundingBoxes(activePlayers, this._positions, this._ballData);
 
@@ -347,12 +347,13 @@ class ClientTick extends Tick {
 }
 
 class ServerTick extends Tick {
-	constructor(roomId, players, callback) {
+	constructor(room, players, callback) {
 		super(callback);
 
-		this._roomId = roomId;
+		this._room = room;
 		this._players = players;
 		this._verifiedEventIds = [0, 0, 0, 0];
+		this._goal = false;
 
 		this._players.forEach((player, i) => player.index = i);
 	}
@@ -417,7 +418,7 @@ class ServerTick extends Tick {
 
 	startGame(io) {
 		const countdown = 3 * TICK_SPEED;
-		const direction = randVector();
+		const direction = randVector(this._room.activePlayers);
 
 		this.roundStart(countdown, direction);
 
@@ -426,8 +427,55 @@ class ServerTick extends Tick {
 		});
 	}
 
-	getRoomId() {
-		return this._roomId;
+	getGoal() {
+		const limit = sizes.boardSize / 2 + sizes.borderSize;
+
+		const [x, z] = this._ballData;
+		const scorer = this._ballData[4];
+
+		if(z < -limit)
+			return {scorer, target: 0};
+		else if(z > limit)
+			return {scorer, target: 1};
+		else if(x < -limit)
+			return {scorer, target: 2};
+		else if(x > limit)
+			return {scorer, target: 3};
+
+		return null;
+	}
+
+	sendGoalToPlayers(io, updateState) {
+		const goal = this.getGoal();
+
+		if(goal == null || this._goal)
+			return;
+
+		this._goal = true;
+		this._room.scores[goal.scorer]++;
+		this.stopBall();
+
+		const direction = randVector(this._room.activePlayers, goal.target);
+
+		const payload = {
+			goal,
+			direction,
+		};
+
+		this._players.forEach(player => {
+			io.sockets.sockets.get(player.id)?.emit('goal', payload);
+		});
+
+		updateState();
+
+		setTimeout(() => {
+			this._goal = false;
+			this.roundStart(0, direction);
+		}, 3000);
+	}
+
+	getRoom() {
+		return this._room;
 	}
 }
 
@@ -462,13 +510,23 @@ function dotVector(v1, v2) {
 	return v1[0] * v2[0] + v1[1] * v2[1];
 }
 
-function randVector() {
+function randVector(activePlayers, target) {
+	const indices = activePlayers.reduce((acc, player, i) => player ? [...acc, i] : acc, []);
+	const index = target ?? indices[randInt(0, indices.length - 1)];
+
 	const v = [
 		Math.random() * 2 - 1,
-		Math.random() * 2 - 1,
+		index % 2 === 0 ? -1 : 1,
 	];
 
+	if(index >= 2)
+		v.reverse();
+
 	return normalizeVector(v);
+}
+
+function randInt(min, max) {
+	return Math.round(Math.random() * (max - min) + min);
 }
 
 function normalizeVector(v) {

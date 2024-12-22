@@ -17,17 +17,21 @@ function DataContextProvider(props) {
 	const {children} = props;
 
 	const dataDefault = {
-		rooms: {},
+		lastId: -1,
+		userId: null,
 		players: {},
+		rooms: {},
+		tournaments: {},
 	};
 
-	const [userId, setUserId] = useState(null);
-	const [data, setData] = useReducer(dataReducer, dataDefault);
-
-	console.log('data', data.rooms);
+	// const [data, setData] = useReducer(dataReducer, dataDefault);
+	const [data, setData] = useState(dataDefault);
 
 	const socketRef = useRef(null);
 	const send = socketRef.current?.emit?.bind(socketRef.current);
+
+	const dataRef = useRef(null);
+	dataRef.current = data;
 
 	useEffect(() => {
 		const socket = io(SOCKET_SERVER_URL);
@@ -42,11 +46,17 @@ function DataContextProvider(props) {
 			socket.emit('initial');
 		});
 
-		socket.on('initial', payload => {
-			const {id, data} = payload;
+		socket.on('state', payload => {
+			const {id, userId, data: incomingData} = payload;
 
-			setUserId(id);
-			setData([{action: 'overwrite', value: data}]);
+			const data = dataRef.current;
+
+			if(id <= data.lastId)
+				return;
+
+			const newData = {...data, lastId: id, userId: data.userId ?? userId, ...incomingData};
+
+			setData(newData);
 		});
 
 		socket.on('instruction', instructions => setData(instructions));
@@ -61,16 +71,14 @@ function DataContextProvider(props) {
 
 	}, []);
 
-	useEffect(() => {
-		console.log('DataContextProvider re-rendered');
-	});
-
 	const fns = {
-		getPlayer: getPlayer.bind(null, data, userId),
+		getPlayer: getPlayer.bind(null, data),
+		getPlayerById: getPlayerById.bind(null, data),
 		getRoom: getRoom.bind(null, data),
 		getRoomList: getRoomList.bind(null, data),
 		getPlayerList: getPlayerList.bind(null, data),
 		getPlayerListForRoom: getPlayerListForRoom.bind(null, data),
+		getTournamentForRoom: getTournamentForRoom.bind(null, data),
 		createRoom: createRoom.bind(null, send),
 		joinRoom: joinRoom.bind(null, send),
 		quickJoinRoom: quickJoinRoom.bind(null, send),
@@ -91,86 +99,92 @@ function DataContextProvider(props) {
 };
 
 // reducer functions
-function dataReducer(state, instructions) {
+// function dataReducer(state, instructions) {
 
-	if(instructions === lastInstructions)
-		return state;
+// 	if(instructions === lastInstructions)
+// 		return state;
 
-	const fns = {
-		object: applyStateObject,
-		array: applyStateArray,
-	};
+// 	const fns = {
+// 		object: applyStateObject,
+// 		array: applyStateArray,
+// 	};
 
-	console.log('state', state);
-	console.log('inst', instructions);
+// 	console.log('state', state);
+// 	console.log('inst', instructions);
 
-	let newState = {...state};
+// 	let newState = {...state};
 
-	for(const instruction of instructions) {
-		const {type, action, path, value} = instruction;
+// 	for(const instruction of instructions) {
+// 		const {type, action, path, value} = instruction;
 
-		if(action === 'overwrite') {
-			newState = {...newState, ...value};
-			continue;
-		}
+// 		if(action === 'overwrite') {
+// 			newState = {...newState, ...value};
+// 			continue;
+// 		}
 
-		const [entity, property] = getEntity(newState, path);
+// 		const [entity, property] = getEntity(newState, path);
 
-		console.log(entity, property, action, value);
+// 		console.log(entity, property, action, value);
 
-		if(entity == null)
-			continue;
+// 		if(entity == null)
+// 			continue;
 
-		fns[type](entity, property, action, value);
-	}
+// 		fns[type](entity, property, action, value);
+// 	}
 
-	lastInstructions = instructions;
+// 	lastInstructions = instructions;
 
-	console.log('newState', newState);
+// 	console.log('newState', newState);
 
-	return {...newState};
-}
+// 	return {...newState};
+// }
 
-function applyStateObject(entity, property, action, value) {
-	switch(action) {
-		case 'set':
-			return entity[property] = value;
-		case 'unset':
-			return delete entity[property];
-		default:
-			return;
-	}
-}
+// function applyStateObject(entity, property, action, value) {
+// 	switch(action) {
+// 		case 'set':
+// 			return entity[property] = value;
+// 		case 'unset':
+// 			return delete entity[property];
+// 		default:
+// 			return;
+// 	}
+// }
 
-function applyStateArray(entity, property, action, value) {
-	switch(action) {
-		case 'push':
-			return entity[property].push(value);
-		case 'pop':
-			return entity[property].pop();
-		case 'splice':
-			return entity[property].splice(...value);
-		case 'set':
-			return entity[property] = value;
-		case 'unset':
-			return delete entity[property];
-		default:
-			return;
-	}
-}
+// function applyStateArray(entity, property, action, value) {
+// 	switch(action) {
+// 		case 'push':
+// 			return entity[property].push(value);
+// 		case 'pop':
+// 			return entity[property].pop();
+// 		case 'splice':
+// 			return entity[property].splice(...value);
+// 		case 'set':
+// 			return entity[property] = value;
+// 		case 'unset':
+// 			return delete entity[property];
+// 		default:
+// 			return;
+// 	}
+// }
 
-function getEntity(state, path) {
-	const parts = path.split('.');
-	const last = parts.pop();
+// function getEntity(state, path) {
+// 	const parts = path.split('.');
+// 	const last = parts.pop();
 
-	const entity = parts.reduce((result, part) => result == null ? null : result[part], state);
+// 	const entity = parts.reduce((result, part) => result == null ? null : result[part], state);
 
-	return [entity, last];
-}
+// 	return [entity, last];
+// }
 
 // api functions
-function getPlayer(data, userId) {
-	return data.players[userId] || null;
+function getPlayer(data) {
+	const {userId, players} = data;
+
+	return players[userId] || null;
+}
+
+function getPlayerById(data, playerId) {
+	return data.players[playerId];
 }
 
 function getRoom(data, roomId) {
@@ -178,7 +192,6 @@ function getRoom(data, roomId) {
 }
 
 function getRoomList(data) {
-	console.log('getRoomList', data);
 	return Object.values(data.rooms);
 }
 
@@ -196,6 +209,15 @@ function getPlayerListForRoom(data, roomId) {
 		return [];
 
 	return room.players.map(playerId => data.players[playerId]);
+}
+
+function getTournamentForRoom(data, roomId) {
+	const room = data.rooms[roomId];
+
+	if(room == null)
+		return null;
+
+	return data.tournaments[room.tournamentId];
 }
 
 function createRoom(send, options) {

@@ -79,13 +79,13 @@ function getPaddles(playerIds, paddleRefs = []) {
 	const paddles = [];
 
 	if(playerIds[0])
-		paddles.push({position: [0, 0, -halfSize], size: paddleSizeVertical, color: colors[0], axis: 'x', playerIndex: 0, ref: paddleRefs[0]});
+		paddles.push({position: [0, 0, -halfSize], size: paddleSizeVertical, color: colors[1], axis: 'x', playerIndex: 0, ref: paddleRefs[0]});
 	if(playerIds[1])
-		paddles.push({position: [0, 0, halfSize], size: paddleSizeVertical, color: colors[1], axis: 'x', playerIndex: 1, ref: paddleRefs[1]});
+		paddles.push({position: [0, 0, halfSize], size: paddleSizeVertical, color: colors[2], axis: 'x', playerIndex: 1, ref: paddleRefs[1]});
 	if(playerIds[2])
-		paddles.push({position: [-halfSize, 0, 0], size: paddleSizeHorizontal, color: colors[2], axis: 'z', playerIndex: 2, ref: paddleRefs[2]});
+		paddles.push({position: [-halfSize, 0, 0], size: paddleSizeHorizontal, color: colors[3], axis: 'z', playerIndex: 2, ref: paddleRefs[2]});
 	if(playerIds[3])
-		paddles.push({position: [halfSize, 0, 0], size: paddleSizeHorizontal, color: colors[3], axis: 'z', playerIndex: 3, ref: paddleRefs[3]});
+		paddles.push({position: [halfSize, 0, 0], size: paddleSizeHorizontal, color: colors[4], axis: 'z', playerIndex: 3, ref: paddleRefs[3]});
 
 	return paddles;
 }

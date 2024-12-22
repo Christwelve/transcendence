@@ -15,6 +15,9 @@ const lookup = {
 		<circle key="award_0" cx="12" cy="8" r="7" />,
 		<polyline key="award_1" points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" />
 	],
+	success: [
+		<polyline key="success_0" points="20 6 9 17 4 12" />
+	],
 	warning: [
 		<path key="warning_0" d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>,
 		<line key="warning_1" x1="12" y1="9" x2="12" y2="13"/>,

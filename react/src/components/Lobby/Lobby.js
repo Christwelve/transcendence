@@ -1,14 +1,56 @@
 import React, {useState} from 'react'
 import RoomList from '../RoomList/RoomList'
 import Room from '../Room/Room'
-import cls from '../../utils/cls'
+import Brackets from '../Brackets/Brackets'
 import scss from './Lobby.module.scss'
 
 function Lobby() {
+
+  const brackets = [
+    [
+      {
+        stage: 2,
+        players: [
+          'asdasd',
+          'asdaasdsd',
+        ],
+        winner: 'asdasd',
+        scores: [1, 0]
+      },
+      {
+        stage: 0,
+        players: [
+          'aasdsd',
+          'daasdsd',
+        ],
+        scores: [0, 0]
+      },
+      {
+        stage: 0,
+        players: [
+          'asdasdw',
+          'asdasdr',
+        ],
+        scores: [0, 0]
+      }
+    ],
+    [
+      {
+        stage: 0,
+        players: [
+          'asdasd',
+          'asdaasdsd',
+        ],
+        scores: [1, 0]
+      }
+    ]
+  ]
+
   return (
     <div className={scss.lobby}>
       <RoomList />
       <Room />
+      <Brackets brackets={brackets} />
     </div>
   )
 }

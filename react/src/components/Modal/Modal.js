@@ -4,7 +4,7 @@ import Icon from '../Icon/Icon'
 import scss from './Modal.module.scss'
 
 function Modal(props) {
-	const {title, onClose, children} = props;
+	const {title, confirmLabel, onClose, onConfirm, children} = props;
 
 	const ref = useRef(null);
 
@@ -24,8 +24,12 @@ function Modal(props) {
 	return (
 		<div className={scss.backdrop} onClick={onClick} ref={ref}>
 			<div className={scss.modal}>
-				<Card title={title} action={closeAction}>
+				<Card title={title} action={closeAction} classes={scss.body}>
 					{children}
+					<div className={scss.actions}>
+						<button className={scss.cancel} onClick={onClose}>Cancel</button>
+						<button className={scss.confirm} onClick={onConfirm}>{confirmLabel}</button>
+					</div>
 				</Card>
 			</div>
 		</div>

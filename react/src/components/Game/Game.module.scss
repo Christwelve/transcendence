@@ -45,5 +45,74 @@
 				display: none;
 			}
 		}
+
+		.goal {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+
+			.title {
+				font-size: 120px;
+				font-weight: 900;
+
+				&.c0 {
+					color: var(--color-white-trans);
+					-webkit-text-stroke: 3px var(--color-white);
+					text-shadow: 0 0 8px var(--color-white);
+				}
+
+				&.c1 {
+					color: var(--color-red-trans);
+					-webkit-text-stroke: 3px var(--color-red);
+					text-shadow: 0 0 8px var(--color-red);
+				}
+
+				&.c2 {
+					color: var(--color-green-trans);
+					-webkit-text-stroke: 3px var(--color-green);
+					text-shadow: 0 0 8px var(--color-green);
+				}
+
+				&.c3 {
+					color: var(--color-blue-trans);
+					-webkit-text-stroke: 3px var(--color-blue);
+					text-shadow: 0 0 8px var(--color-blue);
+				}
+
+				&.c4 {
+					color: var(--color-yellow-trans);
+					-webkit-text-stroke: 3px var(--color-yellow);
+					text-shadow: 0 0 8px var(--color-yellow);
+				}
+			}
+
+			.message {
+				font-size: 30px;
+
+				.c0 {
+					color: var(--color-white);
+				}
+
+				.c1 {
+					color: var(--color-red);
+				}
+
+				.c2 {
+					color: var(--color-green);
+				}
+
+				.c3 {
+					color: var(--color-blue);
+				}
+
+				.c4 {
+					color: var(--color-yellow);
+				}
+			}
+
+			&:not(.show) {
+				display: none;
+			}
+		}
 	}
 }

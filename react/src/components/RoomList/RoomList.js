@@ -19,7 +19,10 @@ function RoomList() {
 
 	useEffect(() => {
 		const onKeydown = event => {
-			const {code} = event;
+			const {target, code} = event;
+
+			if(target !== document.body)
+				return;
 
 			if(code !== 'KeyQ')
 				return;
@@ -50,7 +53,7 @@ function RoomList() {
 	}
 
 	const titleAction = (
-		<div className={scss.create} onClick={createRoomButtonCallback}>
+		<div className={scss.create} title='Create Room' onClick={createRoomButtonCallback}>
 			<Icon type='plus' size='18' />
 		</div>
 	);
