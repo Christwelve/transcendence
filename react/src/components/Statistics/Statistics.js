@@ -6,6 +6,7 @@ import 'chart.js/auto';
 const Statistics = () => {
   const [isStatisticsOpen, setIsStatisticsOpen] = useState(false);
   const [isMatchHistoryOpen, setIsMatchHistoryOpen] = useState(false);
+  const [isChartBoxOpen, setIsChartBoxOpen] = useState(false);
   const [winRate, setWinRate] = useState(33);
   const [wins, setWins] = useState(531);
   const [losses, setLosses] = useState(32);
@@ -16,6 +17,7 @@ const Statistics = () => {
     { matchId: 1, goalsScored: 5, goalsReceived: 3 },
     { matchId: 2, goalsScored: 2, goalsReceived: 4 },
     { matchId: 3, goalsScored: 6, goalsReceived: 6 },
+    { matchId: 4, goalsScored: 5, goalsReceived: 7 },
     // Add more match data as needed
   ];
 
@@ -45,6 +47,7 @@ const Statistics = () => {
   useEffect(() => {
     if (!isStatisticsOpen) {
       setIsMatchHistoryOpen(false);
+      setIsChartBoxOpen(false);
     }
   }, [isStatisticsOpen]);
 
@@ -68,7 +71,17 @@ const Statistics = () => {
             <p>Average goals scored: {averageGoalsScored.toFixed(2)}</p>
             <p>Average goals received: {averageGoalsReceived.toFixed(2)}</p>
           </div>
-          <Line data={chartData} />
+          <button
+            className={`${styles.chartBox__toggle} ${isChartBoxOpen ? styles.statistics__close : ""}`}
+            onClick={() => setIsChartBoxOpen((prev) => !prev)}
+          >
+            {isChartBoxOpen ? "Close Player Chart" : "View Player Chart"}
+          </button>
+          {isChartBoxOpen && (
+            <div className={styles.chartBox}>
+              <Line data={chartData} />
+            </div>
+          )}
           <button
             className={`${styles.matchHistory__box__toggle} ${isMatchHistoryOpen ? styles.statistics__close : ""}`}
             onClick={() => setIsMatchHistoryOpen((prev) => !prev)}
