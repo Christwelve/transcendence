@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import "../genericStyles.css";
+import styles from "./TwoFactor.module.scss";
 
 
 const TwoFactor = ({ changeStatus, userLogin, errorMessage, user }) => {
@@ -56,24 +56,24 @@ const TwoFactor = ({ changeStatus, userLogin, errorMessage, user }) => {
   };
 
   return (
-    <div className="container">
+    <div className={styles.container}>
       <h1>TwoFactor Authentication</h1>
-      <form className="wd-25 pd-3">
-        <div className="mb-3">
-          <label htmlFor="otp" className="form-label">
+      <form className={styles.form}>
+        <div className={styles["form-group"]}>
+          <label htmlFor="otp" className={styles["form-label"]}>
             OTP code
           </label>
           <input
             type="otp"
-            className="form-control"
+            className={styles["form-control"]}
             id="otp"
             placeholder="123456"
             onChange={_onOtpChange}
           />
         </div>
-        <div className="mb-3">
+        <div className={styles["form-group"]}>
           <p>
-            Scan here to get the OTP code?{" "}
+            Scan here with an authenticator app{" "}
           <img
             src={qrCode}
             alt="QR code"
@@ -84,7 +84,7 @@ const TwoFactor = ({ changeStatus, userLogin, errorMessage, user }) => {
         <div className="mb-3">
           <button
             type="submit"
-            className="btn btn-primary mb-3"
+            className={styles["btn-primary"]}
             onClick={_onFormSubmit}
           >
             Authenticate
