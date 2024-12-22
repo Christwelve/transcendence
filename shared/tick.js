@@ -11,14 +11,12 @@ let instanceId = 0;
 let instances = [];
 
 class Tick {
-	constructor(playerCount, callback) {
+	constructor(callback) {
 		this._id = instanceId++;
 
 		this._tick = 0;
 		this._tickNextAmount = 0;
 		this._callback = callback;
-
-		this._playerCount = playerCount;
 
 		this._queue = [];
 		this._positions = [0, 0, 0, 0];
@@ -84,6 +82,7 @@ class Tick {
 	}
 
 	roundStart(countdown, direction) {
+		this._ballData = [0, 0, 0, 0, -1];
 		this._countdown = countdown;
 		this._direction = direction;
 		this._starting = true;
@@ -99,6 +98,11 @@ class Tick {
 		console.log('kickoff', this._direction, this._ballData);
 	}
 
+	stopBall() {
+		this._ballData[2] = 0;
+		this._ballData[3] = 0;
+	}
+
 	getTick() {
 		this._assertDetached();
 
@@ -110,8 +114,9 @@ class Tick {
 
 		const limit = (sizes.goalSize - sizes.paddleSize) / 2;
 		const direction = playerIndex % 2 == 0 ? -1 : 1;
+		const invert = playerIndex < 2 ? 1 : -1;
 
-		const value = Math.sign(input) * direction;
+		const value = Math.sign(input) * direction * invert;
 
 		this._positions[playerIndex] += value;
 
@@ -121,8 +126,11 @@ class Tick {
 			this._positions[playerIndex] = -limit;
 	}
 
-	moveBall() {
+	moveBall(activePlayers) {
 		this._assertDetached();
+
+		if(activePlayers == null)
+			return;
 
 		const [x, z, dx, dz] = this._ballData;
 
@@ -132,12 +140,7 @@ class Tick {
 		this._ballData[0] = px;
 		this._ballData[1] = pz;
 
-		const limit = sizes.boardSize / 2 + sizes.borderSize;
-
-		if(Math.abs(px) > limit || Math.abs(pz) > limit)
-			return this._setBallPosition(0, 0);
-
-		const [boundingBoxesOther, boundingBoxBall] = getBoundingBoxes(this._playerCount, this._positions, this._ballData);
+		const [boundingBoxesOther, boundingBoxBall] = getBoundingBoxes(activePlayers, this._positions, this._ballData);
 
 		for(const boundingBox of boundingBoxesOther) {
 
@@ -171,8 +174,8 @@ class Tick {
 }
 
 class ClientTick extends Tick {
-	constructor(player, playerCount, callback) {
-		super(playerCount, callback);
+	constructor(player, callback) {
+		super(callback);
 
 		this._tickOffset = TICK_DEFAULT_OFFSET;
 
@@ -182,6 +185,12 @@ class ClientTick extends Tick {
 		this._history = [];
 
 		this._verifiedPosition = 0;
+	}
+
+	setPlayerIds(playerIds) {
+		this._assertDetached();
+
+		this._playerIds = playerIds;
 	}
 
 	getPlayerIndex() {
@@ -338,13 +347,13 @@ class ClientTick extends Tick {
 }
 
 class ServerTick extends Tick {
-	constructor(players, callback) {
-		super(players.length, callback);
+	constructor(room, players, callback) {
+		super(callback);
 
-		console.log('players', players.length);
-
+		this._room = room;
 		this._players = players;
 		this._verifiedEventIds = [0, 0, 0, 0];
+		this._goal = false;
 
 		this._players.forEach((player, i) => player.index = i);
 	}
@@ -409,13 +418,76 @@ class ServerTick extends Tick {
 
 	startGame(io) {
 		const countdown = 3 * TICK_SPEED;
-		const direction = randVector();
+		const direction = randVector(this._room.activePlayers);
+		// const direction = [0, 0];
 
 		this.roundStart(countdown, direction);
 
 		this._players.forEach(player => {
 			io.sockets.sockets.get(player.id)?.emit('round.start', countdown, direction);
 		});
+	}
+
+	getGoal() {
+		const limit = sizes.boardSize / 2 + sizes.borderSize;
+
+		const [x, z] = this._ballData;
+		const scorer = this._ballData[4];
+
+		if(z < -limit)
+			return {scorer, target: 0};
+		else if(z > limit)
+			return {scorer, target: 1};
+		else if(x < -limit)
+			return {scorer, target: 2};
+		else if(x > limit)
+			return {scorer, target: 3};
+
+		return null;
+	}
+
+	sendGoalToPlayers(io, updateState, room) {
+		const goal = this.getGoal();
+
+		if(goal == null || this._goal)
+			return;
+
+		this._goal = true;
+		if(goal.scorer !== -1)
+			this._room.scores[goal.scorer].scored++;
+		this._room.scores[goal.target].received++;
+		this.stopBall();
+
+		const direction = randVector(this._room.activePlayers, goal.target);
+
+		const payload = {
+			goal,
+			direction,
+		};
+
+		this._players.forEach(player => {
+			io.sockets.sockets.get(player.id)?.emit('goal', payload);
+		});
+
+		updateState();
+
+		setTimeout(() => {
+			this._goal = false;
+
+			if(room.running)
+				this.roundStart(0, direction);
+			else {
+				this._ballData = [0, 0, 0, 0, -1];
+				this.sendCollisionToPlayers(io);
+			}
+
+			updateState();
+
+		}, 3000);
+	}
+
+	getRoom() {
+		return this._room;
 	}
 }
 
@@ -450,13 +522,23 @@ function dotVector(v1, v2) {
 	return v1[0] * v2[0] + v1[1] * v2[1];
 }
 
-function randVector() {
+function randVector(activePlayers, target) {
+	const indices = activePlayers.reduce((acc, player, i) => player ? [...acc, i] : acc, []);
+	const index = target ?? indices[randInt(0, indices.length - 1)];
+
 	const v = [
 		Math.random() * 2 - 1,
-		Math.random() * 2 - 1,
+		index % 2 === 0 ? -1 : 1,
 	];
 
+	if(index >= 2)
+		v.reverse();
+
 	return normalizeVector(v);
+}
+
+function randInt(min, max) {
+	return Math.round(Math.random() * (max - min) + min);
 }
 
 function normalizeVector(v) {
