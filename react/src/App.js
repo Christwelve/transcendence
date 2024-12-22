@@ -32,26 +32,11 @@ function App() {
 
   const [userStatus, setUserStatus] = useState("login");
   const [errorMessage, setErrorMessage] = useState(null);
-  const [database, setDatabase] = useState({});
   const [avatar, setAvatar] = useState(null);
   const [user, setUser] = useState(null);
 
   const changeStatus = (status) => {
     setUserStatus(status);
-  };
-
-  const addUserToDatabase = (user) => {
-    if (!database[user.username]) {
-      const updatedDatabase = {
-        ...database,
-        [user.username]: { email: user.email, password: user.password },
-      };
-      setDatabase(updatedDatabase);
-      setUserStatus("login");
-      setErrorMessage(null);
-    } else {
-      setErrorMessage("User already exists");
-    }
   };
 
   const userLogin = async (user, authenticated) => {
@@ -133,22 +118,27 @@ function App() {
       }
 
       const user = await response.json();
+      // console.log("User: ", user);
       const authToken = Cookies.get('authToken');
       if (!authToken) {
         Cookies.set('authToken', user.token);
       }
       if (user.avatar) {
+        // if (user.avatar.includes('intra.42.fr')) {
+
+        // }
         if (user.avatar.includes('avatars/')) {
           const avatarIcon = (user.avatar).split('/').pop();
           setAvatar(`http://localhost:8000/media/avatars/${avatarIcon}`);
         } else {
-          console.log("ADD FILE TO BACKEND AND STORE PATH: ", user.avatar);
+          setAvatar(user.avatar);
+          console.log("TODO: ADD FILE TO BACKEND AND STORE PATH: ", user.avatar);
           setAvatar(user.avatar);
         }
 
       }
-      else
-        setAvatar(`https://robohash.org/${user.username}?200x200`);
+      // else
+      //   setAvatar(`https://robohash.org/${user.username}?200x200`);
       setUserStatus("logged");
       setErrorMessage(null);
     } catch (error) {
@@ -162,8 +152,8 @@ function App() {
       {userStatus === "register" ? (
         <Register
           changeStatus={changeStatus}
-          addUserToDatabase={addUserToDatabase}
-          errorMessage={errorMessage}
+        // addUserToDatabase={addUserToDatabase}
+        // errorMessage={errorMessage}
         />
       ) : userStatus === "login" ? (
         <Login

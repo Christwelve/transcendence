@@ -19,6 +19,19 @@ const FriendList = () => {
     }
   };
 
+  const adjustLastOnline = (lastOnline) => {
+    const now = new Date();
+    const lastOnlineDate = new Date(lastOnline);
+    const difference = now - lastOnlineDate;
+
+    if (difference < 60 * 1000) return "<1 min ago";
+    if (difference < 60 * 60 * 1000) return `${Math.floor(difference / (60 * 1000))} min ago`;
+    if (difference < 24 * 60 * 60 * 1000) return `${Math.floor(difference / (60 * 60 * 1000))} h ago`;
+    if (difference < 7 * 24 * 60 * 60 * 1000) return `${Math.floor(difference / (24 * 60 * 60 * 1000))} days ago`;
+    if (difference < 365 * 24 * 60 * 60 * 1000) return `${Math.floor(difference / (7 * 24 * 60 * 60 * 1000))} weeks ago`;
+    return `${Math.floor(difference / (365 * 24 * 60 * 60 * 1000))} year(s) ago`;
+  };
+
   const handleSearch = async () => {
     try {
       const response = await fetchWithCredentials(`http://localhost:8000/api/user/search/?query=${searchQuery}`, "GET");
@@ -48,7 +61,6 @@ const FriendList = () => {
       });
 
       if (response.ok) {
-        // alert(`${username} added successfully!`);
         fetchFriends();
         setSearchQuery("");
         setFilteredUsers([]);
@@ -67,7 +79,6 @@ const FriendList = () => {
         body: JSON.stringify({ username }),
       });
       if (response.ok) {
-        // alert(`${username} removed successfully!`);
         fetchFriends();
         setFilteredUsers((prevFilteredUsers) => [
           ...prevFilteredUsers,
@@ -85,12 +96,10 @@ const FriendList = () => {
 
   return (
     <div
-      className={`${styles.friendList} ${isFriendListOpen ? styles.open : ""
-        }`}
+      className={`${styles.friendList} ${isFriendListOpen ? styles.open : ""}`}
     >
       <button
-        className={`${styles.friendList__toggle} ${isFriendListOpen ? styles.friendList__close : ""
-          }`}
+        className={`${styles.friendList__toggle} ${isFriendListOpen ? styles.friendList__close : ""}`}
         onClick={() => setIsFriendListOpen((prev) => !prev)}
       >
         {isFriendListOpen ? "Close Friend List" : "Open Friend List"}
@@ -104,7 +113,7 @@ const FriendList = () => {
               placeholder="Search for users..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={event => event.code === "Enter" && handleSearch()}
+              onKeyDown={(event) => event.code === "Enter" && handleSearch()}
             />
             <button onClick={handleSearch}>Search</button>
             {searchMessage && <p className={styles.searchMessage}>{searchMessage}</p>}
@@ -113,7 +122,6 @@ const FriendList = () => {
             <h3>Search Results:</h3>
             {filteredUsers.map((user) => (
               <div key={user.id || user.username}>
-                {/* <img src={user.avatar} /> */}
                 <span>{user.username}</span>
                 <button
                   onClick={() => handleAddFriend(user.username)}
@@ -129,10 +137,9 @@ const FriendList = () => {
             {friends.length > 0 ? (
               friends.map((friend) => (
                 <div key={friend.id || friend.friend.username}>
-                  {/* <img src={user.avatar} /> */}
                   <span>
-                    {friend.friend.username} (Status:{" "}
-                    {friend.friend.status ? "Online" : `Last Online ${friend.friend.last_online}`})
+                    {friend.friend.username} ({""}
+                    {friend.friend.status ? "Online" : `Last seen ${adjustLastOnline(friend.friend.last_online)}`})
                   </span>
                   <button
                     onClick={() => handleRemoveFriend(friend.friend.username)}
@@ -146,9 +153,8 @@ const FriendList = () => {
             )}
           </div>
         </div>
-      )
-      }
-    </div >
+      )}
+    </div>
   );
 };
 
@@ -156,8 +162,8 @@ const FriendList = () => {
 function fetchWithCredentials(path, method, extraOptions = {}) {
   const options = {
     method,
-    credentials: 'include',
-    ...extraOptions
+    credentials: "include",
+    ...extraOptions,
   };
 
   return fetch(path, options);
