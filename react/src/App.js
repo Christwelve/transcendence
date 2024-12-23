@@ -3,9 +3,12 @@ import "./App.css";
 import Register from "./components/Register/Register";
 import Login from "./components/Login/Login";
 import Home from "./components/Home/Home";
-import DataContextProvider from './components/DataContext/DataContext'
-import ModalPresenter from './components/Modal/ModalPresenter'
-import { closeModalTop } from './utils/modal'
+import Cookies from 'js-cookie';
+import TwoFactor from "./components/TwoFactor/TwoFactor";
+import DataContextProvider from './components/DataContext/DataContext';
+import ModalPresenter from './components/Modal/ModalPresenter';
+import ToastPresenter from './components/Toast/ToastPresenter'
+import { closeModalTop } from './utils/modal';
 
 function App() {
 	useEffect(() => {
@@ -23,19 +26,16 @@ function App() {
   }, []);
 
   useEffect(() => {
-    // Check for `logged_in=true` in the query string
-    const params = new URLSearchParams(window.location.search);
-    const loggedIn = params.get("logged_in");
-
-    if (loggedIn === "true") {
+    if (Cookies.get('login')) {
       fetchUserData(); // Call the function to fetch user data
     }
   }, []);
 
-	const [userStatus, setUserStatus] = useState("register");
-	const [errorMessage, setErrorMessage] = useState(null);
-	const [database, setDatabase] = useState({});
-	const [avatar, setAvatar] = useState(null);
+  const [userStatus, setUserStatus] = useState("register");
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [database, setDatabase] = useState({});
+  const [avatar, setAvatar] = useState(null);
+  const [user, setUser] = useState(null);
 
 	const changeStatus = (status) => {
 		setUserStatus(status);
@@ -55,30 +55,62 @@ function App() {
 		}
 	};
 
-  const userLogin = async (user) => {
-    const response = await fetch(`http://localhost:8000/api/login/`, {
-      method: "POST",
-      body: user,
-    });
+  const userLogin = async (user, authenticated) => {
+    if (authenticated) {
+      const response = await fetch(`http://localhost:8000/api/login/`, {
+        method: "POST",
+        credentials: 'include',
+        body: user,
+      });
 
-    const userData = await response.json();
+      const userData = await response.json();
 
-    if (!response.ok) {
-      if (response.status === 400 || response.status === 404) {
-        setErrorMessage("Wrong credentials!");
-        console.log("hey");
+      if (!response.ok) {
+        if (response.status === 400 || response.status === 404) {
+          setErrorMessage("Wrong credentials!");
+        } else if (response.status === 401) {
+          setErrorMessage("Unable to authenticate!");
+        } else {
+          console.error("An unexpected error occurred:", response.statusText);
+        }
       } else {
-        console.error("An unexpected error occurred:", response.statusText);
+        Cookies.set('login', 'manual');
+        if(!userData.user.avatar)
+          setAvatar(`https://robohash.org/${userData.username}?200x200`);
+        else {
+          const avatarIcon = (userData.user.avatar).split('/').pop();
+          setAvatar(`http://localhost:8000/media/avatars/${avatarIcon}`);
+        }
+
+        //when we change the domain to a secure one we must add { secure: true } as 3rd parameter
+        Cookies.set('authToken', userData.token);
+        setUserStatus("logged");
+        setErrorMessage(null);
+        setUser(userData.user);
       }
     } else {
-      if (!userData.avatar)
-        setAvatar(`https://robohash.org/${userData.username}?200x200`);
-      else {
-        const avatarIcon = (userData.avatar).split('/').pop();
-        setAvatar(`http://localhost:8000/media/avatars/${avatarIcon}`);
+      try {
+        const response = await fetch(`http://localhost:8000/api/login/`, {
+          method: "POST",
+          credentials: 'include',
+          body: user,
+        });
+
+        if (response.status === 400 || response.status === 404) {
+          setErrorMessage("Wrong credentials!");
+          return;
+        } else if (response.status === 401 ) {
+          setUserStatus("2fa");
+          setErrorMessage(null);
+          const userObject = Object.fromEntries(user.entries());
+          setUser(userObject);
+        } else {
+          setErrorMessage("An unexpected error occurred");
+        }
+      } catch (error) {
+        console.error("Network error:", error.message);
       }
-      setUserStatus("logged");
-      setErrorMessage(null);
+
     }
   };
 
@@ -98,6 +130,7 @@ function App() {
       }
 
       const data = await response.json();
+      Cookies.set('login', '42');
       window.location.href = data.authorization_url; // Redirect the user
     } catch (error) {
       console.error("Network error:", error.message);
@@ -119,7 +152,21 @@ function App() {
       }
 
       const user = await response.json();
-      setAvatar(user.avatar);
+      const authToken = Cookies.get('authToken');
+      if (!authToken) {
+        Cookies.set('authToken', user.token);
+      }
+      if (user.avatar) {
+        if (user.avatar.includes('avatars/')) {
+          const avatarIcon = (user.avatar).split('/').pop();
+          setAvatar(`http://localhost:8000/media/avatars/${avatarIcon}`);
+        } else {
+          setAvatar(user.avatar);
+        }
+
+      }
+      else
+        setAvatar(`https://robohash.org/${user.username}?200x200`);
       setUserStatus("logged");
       setErrorMessage(null);
     } catch (error) {
@@ -132,6 +179,7 @@ function App() {
   //   <DataContextProvider>
   //     <Home changeStatus={changeStatus} avatar={avatar} />
   //     <ModalPresenter />
+  //     <ToastPresenter />
   //   </DataContextProvider>
   // );
 
@@ -150,11 +198,18 @@ function App() {
           userLogin={userLogin}
           errorMessage={errorMessage}
         />
+      ) : userStatus === "2fa" ? (
+        <TwoFactor
+          changeStatus={changeStatus}
+          userLogin={userLogin}
+          errorMessage={errorMessage}
+          user={user}
+        />
       ) : (
-
         <DataContextProvider>
           <Home changeStatus={changeStatus} avatar={avatar} />
           <ModalPresenter />
+          <ToastPresenter />
         </DataContextProvider>
 
 			)}
