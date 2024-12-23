@@ -28,6 +28,9 @@ const Home = ({ changeStatus, avatar }) => {
         {mainComponent === "profile" && <Profile avatar={avatar} />}
         {mainComponent === "main" && <Main />}
         {mainComponent === "game" && <Game />}
+        <div>
+          <Statistics />
+        </div>
       </div>
       <FriendList />
     </div>
