@@ -68,6 +68,11 @@ function Statistics() {
       })
       .then((statistics) => {
         setUserStatistics(statistics); // Store user statistics
+        const totalGoalsScored = statistics.statistics.reduce((acc, stat) => acc + stat.goals_scored, 0);
+        const totalGoalsReceived = statistics.statistics.reduce((acc, stat) => acc + stat.goals_received, 0);
+  
+        setTotalGoalsScored(totalGoalsScored);
+        setTotalGoalsReceived(totalGoalsReceived);
       })
       .catch((error) => {
         console.error("Error fetching user statistics:", error);
@@ -82,9 +87,6 @@ function Statistics() {
       setWinRate(calculatedWinRate.toFixed(2));
     }
   }, [fullUserData]);
-
-  const averageGoalsScored = mockMatchHistory.reduce((acc, match) => acc + match.goalsScored, 0) / mockMatchHistory.length;
-  const averageGoalsReceived = mockMatchHistory.reduce((acc, match) => acc + match.goalsReceived, 0) / mockMatchHistory.length;
 
   const chartData = {
     labels: mockMatchHistory.map(match => `Match ${match.matchId}`),
@@ -125,23 +127,20 @@ function Statistics() {
         <div className={styles.statistics__box}>
           <div>
             <h3>User Data Overview:</h3>
-            <pre>{JSON.stringify(userData, null, 2)}</pre>
+            {/* <pre>{JSON.stringify(userData, null, 2)}</pre> */}
             {fullUserData ? (
               <>
                 <p>Name: {fullUserData.username}</p>
                 <p>WINRATE: {winRate}%</p>
                 <p>WINS: {fullUserData.wins}</p>
                 <p>LOSSES: {fullUserData.losses}</p>
-                <p>Total goals scored: {totalGoalsScored}</p>
-                <p>Total goals received: {totalGoalsReceived}</p>
-                <p>Average goals scored: {averageGoalsScored.toFixed(2)}</p>
-                <p>Average goals received: {averageGoalsReceived.toFixed(2)}</p>
-              </>
+                <p>Total goals scored: {totalGoalsScored || 0}</p>
+                <p>Total goals received: {totalGoalsReceived || 0}</p>              </>
             ) : (
               <p>Loading full user data...</p>
             )}
             <h3>User Statistics:</h3>
-            <pre>{JSON.stringify(userStatistics, null, 2)}</pre>
+            {/* <pre>{JSON.stringify(userStatistics, null, 2)}</pre> */}
           </div>
           <button
             className={`${styles.chartBox__toggle} ${isChartBoxOpen ? styles.statistics__close : ""}`}
