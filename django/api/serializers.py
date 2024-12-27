@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Match, Statistic, Friend
+from .models import User, Match, Statistic, Friend, Tournament
 
 class UserSerializer(serializers.ModelSerializer):
     avatar = serializers.ImageField(required=False)
@@ -9,18 +9,13 @@ class UserSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class MatchSerializer(serializers.ModelSerializer):
-    matchType = serializers.CharField(source='match_type')
+    tournamentId = serializers.IntegerField(source='tournament_id', min_value=0, allow_null=True)
     startTime = serializers.DateTimeField(source='datetime_start')
     endTime = serializers.DateTimeField(source='datetime_end')
 
     class Meta:
         model = Match
-        fields = ['id', 'startTime', 'endTime', 'matchType']
-
-    def validate_matchType(self, value):
-        if value not in [Match.SINGLE_GAME, Match.TOURNAMENT]:
-            raise serializers.ValidationError("Invalid match type.")
-        return value
+        fields = ['id', 'startTime', 'endTime', 'tournamentId']
 
 class StatisticSerializer(serializers.ModelSerializer):
     matchId = serializers.IntegerField(source='match_id', min_value=0)
@@ -33,11 +28,11 @@ class StatisticSerializer(serializers.ModelSerializer):
         model = Statistic
         fields = ['id', 'goalsScored', 'goalsReceived', 'datetimeLeft', 'matchId', 'userId']
 
-    def validate(self, attrs):
-        # Debugging the incoming data
-        print("Validating data:", attrs)
-        return super().validate(attrs)
+class TournamentSerializer(serializers.ModelSerializer):
 
+    class Meta:
+        model = Tournament
+        fields = ['id']
 
 
 class FriendSerializer(serializers.ModelSerializer):

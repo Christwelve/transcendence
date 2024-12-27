@@ -47,30 +47,19 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.username
 
 class Match(models.Model):
-    SINGLE_GAME = 'SINGLE_GAME'
-    TOURNAMENT = 'TOURNAMENT'
-    MATCH_TYPES = [
-        (SINGLE_GAME, 'SINGLE_GAME'),
-        (TOURNAMENT, 'TOURNAMENT'),
-    ]
-
     id = models.AutoField(primary_key=True)
     datetime_start = models.DateTimeField()
     datetime_end = models.DateTimeField()
-    match_type = models.CharField(
-        max_length=20,
-        choices=MATCH_TYPES,
-        default=SINGLE_GAME
-    )
+    tournament_id = models.PositiveIntegerField(null=True)
 
     def __str__(self):
-        return f"Match {self.id} ({self.datetime_start} - {self.datetime_end}, {self.get_match_type_display()})"
+        return f"Match {self.id} ({self.datetime_start} - {self.datetime_end}, {self.tournament_id})"
 
 
 class Statistic(models.Model):
     id = models.AutoField(primary_key=True)
-    match_id = models.PositiveIntegerField()
-    user_id = models.PositiveIntegerField()
+    match_id = models.PositiveIntegerField(null=True)
+    user_id = models.PositiveIntegerField(null=True)
     goals_scored = models.PositiveSmallIntegerField(default=0)
     goals_received = models.PositiveSmallIntegerField(default=0)
     datetime_left = models.DateTimeField()
@@ -78,6 +67,11 @@ class Statistic(models.Model):
     def __str__(self):
         return f"Statistic {self.id}: Match {self.match_id}, User {self.user_id}"
 
+class Tournament(models.Model):
+    id = models.AutoField(primary_key=True)
+
+    def __str__(self):
+        return f"Tournament {self.id}"
 
 class Friend(models.Model):
     user = models.ForeignKey(

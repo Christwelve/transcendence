@@ -358,39 +358,9 @@ const onTick = tick => {
 		room.running = false;
 		room.status = 3;
 
-		// MATCH DATA
+		setTimeout(async () => {
+			await endGame(room);
 
-		(async () => {
-			const endTime = new Date().toISOString();
-
-			const matchData = {
-				startTime: room.startTime,
-				endTime: endTime,
-				matchType: room.type === 0 ? 'SINGLE_GAME' : 'TOURNAMENT',
-			};
-
-			console.log('Sending match data:', matchData);
-
-			const matchId = await postMatch(matchData);
-
-			if (matchId) {
-				// STATISTIC DATA
-				const statisticData = {
-					userId: 1,
-					goalsScored: room.scores[0].scored,
-					goalsReceived: room.scores[0].received,
-					datetimeLeft: endTime,
-					matchId: matchId, // Add match_id here
-				};
-
-				console.log('Sending statistic data:', statisticData);
-				await postStatistic(statisticData, matchId);
-			} else {
-				console.error('Match ID is undefined, cannot post statistics.');
-			}
-		})();
-
-		setTimeout(() => {
 			room.status = 0;
 			room.players.forEach(id => {
 				const player = data.players[id];
@@ -411,6 +381,49 @@ const onTick = tick => {
 		updateState();
 	}
 };
+
+async function endGame(room) {
+	const endTime = new Date().toISOString();
+	// TODO: Adjust Tourmanent Id
+	const matchData = {
+		startTime: room.startTime,
+		endTime: endTime,
+		tournamentId: null
+	};
+
+	console.log('Sending match data:', matchData);
+
+	const matchId = await postMatch(matchData);
+
+	if (matchId) {
+		// STATISTIC DATA
+		// TODO: handle logged out player (maybe store preliminary stats while game is running)
+		const statisticData = room.activePlayers.reduce((acc, playerId, i) => {
+
+			if (playerId == null)
+				return acc;
+
+			const player = data.players[playerId];
+			const score = room.scores[i];
+
+			const obj = {
+				// TODO: remove ?? 1 when proper user is implemented
+				userId: player.tid ?? 1,
+				goalsScored: score.scored,
+				goalsReceived: score.received,
+				datetimeLeft: endTime,
+				matchId
+			};
+
+			return [...acc, obj];
+		}, []);
+
+		console.log('Sending statistic data:', statisticData);
+		await postStatistic(statisticData, matchId);
+	} else {
+		console.error('Match ID is undefined, cannot post statistics.');
+	}
+}
 
 function updateBall(tick) {
 	const { activePlayers } = tick.getRoom();

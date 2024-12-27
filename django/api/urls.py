@@ -8,6 +8,7 @@ urlpatterns = [
 	path('user/data/', views.get_user_data, name='user_data'),
     path('matches/', views.match_view, name='match_view'),
     path('statistics/', views.statistic_view, name='statistic_view'),
+    path('tournaments/', views.tournament_view, name='tournament_view'),
     path('login/', views.login_view, name='login_view'),
 	path('auth/42/login/', views.login_with_42, name='login_with_42'),
     path('42/login/callback/', views.login_with_42_callback, name='login_with_42_callback'),
