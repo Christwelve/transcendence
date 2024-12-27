@@ -12,6 +12,7 @@ function Statistics() {
   const [totalGoalsReceived, setTotalGoalsReceived] = useState(200);
   const [userData, setUserData] = useState(null);
   const [fullUserData, setFullUserData] = useState(null);
+  const [userStatistics, setUserStatistics] = useState(null);
 
   const mockMatchHistory = [
     { matchId: 1, goalsScored: 5, goalsReceived: 3 },
@@ -52,6 +53,24 @@ function Statistics() {
       })
       .catch((error) => {
         console.error("Error fetching user data:", error);
+      });
+
+    // Fetch user statistics
+    fetch("http://localhost:8000/api/user/statistics/", {
+      method: "GET",
+      credentials: "include",
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to fetch user statistics");
+        }
+        return response.json();
+      })
+      .then((statistics) => {
+        setUserStatistics(statistics); // Store user statistics
+      })
+      .catch((error) => {
+        console.error("Error fetching user statistics:", error);
       });
   }, []);
 
@@ -121,6 +140,8 @@ function Statistics() {
             ) : (
               <p>Loading full user data...</p>
             )}
+            <h3>User Statistics:</h3>
+            <pre>{JSON.stringify(userStatistics, null, 2)}</pre>
           </div>
           <button
             className={`${styles.chartBox__toggle} ${isChartBoxOpen ? styles.statistics__close : ""}`}
