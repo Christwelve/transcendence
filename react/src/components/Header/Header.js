@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import Cookies from "js-cookie";
-import { FaCog, FaSignOutAlt } from "react-icons/fa"; // Icons for settings and logout
+import { FaCog, FaSignOutAlt } from "react-icons/fa";
 import styles from "./Header.module.scss";
 import SettingsWidget from "../Profile/SettingsWidget";
 
 const Header = ({ changeStatus, avatar, setAvatar }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false); // Control the settings widget visibility
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const logout = async () => {
     const response = await fetch(`http://localhost:8000/api/logout/`, {
@@ -52,8 +52,8 @@ const Header = ({ changeStatus, avatar, setAvatar }) => {
               <button
                 className={styles.dropdownItem}
                 onClick={() => {
-                  setIsSettingsOpen(true); // Open the settings widget
-                  setIsDropdownOpen(false); // Close dropdown
+                  setIsSettingsOpen(true);
+                  setIsDropdownOpen(false);
                 }}
               >
                 <FaCog /> Settings
@@ -72,10 +72,10 @@ const Header = ({ changeStatus, avatar, setAvatar }) => {
           <SettingsWidget
             avatar={avatar}
             setAvatar={(newAvatar) => {
-              setAvatar(newAvatar); // Update avatar when saved
-              setIsSettingsOpen(false); // Close settings widget
+              setAvatar(newAvatar);
+              setIsSettingsOpen(false);
             }}
-            onClose={() => setIsSettingsOpen(false)} // Handle closing of settings widget
+            onClose={() => setIsSettingsOpen(false)}
           />
         </div>
       )}

@@ -303,12 +303,15 @@ def logout_view(request):
     request.session.flush()
     return Response({"message": "Logged out successfully"})
 
-
 @api_view(['POST'])
 def update_profile(request):
     try:
-        # Replace hardcoded username with authentication logic
-        user = User.objects.get(username='fvoicu')
+        username = request.session.get('user_data', {}).get('username')
+        
+        if not username:
+            return Response({'error': 'User not logged in or session expired'}, status=401)
+
+        user = get_object_or_404(User, username=username)
         data = request.data
 
         if 'username' in data:
