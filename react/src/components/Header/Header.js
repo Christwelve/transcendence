@@ -50,7 +50,7 @@ const Header = ({ changeStatus, changeComponent, avatar }) => {
         <div
           className={styles.navbarBrand}
           onClick={() => {
-            activateTab("home");
+            window.location.reload();
           }}
         >
           <img

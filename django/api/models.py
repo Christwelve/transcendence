@@ -33,7 +33,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     status = models.BooleanField(default=True)
     wins = models.PositiveIntegerField(default=0)
     losses = models.PositiveIntegerField(default=0)
-    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+    avatar = models.ImageField(upload_to=avatar_upload_path, null=True, blank=True)
     last_online = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)  # Required by Django
     is_staff = models.BooleanField(default=False)  # Required by Django
@@ -81,6 +81,6 @@ class Friend(models.Model):
 
     class Meta:
         unique_together = ("user", "friend")
-        
+
     def __str__(self):
         return f"{self.user.username} is friends with {self.friend.username}"
