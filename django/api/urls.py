@@ -1,9 +1,11 @@
 from django.urls import path, include, re_path
 from oauth2_provider import urls as oauth2_urls
 from . import views
-
+# fetchStatistics
 urlpatterns = [
+    path('add_statistic/', views.add_statistic, name='add_statistic'),
     path('fetchUsers/', views.get_all_users, name='get_all_users'),
+    path('fetchStatistics/', views.fetchStatistics, name='fetchStatistics'),
     path('users/', views.user_view, name='user_view'),
 	path('users/<str:username>/', views.user_view, name='user_view_by_username'),
 	path('testSession', views.test_session, name='test_session'),
