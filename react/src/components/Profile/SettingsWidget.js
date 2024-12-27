@@ -1,15 +1,12 @@
 import React, { useState } from "react";
 import styles from "./Profile.module.scss";
 
-const SettingsWidget = ({ avatar, setAvatar }) => {
-  const [isOpen, setIsOpen] = useState(false);
+const SettingsWidget = ({ avatar, setAvatar, onClose }) => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [avatarPreview, setAvatarPreview] = useState(avatar);
   const [avatarFile, setAvatarFile] = useState(null);
-
-  const toggleWidget = () => setIsOpen(!isOpen);
 
   const handleSaveChanges = () => {
     const formData = new FormData();
@@ -46,59 +43,49 @@ const SettingsWidget = ({ avatar, setAvatar }) => {
   };
 
   return (
-    <div className={styles.container}>
-      {/* Toggle Button */}
-      <button className={styles.toggleButton} onClick={toggleWidget}>
-        ⚙️ Settings
-      </button>
+    <div className={styles.widget}>
+      <h3>Settings</h3>
+      <img src={avatarPreview} alt="Avatar" className={styles.avatar} />
+      <input type="file" onChange={handleAvatarChange} />
 
-      {/* Settings Content */}
-      {isOpen && (
-        <div className={styles.widget}>
-          <h3>Settings</h3>
-          <img src={avatarPreview} alt="Avatar" className={styles.avatar} />
-          <input type="file" onChange={handleAvatarChange} />
+      <div className={styles.formGroup}>
+        <label>Username</label>
+        <input
+          type="text"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          placeholder="Enter new username"
+        />
+      </div>
 
-          <div className={styles.formGroup}>
-            <label>Username</label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter new username"
-            />
-          </div>
+      <div className={styles.formGroup}>
+        <label>Email</label>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Enter new email"
+        />
+      </div>
 
-          <div className={styles.formGroup}>
-            <label>Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter new email"
-            />
-          </div>
+      <div className={styles.formGroup}>
+        <label>Password</label>
+        <input
+          type="password"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          placeholder="Enter new password"
+        />
+      </div>
 
-          <div className={styles.formGroup}>
-            <label>Password</label>
-            <input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="Enter new password"
-            />
-          </div>
-
-          <div className={styles.actions}>
-            <button className={styles.saveButton} onClick={handleSaveChanges}>
-              Save
-            </button>
-            <button className={styles.cancelButton} onClick={toggleWidget}>
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
+      <div className={styles.actions}>
+        <button className={styles.saveButton} onClick={handleSaveChanges}>
+          Save
+        </button>
+        <button className={styles.cancelButton} onClick={onClose}>
+          Cancel
+        </button>
+      </div>
     </div>
   );
 };

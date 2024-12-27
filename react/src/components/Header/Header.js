@@ -1,116 +1,84 @@
 import React, { useState } from "react";
-import Cookies from 'js-cookie';
+import Cookies from "js-cookie";
+import { FaCog, FaSignOutAlt } from "react-icons/fa"; // Icons for settings and logout
 import styles from "./Header.module.scss";
+import SettingsWidget from "../Profile/SettingsWidget";
 
-const Header = ({ changeStatus, changeComponent, avatar }) => {
-  const [homeIsActive, setHomeIsActive] = useState(true);
-  const [gameIsActive, setGameIsActive] = useState(false);
-
-  const activateTab = (tab) => {
-    if (tab === "main") {
-      setHomeIsActive(true);
-      setGameIsActive(false);
-    } else if (tab === "game") {
-      setGameIsActive(true);
-      setHomeIsActive(false);
-    } else {
-      setHomeIsActive(false);
-      setGameIsActive(false);
-    }
-    changeComponent(tab);
-  };
+const Header = ({ changeStatus, avatar, setAvatar }) => {
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false); // Control the settings widget visibility
 
   const logout = async () => {
     const response = await fetch(`http://localhost:8000/api/logout/`, {
       method: "POST",
-      // headers: {
-      //   Authorization: `Token ${Cookies.get('authToken')}`
-      // }
     });
 
     if (response.ok) {
       console.log("Logged out successfully");
-      const authToken = Cookies.get('authToken');
-      if (authToken) { //add this check just for safety
-        Cookies.remove('authToken');
+      const authToken = Cookies.get("authToken");
+      if (authToken) {
+        Cookies.remove("authToken");
       }
-      Cookies.remove('login');
+      Cookies.remove("login");
       const url = new URL(window.location);
-      url.searchParams.delete('logged_in'); // Remove the logged_in query parameter
-      window.history.pushState({}, '', url); // Update the URL without reloading the page
+      url.searchParams.delete("logged_in");
+      window.history.pushState({}, "", url);
       changeStatus("login");
     }
-  }
+  };
 
   return (
-    <header
-      className={`navbar navbar-expand-lg navbar-dark ${styles.customNavbar}`}
-    >
+    <header className={`navbar navbar-expand-lg navbar-dark ${styles.customNavbar}`}>
       <div className={styles.inner}>
-        <div
-          className={styles.navbarBrand}
-          onClick={() => {
-            activateTab("home");
-          }}
-        >
-          <img
-            src="/logo.png"
-            alt="Logo"
-            width="30"
-            height="30"
-            className="d-inline-block align-text-top"
-          />
+        {/* Brand Logo */}
+        <div className={styles.navbarBrand} onClick={() => console.log("Go Home!")}>
+          <img src="/logo.png" alt="Logo" className={styles.logo} />
           Transcendence
         </div>
 
-        <div id="navbarNav">
-          <div className="btn-group dropstart">
-            <button
-              type="button"
-              className={`btn dropdown-toggle ${styles.dropdownButton}`}
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
-            >
-              <img src={avatar} alt="profile" className={styles.profile} />
-            </button>
-            <ul className={`dropdown-menu ${styles.dropdownMenu}`}>
-              <li>
-                <button
-                  className={`dropdown-item ${styles.dropdownItem}`}
-                  onClick={() => {
-                    activateTab("profile");
-                  }}
-                >
-                  Settings
-                </button>
-              </li>
-              <li>
-                <button
-                  className={`dropdown-item ${styles.dropdownItem}`}
-                  onClick={() => {
-                    activateTab("stats");
-                  }}
-                >
-                  Statistics
-                </button>
-              </li>
-              <li>
-                <hr className={`dropdown-divider ${styles.dropdownDivider}`} />
-              </li>
-              <li>
-                <button
-                  className={`dropdown-item ${styles.dropdownItem}`}
-                  onClick={() => {
-                    logout();
-                  }}
-                >
-                  Logout
-                </button>
-              </li>
-            </ul>
-          </div>
+        {/* Profile Section */}
+        <div className={styles.profileContainer}>
+          {/* Profile Avatar */}
+          <img
+            src={avatar}
+            alt="profile"
+            className={styles.profile}
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+          />
+
+          {/* Dropdown Menu */}
+          {isDropdownOpen && (
+            <div className={styles.dropdownMenu}>
+              <button
+                className={styles.dropdownItem}
+                onClick={() => {
+                  setIsSettingsOpen(true); // Open the settings widget
+                  setIsDropdownOpen(false); // Close dropdown
+                }}
+              >
+                <FaCog /> Settings
+              </button>
+              <button className={styles.dropdownItem} onClick={logout}>
+                <FaSignOutAlt /> Logout
+              </button>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Settings Widget */}
+      {isSettingsOpen && (
+        <div className={styles.settingsContainer}>
+          <SettingsWidget
+            avatar={avatar}
+            setAvatar={(newAvatar) => {
+              setAvatar(newAvatar); // Update avatar when saved
+              setIsSettingsOpen(false); // Close settings widget
+            }}
+            onClose={() => setIsSettingsOpen(false)} // Handle closing of settings widget
+          />
+        </div>
+      )}
     </header>
   );
 };
