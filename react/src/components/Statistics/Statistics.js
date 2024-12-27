@@ -2,19 +2,16 @@ import React, { useState, useEffect } from "react";
 import styles from "./Statistics.module.scss";
 import { Line } from 'react-chartjs-2';
 import 'chart.js/auto';
-// to do:
-// 2. add list of players to match history elements
-// 3.change mock data to real data from the server
+
 function Statistics() {
   const [isStatisticsOpen, setIsStatisticsOpen] = useState(false);
   const [isMatchHistoryOpen, setIsMatchHistoryOpen] = useState(false);
   const [isChartBoxOpen, setIsChartBoxOpen] = useState(false);
-  const [winRate, setWinRate] = useState(33);
-  const [wins, setWins] = useState(531);
-  const [losses, setLosses] = useState(32);
+  const [winRate, setWinRate] = useState(0);
   const [totalGoalsScored, setTotalGoalsScored] = useState(400);
   const [totalGoalsReceived, setTotalGoalsReceived] = useState(200);
   const [userData, setUserData] = useState(null);
+  const [fullUserData, setFullUserData] = useState(null);
 
   const mockMatchHistory = [
     { matchId: 1, goalsScored: 5, goalsReceived: 3 },
@@ -37,11 +34,35 @@ function Statistics() {
       })
       .then((data) => {
         setUserData(data); // Store user data
+
+        // Fetch full user data using the username from the first response
+        return fetch(`http://localhost:8000/api/users/${data.username}/`, {
+          method: "GET",
+          credentials: "include",
+        });
+      })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to fetch full user data");
+        }
+        return response.json();
+      })
+      .then((fullData) => {
+        setFullUserData(fullData); // Store full user data
       })
       .catch((error) => {
         console.error("Error fetching user data:", error);
       });
   }, []);
+
+  useEffect(() => {
+    if (fullUserData) {
+      const { wins, losses } = fullUserData;
+      const totalGames = wins + losses;
+      const calculatedWinRate = totalGames > 0 ? (wins / totalGames) * 100 : 0;
+      setWinRate(calculatedWinRate.toFixed(2));
+    }
+  }, [fullUserData]);
 
   const averageGoalsScored = mockMatchHistory.reduce((acc, match) => acc + match.goalsScored, 0) / mockMatchHistory.length;
   const averageGoalsReceived = mockMatchHistory.reduce((acc, match) => acc + match.goalsReceived, 0) / mockMatchHistory.length;
@@ -85,19 +106,20 @@ function Statistics() {
         <div className={styles.statistics__box}>
           <div>
             <h3>User Data Overview:</h3>
-            {userData ? (
+            <pre>{JSON.stringify(userData, null, 2)}</pre>
+            {fullUserData ? (
               <>
-                <p>Name: {userData.username}</p>
-                <p>WINRATE: {winRate}</p>
-                <p>WINS: {wins}</p>
-                <p>LOSSES: {losses}</p>
+                <p>Name: {fullUserData.username}</p>
+                <p>WINRATE: {winRate}%</p>
+                <p>WINS: {fullUserData.wins}</p>
+                <p>LOSSES: {fullUserData.losses}</p>
                 <p>Total goals scored: {totalGoalsScored}</p>
                 <p>Total goals received: {totalGoalsReceived}</p>
                 <p>Average goals scored: {averageGoalsScored.toFixed(2)}</p>
                 <p>Average goals received: {averageGoalsReceived.toFixed(2)}</p>
               </>
             ) : (
-              <p>Loading user data...</p>
+              <p>Loading full user data...</p>
             )}
           </div>
           <button
