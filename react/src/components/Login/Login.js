@@ -5,15 +5,41 @@ import styles from "./Login.module.scss";
 const Login = ({ changeStatus, userLogin, errorMessage, login_with_42 }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [usernameError, setUsernameError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
   const robotFaceRef = useRef(null);
 
   const _onUsernameChange = (event) => {
     setUsername(event.target.value);
+    setUsernameError("");
   };
 
   const _onPasswordChange = (event) => {
-    setPassword(event.target.value);
+    const value = event.target.value;
+    setPassword(value);
+
+    if (value === "") {
+      setPasswordError("Password is required.");
+    } else {
+      setPasswordError("");
+    }
+  };
+
+  const validateFieldsOnSubmit = () => {
+    let valid = true;
+
+    if (!password) {
+      setPasswordError("Password is required.");
+      valid = false;
+    }
+
+    if (!username) {
+      setUsernameError("Username is required.");
+      valid = false;
+    }
+
+    return valid;
   };
 
   const createUser = () => {
@@ -25,6 +51,9 @@ const Login = ({ changeStatus, userLogin, errorMessage, login_with_42 }) => {
 
   const _onFormSubmit = (event) => {
     event.preventDefault();
+    const isValid = validateFieldsOnSubmit();
+    if (!isValid) return;
+    
     const user = createUser();
     userLogin(user, false);
   };
@@ -100,20 +129,22 @@ const Login = ({ changeStatus, userLogin, errorMessage, login_with_42 }) => {
           <label htmlFor="username" className={styles["form-label"]}>Username</label>
           <input
             type="text"
-            className={styles["form-control"]}
+            className={`${styles["form-control"]} ${usernameError ? "is-invalid" : ""}`}
             id="username"
             placeholder="example"
             onChange={_onUsernameChange}
           />
+          {usernameError && <div className="invalid-feedback">{usernameError}</div>}
         </div>
         <div className={styles["form-group"]}>
           <label htmlFor="password" className={styles["form-label"]}>Password</label>
           <input
             type="password"
             id="password"
-            className={styles["form-control"]}
+            className={`${styles["form-control"]} ${passwordError ? "is-invalid" : ""}`}
             onChange={_onPasswordChange}
           />
+          {passwordError && <div className="invalid-feedback">{passwordError}</div>}
         </div>
         <div className={styles["form-group"]}>
           <button

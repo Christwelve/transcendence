@@ -150,7 +150,6 @@ def login_view(request):
     if request.method == 'POST':
         username = request.data['username']
         password = request.data['password']
-        otp_token = request.data['otp_token']
         user = get_object_or_404(User, username=username)
         if check_password(password, user.password):
             totp_device = TOTPDevice.objects.filter(user=user, confirmed=True).first()
@@ -164,6 +163,7 @@ def login_view(request):
                     totp_device.save()
 
             if totp_device:  # If user has a TOTP device, validate the token
+                otp_token = request.data.get('otp_token')
                 if not otp_token:  # If no 2FA token is provided, return an error
                     return Response({'error': '2FA token is required'}, status=status.HTTP_401_UNAUTHORIZED)
                 if not totp_device.verify_token(otp_token):  # Validate the token

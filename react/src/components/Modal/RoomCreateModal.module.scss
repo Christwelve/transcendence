@@ -11,31 +11,3 @@
 		outline: 1px solid var(--color-primary);
 	}
 }
-
-.actions {
-	display: flex;
-	justify-content: flex-end;
-	margin-top: 36px;
-
-
-	button {
-		margin-left: 12px;
-		background-color: var(--color-gray-dark);
-		color: var(--color-white);
-		border-radius: 6px;
-		padding: 3px 24px;
-
-		&.cancel {
-			color: var(--color-gray-light);
-
-			&:hover {
-				color: var(--color-white);
-			}
-		}
-
-		&.create {
-			background-color: var(--color-primary);
-			color: var(--color-black);
-		}
-	}
-}

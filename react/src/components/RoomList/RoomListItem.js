@@ -17,9 +17,13 @@ function RoomListItem(props) {
 	const playersCurrentPadded = padNumber(playerCount, 2);
 	const playersMaxPadded = padNumber(playersMax, 2);
 
+	const isFull = playerCount >= playersMax;
+	const isStarted = status !== 0;
+	const isDisabled = (isFull || isStarted) && !selected;
+
 	return (
 		<div className={cls(scss.wrapper)}>
-			<div className={cls(scss.room, selected && scss.selected)} onClick={onClick}>
+			<div className={cls(scss.room, selected && scss.selected, isDisabled && scss.disabled)} onClick={onClick}>
 				<div className={scss.info}>
 					<div className={scss.name}>{name}</div>
 					<div className={scss.meta}>

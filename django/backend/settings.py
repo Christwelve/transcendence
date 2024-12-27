@@ -183,7 +183,7 @@ OAUTH2_PROVIDER = {
     'AUTH_ACCESS_TOKEN_URL': '/oauth/token',
     'AUTH_USERINFO_URL': '/v2/me',
     'CLIENT_ID': 'u-s4t2ud-35200b91dbc192b0409be4fe981c496c78f0d18c705602b771e804d09f4fabab',
-    'CLIENT_SECRET': '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',
+    'CLIENT_SECRET': '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',
     'SCOPE': {'public': 'Public access'},  # Adjust scopes based on your needs
 }
 

@@ -7,6 +7,7 @@ import Cookies from 'js-cookie';
 import TwoFactor from "./components/TwoFactor/TwoFactor";
 import DataContextProvider from './components/DataContext/DataContext';
 import ModalPresenter from './components/Modal/ModalPresenter';
+import ToastPresenter from './components/Toast/ToastPresenter'
 import { closeModalTop } from './utils/modal';
 
 function App() {
@@ -73,10 +74,28 @@ function App() {
         setUser(userData.user);
       }
     } else {
-      setUserStatus("2fa");
-      setErrorMessage(null);
-      const userObject = Object.fromEntries(user.entries());
-      setUser(userObject);
+      try {
+        const response = await fetch(`http://localhost:8000/api/login/`, {
+          method: "POST",
+          credentials: 'include',
+          body: user,
+        });
+
+        if (response.status === 400 || response.status === 404) {
+          setErrorMessage("Wrong credentials!");
+          return;
+        } else if (response.status === 401 ) {
+          setUserStatus("2fa");
+          setErrorMessage(null);
+          const userObject = Object.fromEntries(user.entries());
+          setUser(userObject);
+        } else {
+          setErrorMessage("An unexpected error occurred");
+        }
+      } catch (error) {
+        console.error("Network error:", error.message);
+      }
+
     }
   };
 
@@ -147,6 +166,14 @@ function App() {
     }
   };
 
+  // return (
+  //   <DataContextProvider>
+  //     <Home changeStatus={changeStatus} avatar={avatar} />
+  //     <ModalPresenter />
+  //     <ToastPresenter />
+  //   </DataContextProvider>
+  // );
+
   return (
     <>
       {userStatus === "register" ? (
@@ -173,6 +200,7 @@ function App() {
         <DataContextProvider>
           <Home changeStatus={changeStatus} avatar={avatar} />
           <ModalPresenter />
+          <ToastPresenter />
         </DataContextProvider>
 
       )}

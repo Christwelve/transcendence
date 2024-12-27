@@ -9,7 +9,19 @@
 	--color-primary: rgb(var(--color-primary-rgb));
 
 	--color-white: #fff;
+	--color-white-trans: rgba(255, 255, 255, 0.5);
 	--color-black: #000;
+
+	--color-red: hsl(4deg, 90%, 58%);
+	--color-red-trans: hsla(4deg, 90%, 58%, 0.5);
+	--color-orange: hsl(36deg, 100%, 50%);
+	--color-orange-trans: hsla(36deg, 100%, 50%, 0.5);
+	--color-yellow: hsl(54deg, 100%, 62%);
+	--color-yellow-trans: hsla(54deg, 100%, 62%, 0.5);
+	--color-green: hsl(88deg, 50%, 53%);
+	--color-green-trans: hsla(88deg, 50%, 53%, 0.5);
+	--color-blue: hsl(199deg, 98%, 48%);
+	--color-blue-trans: hsla(199deg, 98%, 48%, 0.5);
 }
 
 html {
