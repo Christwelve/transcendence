@@ -11,7 +11,7 @@ import ToastPresenter from './components/Toast/ToastPresenter'
 import { closeModalTop } from './utils/modal';
 
 function App() {
-	useEffect(() => {
+  useEffect(() => {
 
     const onKeyDown = event => {
       if (event.code !== 'Escape')
@@ -31,29 +31,14 @@ function App() {
     }
   }, []);
 
-  const [userStatus, setUserStatus] = useState("register");
+  const [userStatus, setUserStatus] = useState("login");
   const [errorMessage, setErrorMessage] = useState(null);
-  const [database, setDatabase] = useState({});
   const [avatar, setAvatar] = useState(null);
   const [user, setUser] = useState(null);
 
-	const changeStatus = (status) => {
-		setUserStatus(status);
-	};
-
-	const addUserToDatabase = (user) => {
-		if (!database[user.username]) {
-			const updatedDatabase = {
-				...database,
-				[user.username]: { email: user.email, password: user.password },
-			};
-			setDatabase(updatedDatabase);
-			setUserStatus("login");
-			setErrorMessage(null);
-		} else {
-			setErrorMessage("User already exists");
-		}
-	};
+  const changeStatus = (status) => {
+    setUserStatus(status);
+  };
 
   const userLogin = async (user, authenticated) => {
     if (authenticated) {
@@ -75,7 +60,7 @@ function App() {
         }
       } else {
         Cookies.set('login', 'manual');
-        if(!userData.user.avatar)
+        if (!userData.user.avatar)
           setAvatar(`https://robohash.org/${userData.username}?200x200`);
         else {
           const avatarIcon = (userData.user.avatar).split('/').pop();
@@ -152,21 +137,27 @@ function App() {
       }
 
       const user = await response.json();
+      // console.log("User: ", user);
       const authToken = Cookies.get('authToken');
       if (!authToken) {
         Cookies.set('authToken', user.token);
       }
       if (user.avatar) {
+        // if (user.avatar.includes('intra.42.fr')) {
+
+        // }
         if (user.avatar.includes('avatars/')) {
           const avatarIcon = (user.avatar).split('/').pop();
           setAvatar(`http://localhost:8000/media/avatars/${avatarIcon}`);
         } else {
           setAvatar(user.avatar);
+          console.log("TODO: ADD FILE TO BACKEND AND STORE PATH: ", user.avatar);
+          setAvatar(user.avatar);
         }
 
       }
-      else
-        setAvatar(`https://robohash.org/${user.username}?200x200`);
+      // else
+      //   setAvatar(`https://robohash.org/${user.username}?200x200`);
       setUserStatus("logged");
       setErrorMessage(null);
     } catch (error) {
@@ -188,14 +179,14 @@ function App() {
       {userStatus === "register" ? (
         <Register
           changeStatus={changeStatus}
-          addUserToDatabase={addUserToDatabase}
-          login_with_42={login_with_42}
-          errorMessage={errorMessage}
+        // addUserToDatabase={addUserToDatabase}
+        // errorMessage={errorMessage}
         />
       ) : userStatus === "login" ? (
         <Login
           changeStatus={changeStatus}
           userLogin={userLogin}
+          login_with_42={login_with_42}
           errorMessage={errorMessage}
         />
       ) : userStatus === "2fa" ? (
@@ -212,9 +203,9 @@ function App() {
           <ToastPresenter />
         </DataContextProvider>
 
-			)}
-		</>
-	);
+      )}
+    </>
+  );
 }
 
 export default App;

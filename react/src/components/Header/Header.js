@@ -30,9 +30,19 @@ const Header = ({ changeStatus, avatar, setAvatar }) => {
   return (
     <header className={`navbar navbar-expand-lg navbar-dark ${styles.customNavbar}`}>
       <div className={styles.inner}>
-        {/* Brand Logo */}
-        <div className={styles.navbarBrand} onClick={() => console.log("Go Home!")}>
-          <img src="/logo.png" alt="Logo" className={styles.logo} />
+        <div
+          className={styles.navbarBrand}
+          onClick={() => {
+            window.location.reload();
+          }}
+        >
+          <img
+            src="/logo.png"
+            alt="Logo"
+            width="30"
+            height="30"
+            className="d-inline-block align-text-top"
+          />
           Transcendence
         </div>
 

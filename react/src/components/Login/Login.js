@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import styles from "./Login.module.scss";
 
 
-const Login = ({ changeStatus, userLogin, errorMessage }) => {
+const Login = ({ changeStatus, userLogin, errorMessage, login_with_42 }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [usernameError, setUsernameError] = useState("");
@@ -152,6 +152,16 @@ const Login = ({ changeStatus, userLogin, errorMessage }) => {
             className={styles["btn-primary"]}
           >
             Login
+          </button>
+          <div className={styles.divider}>
+            <span>or</span>
+          </div>
+          <button
+            type="button"
+            className={styles["btn-primary"]}
+            onClick={login_with_42}
+          >
+            Login with 42
           </button>
         </div>
         <div className={styles["form-group"]}>
