@@ -102,7 +102,7 @@ def login_with_42_callback(request):
         # Extract user details
         username = user_info_data.get('login')
         email = user_info_data.get('email')
-        avatar = user_info_data.get('image')['link']
+        api_avatar = user_info_data.get('image', {}).get('link', None)
         password = make_password('')  # Empty password as it is OAuth-based login
 
         user = User.objects.filter(username=username).first()
@@ -116,6 +116,10 @@ def login_with_42_callback(request):
             else:
                 return JsonResponse({'error': 'User creation failed', 'details': serializer.errors}, status=400)
 
+        if not user.avatar:
+            user.avatar = api_avatar
+            user.save()
+
         # Create or retrieve the token for the user
         token, _ = Token.objects.get_or_create(user=user)
 
@@ -123,7 +127,7 @@ def login_with_42_callback(request):
         request.session['user_data'] = {
             'username': username,
             'email': email,
-            'avatar': avatar,
+            'avatar': user.avatar.url if user.avatar else None,
             'token': token.key,
         }
         return redirect(f"http://localhost:3000?logged_in=true")
