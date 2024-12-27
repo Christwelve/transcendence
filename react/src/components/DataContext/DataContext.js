@@ -1,4 +1,4 @@
-import React, {createContext, useContext, useState, useReducer, useEffect, useRef} from 'react'
+import React, { createContext, useContext, useState, useReducer, useEffect, useRef } from 'react'
 import io from 'socket.io-client'
 import {showToast} from '../Toast/ToastPresenter'
 
@@ -11,10 +11,10 @@ let lastInstructions = null;
 
 const useDataContext = () => {
 	return useContext(DataContext);
-  };
+};
 
 function DataContextProvider(props) {
-	const {children} = props;
+	const { children } = props;
 
 	const dataDefault = {
 		lastId: -1,
@@ -101,6 +101,7 @@ function DataContextProvider(props) {
 // reducer functions
 // function dataReducer(state, instructions) {
 
+
 // 	if(instructions === lastInstructions)
 // 		return state;
 
@@ -111,6 +112,7 @@ function DataContextProvider(props) {
 
 // 	console.log('state', state);
 // 	console.log('inst', instructions);
+
 
 // 	let newState = {...state};
 
@@ -124,10 +126,12 @@ function DataContextProvider(props) {
 
 // 		const [entity, property] = getEntity(newState, path);
 
+
 // 		console.log(entity, property, action, value);
 
 // 		if(entity == null)
 // 			continue;
+
 
 // 		fns[type](entity, property, action, value);
 // 	}
@@ -200,6 +204,7 @@ function getPlayerList(data) {
 };
 
 function getPlayerListForRoom(data, roomId) {
+
 	if(roomId == null)
 		return [];
 
@@ -225,7 +230,7 @@ function createRoom(send, options) {
 }
 
 function joinRoom(send, roomId) {
-	send('room.join', {id: roomId});
+	send('room.join', { id: roomId });
 }
 
 function quickJoinRoom(send) {

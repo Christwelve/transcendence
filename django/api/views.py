@@ -231,12 +231,10 @@ def statistic_view(request):
 @api_view(['GET'])
 def fetch_friends(request):
     try:
-        # Hardcode the user for testing purposes,
-        # bypassing permissions and authentications issues
-        # TODO: This must be changed, once the auth is done!
-        user = User.objects.first()
+        username = request.session.get('user_data', {}).get('username', None)
+        user = get_object_or_404(User, username=username)
         if not user:
-            return Response({'error': 'No users found'}, status=404)
+            return Response({'error': 'User not found'}, status=404)
 
         friends = Friend.objects.filter(user=user)
         serializer = FriendSerializer(friends, many=True)
@@ -251,33 +249,39 @@ def search_users(request):
         query = request.GET.get('query', '').strip()
         if not query:
             return Response({'error': 'Query parameter is required'}, status=400)
-        users = User.objects.filter(username__icontains=query)
+
+        username = request.session.get('user_data', {}).get('username', None)
+        user = get_object_or_404(User, username=username)
+        users = User.objects.filter(username__icontains=query).exclude(id=user.id)
+        friends = Friend.objects.filter(user=user).values_list('friend__id', flat=True)
+        users = users.exclude(id__in=friends)
+
         if not users.exists():
             return Response({'detail': 'No User matches the given query.'}, status=200)
+
         results = [{'id': user.id, 'username': user.username} for user in users]
         return Response({'users': results}, status=200)
     except Exception as e:
         return Response({'error': str(e)}, status=500)
 
 
+
 @api_view(['POST'])
 def add_friend(request):
     try:
-        # Hardcode the user for testing purposes,
-        # bypassing permissions and authentications issues
-        # TODO: This must be changed, once the auth is done!
-        user = User.objects.get(username='fvoicu')
-
+        username = request.session.get('user_data', {}).get('username', None)
+        user = get_object_or_404(User, username=username)
+        if not user:
+            return Response({'error': 'User not found'}, status=404)
         friend_username = request.data.get('username')
         if not friend_username:
             return Response({'error': 'Username is required'}, status=400)
-
         friend = User.objects.filter(username=friend_username).first()
         if not friend:
             return Response({'error': 'User not found'}, status=404)
-
-        # TODO: Add "already friends" scenario
-        Friend.objects.get_or_create(user=user, friend=friend)
+        if Friend.objects.filter(user=user, friend=friend).exists():
+            return Response({'error': f'{friend_username} is already your friend!'}, status=400)
+        Friend.objects.create(user=user, friend=friend)
         return Response({'message': f'{friend_username} added as a friend!'}, status=201)
     except Exception as e:
         return Response({'error': str(e)}, status=500)
@@ -286,17 +290,25 @@ def add_friend(request):
 
 @api_view(['POST'])
 def remove_friend(request):
-    # Hardcode the user for testing purposes,
-    # bypassing permissions and authentications issues
-    # TODO: This must be changed, once the auth is done!
-    user = User.objects.get(username='fvoicu')
-    friend_username = request.data.get('username')
     try:
-        friend = User.objects.get(username=friend_username)
-        Friend.objects.filter(user=user, friend=friend).delete()
+        username = request.session.get('user_data', {}).get('username', None)
+        user = get_object_or_404(User, username=username)
+        if not user:
+            return Response({'error': 'User not found'}, status=404)
+        friend_username = request.data.get('username')
+        if not friend_username:
+            return Response({'error': 'Username is required'}, status=400)
+        friend = User.objects.filter(username=friend_username).first()
+        if not friend:
+            return Response({'error': 'User not found'}, status=404)
+        friend_relation = Friend.objects.filter(user=user, friend=friend)
+        if not friend_relation.exists():
+            return Response({'error': f'{friend_username} is not in your friend list!'}, status=400)
+        friend_relation.delete()
         return Response({'message': f'{friend_username} removed from your friends!'}, status=200)
-    except User.DoesNotExist:
-        return Response({'error': 'User not found'}, status=404)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
 
 @api_view(['POST'])
 def logout_view(request):

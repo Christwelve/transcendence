@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import styles from "./Register.module.scss";
 
-const Register = ({ changeStatus, login_with_42 }) => {
+const Register = ({ changeStatus }) => {
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -71,17 +71,6 @@ const Register = ({ changeStatus, login_with_42 }) => {
     return valid;
   };
 
-  const createUser = () => {
-    const formData = new FormData();
-    formData.append("email", email);
-    formData.append("username", username);
-    formData.append("password", password);
-    if (avatar) {
-      formData.append("avatar", avatar);
-    }
-    return formData;
-  };
-
   const addUserToDatabase = async (formData) => {
     try {
       const response = await fetch("http://localhost:8000/api/users/", {
@@ -106,13 +95,35 @@ const Register = ({ changeStatus, login_with_42 }) => {
     }
   };
 
-  const _onFormSubmit = (event) => {
+  const _onFormSubmit = async (event) => {
     event.preventDefault();
     const isValid = validateFieldsOnSubmit();
     if (!isValid) return;
 
-    const user = createUser();
-    addUserToDatabase(user);
+    let avatarFile = avatar;
+
+    if (!avatarFile && username) {
+      const robothashUrl = `https://robohash.org/${username}?200x200`;
+      try {
+        const response = await fetch(robothashUrl);
+        const blob = await response.blob();
+        avatarFile = new File([blob], `${username}.png`, { type: blob.type });
+      } catch (error) {
+        console.error("Error downloading Robohash avatar:", error);
+        return;
+      }
+    }
+
+    const formData = new FormData();
+    formData.append("email", email);
+    formData.append("username", username);
+    formData.append("password", password);
+
+    if (avatarFile) {
+      formData.append("avatar", avatarFile);
+    }
+
+    addUserToDatabase(formData);
   };
 
   return (
@@ -183,24 +194,14 @@ const Register = ({ changeStatus, login_with_42 }) => {
         </div>
         <div className={styles["form-group"]}>
           <p>Do you have an account?{" "}</p>
-            <span
-              className={styles.link}
-              onClick={() => {
-                changeStatus("login");
-              }}
-            >
-              <p>Login now</p>
-            </span>
-          <br />
-          <p>--or--</p>
-          <br />
-          <button
-            type="button"
-            className={styles["btn-primary"]}
-            onClick={login_with_42}
+          <span
+            className={styles.link}
+            onClick={() => {
+              changeStatus("login");
+            }}
           >
-            Login with 42
-          </button>
+            <p>Login now</p>
+          </span>
         </div>
       </form>
     </div>
