@@ -198,6 +198,14 @@ def get_user_data(request):
         return JsonResponse({'error': 'No user data found', 'session': request.session.get('user_data')}, status=404)
     return JsonResponse(user_data)
 
+@login_required
+@api_view(['GET'])
+def get_user_statistics(request):
+    user = request.user
+    statistics = Statistic.objects.filter(user=user)
+    serializer = StatisticSerializer(statistics, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
 @api_view(['GET'])
 def test_session(request):
     session_data = request.session.get('user_data', None)
