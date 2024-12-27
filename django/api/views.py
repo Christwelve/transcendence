@@ -208,9 +208,14 @@ def user_view(request, username=None):
 @api_view(['GET', 'POST'])
 def match_view(request):
     if request.method == 'GET':
-        matches = Match.objects.all()
+        match_type = request.query_params.get('matchType', None)
+        if match_type:
+            matches = Match.objects.filter(match_type=match_type)
+        else:
+            matches = Match.objects.all()
         serializer = MatchSerializer(matches, many=True)
         return Response(serializer.data)
+
     elif request.method == 'POST':
         serializer = MatchSerializer(data=request.data)
         if serializer.is_valid():
@@ -218,17 +223,44 @@ def match_view(request):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['GET', 'POST'])
+# @api_view(['POST'])
+# def statistic_view(request):
+#     if request.method == 'POST':
+#         match_id = request.data.get('match')
+#         user_id = request.data.get('user')
+
+#         if not Match.objects.filter(id=match_id).exists():
+#             return Response({"error": "Invalid match ID"}, status=status.HTTP_400_BAD_REQUEST)
+
+#         if not User.objects.filter(id=user_id).exists():
+#             return Response({"error": "Invalid user ID"}, status=status.HTTP_400_BAD_REQUEST)
+
+#         match = Match.objects.get(id=match_id)
+#         user = User.objects.get(id=user_id)
+
+#         request.data['match'] = match
+#         request.data['user'] = user
+
+#         serializer = StatisticSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
 def statistic_view(request):
-    if request.method == 'GET':
-        statistics = Statistic.objects.all()
-        serializer = StatisticSerializer(statistics, many=True)
-        return Response(serializer.data)
-    elif request.method == 'POST':
+    print("DAAATAAAAAAAAAAA")
+    print(request.data)
+    print(request.method)
+
+    if request.method == 'POST':
+
         serializer = StatisticSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
