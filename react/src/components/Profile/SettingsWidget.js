@@ -19,6 +19,7 @@ const SettingsWidget = ({ avatar, setAvatar, onClose }) => {
 
     fetch("http://localhost:8000/api/user/update/", {
       method: "POST",
+      credentials: "include",
       body: formData,
     })
       .then((response) => response.json())

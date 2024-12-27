@@ -318,26 +318,41 @@ def logout_view(request):
 @api_view(['POST'])
 def update_profile(request):
     try:
-        username = request.session.get('user_data', {}).get('username')
-        
+        if not request.session.get('user_data'):
+            return Response({'error': 'User not logged in or session expired'}, status=401)
+
+        username = request.session['user_data'].get('username', None)
         if not username:
             return Response({'error': 'User not logged in or session expired'}, status=401)
 
         user = get_object_or_404(User, username=username)
+
+        if not request.data:
+            return Response({'error': 'No data provided'}, status=400)
+
         data = request.data
 
         if 'username' in data:
-            user.username = data['username']
+            new_username = data['username']
+            if not new_username:
+                return Response({'error': 'Username is required'}, status=400)
+
+            if User.objects.filter(username=new_username).exists() and new_username != user.username:
+                return Response({'error': 'Username already taken'}, status=400)
+            
+            user.username = new_username
+
         if 'email' in data:
             user.email = data['email']
+
         if 'password' in data:
             user.password = make_password(data['password'])
+
         if 'avatar' in request.FILES:
             user.avatar = request.FILES['avatar']
-
+            
         user.save()
 
-        # Construct the full avatar URL
         avatar_url = user.avatar.url if user.avatar else None
         if avatar_url and not avatar_url.startswith("http"):
             avatar_url = f"http://{request.get_host()}{avatar_url}"
@@ -348,5 +363,4 @@ def update_profile(request):
         }, status=200)
 
     except Exception as e:
-        print(f"Error: {str(e)}")
         return Response({'error': str(e)}, status=500)
