@@ -8,12 +8,17 @@ from .serializers import UserSerializer, MatchSerializer, StatisticSerializer, F
 from django.contrib.auth.hashers import make_password, check_password
 from django.shortcuts import get_object_or_404, redirect
 from django.http import JsonResponse
-
 from django.conf import settings
 from django_otp.plugins.otp_totp.models import TOTPDevice
 import qrcode
 import io
 import base64
+
+@api_view(['GET'])
+def get_all_users(request):
+    users = User.objects.all()
+    serializer = UserSerializer(users, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
 def setup_2fa(request):
@@ -144,6 +149,10 @@ def get_user_data(request):
         return JsonResponse({'error': 'No user data found', 'session': request.session.get('user_data')}, status=404)
     return JsonResponse(user_data)
 
+@api_view(['GET'])
+def test_session(request):
+    session_data = request.session.get('user_data', None)
+    return JsonResponse({'session_data': session_data, 'session_key': request.session.session_key})
 
 @api_view(['POST'])
 def login_view(request):
@@ -183,7 +192,6 @@ def login_view(request):
                 'user_data': request.session['user_data'],
             }, status=status.HTTP_200_OK)
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
-
 
 @api_view(['GET', 'POST'])
 def user_view(request, username=None):
