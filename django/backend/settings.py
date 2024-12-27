@@ -75,6 +75,8 @@ CORS_ORIGIN_WHITELIST = [
     'http://localhost:3000'
 ]
 
+MIDDLEWARE.insert(0, 'corsheaders.middleware.CorsMiddleware')
+
 # TODO:
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
@@ -84,12 +86,13 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_CREDENTIALS = True
 
 # For allowing cross-origin cookies
-SESSION_COOKIE_SAMESITE = 'None'
+# SESSION_COOKIE_SAMESITE = 'None'
 
 # Optional: Specify allowed headers
 CORS_ALLOW_HEADERS = [
-    "content-type",
-    "authorization",
+    'content-type',
+    'x-csrftoken',
+    'authorization',
 ]
 
 ROOT_URLCONF = 'backend.urls'
@@ -206,8 +209,8 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Store sessions in the 
 SESSION_COOKIE_NAME = 'sessionid'
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
-SESSION_COOKIE_SECURE = False
-SESSION_COOKIE_SAMESITE = None
+SESSION_COOKIE_SAMESITE = 'None'  # Allow cross-site cookies
+SESSION_COOKIE_SECURE = True    # Set this to True if using HTTPS
 SESSION_COOKIE_HTTPONLY = True
 
 #multisite support
