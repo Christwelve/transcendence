@@ -7,6 +7,7 @@ const SettingsWidget = ({ avatar, setAvatar, onClose }) => {
   const [newPassword, setNewPassword] = useState("");
   const [avatarPreview, setAvatarPreview] = useState(avatar);
   const [avatarFile, setAvatarFile] = useState(null);
+  const [fileName, setFileName] = useState("No file chosen");
 
   const handleSaveChanges = () => {
     const formData = new FormData();
@@ -37,54 +38,74 @@ const SettingsWidget = ({ avatar, setAvatar, onClose }) => {
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     setAvatarFile(file);
+    setFileName(file ? file.name : "No file chosen");
     const reader = new FileReader();
     reader.onloadend = () => setAvatarPreview(reader.result);
     reader.readAsDataURL(file);
   };
 
   return (
-    <div className={styles.widget}>
-      <h3>Settings</h3>
-      <img src={avatarPreview} alt="Avatar" className={styles.avatar} />
-      <input type="file" onChange={handleAvatarChange} />
+    <div className={`${styles.overlay} ${styles.fadeIn}`}>
+      <div className={styles.widget}>
+        {/* Close Button */}
+        <div className={styles.closeButton} onClick={onClose}>
+          &times;
+        </div>
 
-      <div className={styles.formGroup}>
-        <label>Username</label>
-        <input
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          placeholder="Enter new username"
-        />
-      </div>
+        {/* Content */}
+        <img src={avatarPreview} alt="Avatar" className={styles.avatar} />
 
-      <div className={styles.formGroup}>
-        <label>Email</label>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Enter new email"
-        />
-      </div>
+        <div className={styles.fileUpload}>
+          <label htmlFor="avatarUpload" className={styles.fileLabel}>
+            Choose File
+          </label>
+          <input
+            type="file"
+            id="avatarUpload"
+            className={styles.fileInput}
+            onChange={handleAvatarChange}
+          />
+          <span className={styles.fileName}>{fileName}</span>
+        </div>
 
-      <div className={styles.formGroup}>
-        <label>Password</label>
-        <input
-          type="password"
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-          placeholder="Enter new password"
-        />
-      </div>
+        <div className={styles.formGroup}>
+          <label>Username</label>
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Enter new username"
+          />
+        </div>
 
-      <div className={styles.actions}>
-        <button className={styles.saveButton} onClick={handleSaveChanges}>
-          Save
-        </button>
-        <button className={styles.cancelButton} onClick={onClose}>
-          Cancel
-        </button>
+        <div className={styles.formGroup}>
+          <label>Email</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Enter new email"
+          />
+        </div>
+
+        <div className={styles.formGroup}>
+          <label>Password</label>
+          <input
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            placeholder="Enter new password"
+          />
+        </div>
+
+        <div className={styles.actions}>
+          <button className={styles.saveButton} onClick={handleSaveChanges}>
+            Save
+          </button>
+          <button className={styles.cancelButton} onClick={onClose}>
+            Cancel
+          </button>
+        </div>
       </div>
     </div>
   );
