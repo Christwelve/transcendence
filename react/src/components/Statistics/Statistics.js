@@ -14,6 +14,7 @@ function Statistics() {
   const [losses, setLosses] = useState(32);
   const [totalGoalsScored, setTotalGoalsScored] = useState(400);
   const [totalGoalsReceived, setTotalGoalsReceived] = useState(200);
+  const [userData, setUserData] = useState(null);
 
   const mockMatchHistory = [
     { matchId: 1, goalsScored: 5, goalsReceived: 3 },
@@ -22,6 +23,25 @@ function Statistics() {
     { matchId: 4, goalsScored: 5, goalsReceived: 7 },
     // Add more match data as needed
   ];
+
+  useEffect(() => {
+    fetch("http://localhost:8000/api/user/data/", {
+      method: "GET",
+      credentials: "include", // Ensure cookies are sent with the request
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to fetch user data");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setUserData(data); // Store user data
+      })
+      .catch((error) => {
+        console.error("Error fetching user data:", error);
+      });
+  }, []);
 
   const averageGoalsScored = mockMatchHistory.reduce((acc, match) => acc + match.goalsScored, 0) / mockMatchHistory.length;
   const averageGoalsReceived = mockMatchHistory.reduce((acc, match) => acc + match.goalsReceived, 0) / mockMatchHistory.length;
@@ -64,14 +84,21 @@ function Statistics() {
       {isStatisticsOpen && (
         <div className={styles.statistics__box}>
           <div>
-            <h3>User data Overview:</h3>
-            <p>WINRATE: {winRate}</p>
-            <p>WINS: {wins}</p>
-            <p>LOSSES: {losses}</p>
-            <p>Total goals scored: {totalGoalsScored}</p>
-            <p>Total goals received: {totalGoalsReceived}</p>
-            <p>Average goals scored: {averageGoalsScored.toFixed(2)}</p>
-            <p>Average goals received: {averageGoalsReceived.toFixed(2)}</p>
+            <h3>User Data Overview:</h3>
+            {userData ? (
+              <>
+                <p>Name: {userData.username}</p>
+                <p>WINRATE: {winRate}</p>
+                <p>WINS: {wins}</p>
+                <p>LOSSES: {losses}</p>
+                <p>Total goals scored: {totalGoalsScored}</p>
+                <p>Total goals received: {totalGoalsReceived}</p>
+                <p>Average goals scored: {averageGoalsScored.toFixed(2)}</p>
+                <p>Average goals received: {averageGoalsReceived.toFixed(2)}</p>
+              </>
+            ) : (
+              <p>Loading user data...</p>
+            )}
           </div>
           <button
             className={`${styles.chartBox__toggle} ${isChartBoxOpen ? styles.statistics__close : ""}`}
