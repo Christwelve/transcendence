@@ -1,0 +1,103 @@
+$primary-color: #00fff6;
+$text-color: #ffffff;
+$background-color: rgba(0, 8, 20, 0.95);
+$border-color: rgba(255, 255, 255, 0.2);
+
+.container {
+  position: relative;
+}
+
+.toggleButton {
+  background: $primary-color;
+  border: none;
+  border-radius: 5px;
+  color: #000814;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 10px 20px;
+  transition: background 0.3s;
+
+  &:hover {
+    background: lighten($primary-color, 10%);
+  }
+}
+
+.widget {
+  position: absolute;
+  top: 40px;
+  right: 0;
+  width: 300px;
+  background: $background-color;
+  border: 1px solid $primary-color;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 0 15px $primary-color;
+
+  h3 {
+    color: $text-color;
+    margin-bottom: 10px;
+  }
+
+  .avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    margin-bottom: 10px;
+  }
+
+  .formGroup {
+    margin-bottom: 10px;
+
+    label {
+      display: block;
+      color: lighten($text-color, 20%);
+      margin-bottom: 5px;
+    }
+
+    input {
+      width: 100%;
+      padding: 8px;
+      background: $border-color;
+      border: none;
+      border-radius: 5px;
+      color: $text-color;
+
+      &:focus {
+        outline: none;
+        box-shadow: 0 0 5px $primary-color;
+      }
+    }
+  }
+
+  .actions {
+    display: flex;
+    justify-content: space-between;
+
+    .saveButton {
+      background: $primary-color;
+      border: none;
+      border-radius: 5px;
+      color: #000814;
+      padding: 8px 15px;
+      cursor: pointer;
+
+      &:hover {
+        background: lighten($primary-color, 10%);
+      }
+    }
+
+    .cancelButton {
+      background: none;
+      border: 1px solid $primary-color;
+      border-radius: 5px;
+      color: $text-color;
+      padding: 8px 15px;
+      cursor: pointer;
+
+      &:hover {
+        background: $primary-color;
+        color: #000814;
+      }
+    }
+  }
+}

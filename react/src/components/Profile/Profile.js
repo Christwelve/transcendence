@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import "../genericStyles.css";
-import "./Profile.css";
+import "./Profile.module.scss";
 
 const Profile = ({ avatar, setAvatar }) => {
   const [username, setUsername] = useState("");
