@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Navbar from "../Navbar/Navbar";
+import Header from "../Header/Header";
 import Statistics from "../Statistics/Statistics";
 import Profile from "../Profile/Profile";
 import Main from "../Main/Main";
@@ -17,7 +17,7 @@ const Home = ({ changeStatus, avatar, setAvatar }) => {
 
   return (
     <div className={styles.homeContainer}>
-      <Navbar
+      <Header
         changeStatus={changeStatus}
         changeComponent={changeComponent}
         avatar={avatar}

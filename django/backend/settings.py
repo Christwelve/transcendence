@@ -41,8 +41,20 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'corsheaders',
+
+    #for auth tokens
     'rest_framework',
+	'rest_framework.authtoken',
+	'rest_framework_simplejwt',
 	'oauth2_provider',
+
+    #for 2FA
+	'django_otp',
+    'django_otp.plugins.otp_static',
+    'django_otp.plugins.otp_totp',
+    'two_factor',
+
+    #local apps
     'api',
 ]
 
@@ -53,6 +65,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+	'django_otp.middleware.OTPMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -69,6 +82,9 @@ CORS_ALLOWED_ORIGINS = [
 
 # Optional: Allow credentials (e.g., cookies, sessions)
 CORS_ALLOW_CREDENTIALS = True
+
+# For allowing cross-origin cookies
+SESSION_COOKIE_SAMESITE = 'None'
 
 # Optional: Specify allowed headers
 CORS_ALLOW_HEADERS = [
@@ -167,9 +183,38 @@ OAUTH2_PROVIDER = {
     'AUTH_ACCESS_TOKEN_URL': '/oauth/token',
     'AUTH_USERINFO_URL': '/v2/me',
     'CLIENT_ID': 'u-s4t2ud-35200b91dbc192b0409be4fe981c496c78f0d18c705602b771e804d09f4fabab',
-    'CLIENT_SECRET': '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',
+    'CLIENT_SECRET': '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',
     'SCOPE': {'public': 'Public access'},  # Adjust scopes based on your needs
 }
 
-LOGIN_URL = '/admin/login/'
+# LOGIN_URL = '/admin/login/'
 URL_42 = 'https://api.intra.42.fr/oauth/authorize?client_id=u-s4t2ud-35200b91dbc192b0409be4fe981c496c78f0d18c705602b771e804d09f4fabab&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fapi%2F42%2Flogin%2Fcallback%2F&response_type=code'
+
+#needed for authentication
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+}
+
+AUTH_USER_MODEL = 'api.User'
+
+
+#session settings
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Store sessions in the database
+SESSION_COOKIE_NAME = 'sessionid'
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_COOKIE_AGE = 1209600  # 2 weeks in seconds
+SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_SAMESITE = None
+SESSION_COOKIE_HTTPONLY = True
+
+#multisite support
+SITE_ID = 1
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+LOGIN_URL = 'two_factor:login'

@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import styles from "./Navbar.module.scss";
+import Cookies from 'js-cookie';
+import styles from "./Header.module.scss";
 
-const Navbar = ({ changeStatus, changeComponent, avatar }) => {
+const Header = ({ changeStatus, changeComponent, avatar }) => {
   const [homeIsActive, setHomeIsActive] = useState(true);
   const [gameIsActive, setGameIsActive] = useState(false);
 
@@ -19,13 +20,35 @@ const Navbar = ({ changeStatus, changeComponent, avatar }) => {
     changeComponent(tab);
   };
 
+  const logout = async () => {
+    const response = await fetch(`http://localhost:8000/api/logout/`, {
+      method: "POST",
+      // headers: {
+      //   Authorization: `Token ${Cookies.get('authToken')}`
+      // }
+    });
+
+    if (response.ok) {
+      console.log("Logged out successfully");
+      const authToken = Cookies.get('authToken');
+      if (authToken) { //add this check just for safety
+        Cookies.remove('authToken');
+      }
+      Cookies.remove('login');
+      const url = new URL(window.location);
+      url.searchParams.delete('logged_in'); // Remove the logged_in query parameter
+      window.history.pushState({}, '', url); // Update the URL without reloading the page
+      changeStatus("login");
+    }
+  }
+
   return (
-    <nav
+    <header
       className={`navbar navbar-expand-lg navbar-dark ${styles.customNavbar}`}
     >
-      <div className="container-fluid">
-        <p
-          className={`navbar-brand ${styles.navbarBrand}`}
+      <div className={styles.inner}>
+        <div
+          className={styles.navbarBrand}
           onClick={() => {
             activateTab("home");
           }}
@@ -38,35 +61,9 @@ const Navbar = ({ changeStatus, changeComponent, avatar }) => {
             className="d-inline-block align-text-top"
           />
           Transcendence
-        </p>
+        </div>
 
-        <div className="collapse navbar-collapse" id="navbarNav">
-          <ul className="navbar-nav me-auto">
-            <li className="nav-item">
-              <p
-                className={`nav-link ${styles.navbarLink} ${
-                  homeIsActive ? styles.active : ""
-                }`}
-                onClick={() => {
-                  activateTab("main");
-                }}
-              >
-                Home
-              </p>
-            </li>
-            <li className="nav-item">
-              <p
-                className={`nav-link ${styles.navbarLink} ${
-                  gameIsActive ? styles.active : ""
-                }`}
-                onClick={() => {
-                  activateTab("game");
-                }}
-              >
-                Game
-              </p>
-            </li>
-          </ul>
+        <div id="navbarNav">
           <div className="btn-group dropstart">
             <button
               type="button"
@@ -104,7 +101,7 @@ const Navbar = ({ changeStatus, changeComponent, avatar }) => {
                 <button
                   className={`dropdown-item ${styles.dropdownItem}`}
                   onClick={() => {
-                    changeStatus("login");
+                    logout();
                   }}
                 >
                   Logout
@@ -114,8 +111,8 @@ const Navbar = ({ changeStatus, changeComponent, avatar }) => {
           </div>
         </div>
       </div>
-    </nav>
+    </header>
   );
 };
 
-export default Navbar;
+export default Header;
