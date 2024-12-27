@@ -13,6 +13,55 @@ from django_otp.plugins.otp_totp.models import TOTPDevice
 import qrcode
 import io
 import base64
+from django.contrib.auth.decorators import login_required
+
+@api_view(['POST'])
+@login_required
+def add_statistic(request):
+    """
+    View to add a Statistic.
+    If the Match does not exist, it will be created.
+    """
+    match_id = request.data.get('match')
+    goals_scored = request.data.get('goals_scored')
+    goals_received = request.data.get('goals_received')
+    datetime_left = request.data.get('datetime_left')
+    datetime_start = request.data.get('datetime_start')  # Optional for creating Match
+    datetime_end = request.data.get('datetime_end')  # Optional for creating Match
+
+    # Check if the match exists
+    match = None
+    if match_id:
+        try:
+            match = Match.objects.get(id=match_id)
+        except Match.DoesNotExist:
+            # Create the match if datetime fields are provided
+            if datetime_start and datetime_end:
+                match = Match.objects.create(
+                    datetime_start=datetime_start,
+                    datetime_end=datetime_end
+                )
+            else:
+                return Response(
+                    {"detail": "Match not found, and no data provided to create a new match."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+    # Create the Statistic
+    serializer = StatisticSerializer(data={
+        'match': match.id,
+        'goals_scored': goals_scored,
+        'goals_received': goals_received,
+        'datetime_left': datetime_left,
+    })
+
+    if serializer.is_valid():
+        serializer.save(user=request.user)
+        return Response(
+            {"detail": "Statistic added successfully"},
+            status=status.HTTP_201_CREATED
+        )
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
 def get_all_users(request):
@@ -313,3 +362,9 @@ def remove_friend(request):
 def logout_view(request):
     request.session.flush()
     return Response({"message": "Logged out successfully"})
+
+@api_view(['GET'])
+def fetchStatistics(request):
+    statistics = Statistic.objects.all()
+    serializer = StatisticSerializer(statistics, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
