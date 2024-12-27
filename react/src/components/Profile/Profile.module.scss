@@ -173,3 +173,76 @@ $button-radius: 5px;
     }
   }
 }
+
+$primary-color: #00fff6;
+$text-color: #ffffff;
+$background-color: rgba(0, 8, 20, 0.95);
+
+.toggleGroup {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  label {
+    color: $text-color;
+    font-size: 0.9rem;
+  }
+
+  .toggleContainer {
+    display: flex;
+    align-items: center;
+    gap: 10px; /* Space between slider and lock icon */
+  }
+
+  .slider {
+    width: 40px;
+    height: 20px;
+    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.2);
+    position: relative;
+    cursor: pointer;
+    transition: background 0.3s ease;
+
+    &.enabled {
+      background: $primary-color;
+    }
+
+    &.disabled {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .knob {
+      width: 18px;
+      height: 18px;
+      background: $text-color;
+      border-radius: 50%;
+      position: absolute;
+      top: 1px;
+      transition: left 0.3s ease;
+
+      &.knobEnabled {
+        left: 20px;
+      }
+
+      &.knobDisabled {
+        left: 2px;
+      }
+    }
+  }
+
+  .lockIcon {
+    font-size: 1.5rem;
+    transition: color 0.3s ease, text-shadow 0.3s ease;
+
+    &.lockEnabled {
+      color: $primary-color;
+      text-shadow: 0 0 10px $primary-color, 0 0 20px $primary-color;
+    }
+
+    &.lockDisabled {
+      color: $text-color;
+      text-shadow: none;
+    }
+  }
+}

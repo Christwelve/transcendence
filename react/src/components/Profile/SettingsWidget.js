@@ -8,6 +8,7 @@ const SettingsWidget = ({ avatar, setAvatar, onClose }) => {
   const [avatarPreview, setAvatarPreview] = useState(avatar);
   const [avatarFile, setAvatarFile] = useState(null);
   const [fileName, setFileName] = useState("No file chosen");
+  const [is2FAEnabled, setIs2FAEnabled] = useState(false);
 
   const handleSaveChanges = () => {
     const formData = new FormData();
@@ -47,14 +48,10 @@ const SettingsWidget = ({ avatar, setAvatar, onClose }) => {
   return (
     <div className={`${styles.overlay} ${styles.fadeIn}`}>
       <div className={styles.widget}>
-        {/* Close Button */}
         <div className={styles.closeButton} onClick={onClose}>
           &times;
         </div>
-
-        {/* Content */}
         <img src={avatarPreview} alt="Avatar" className={styles.avatar} />
-
         <div className={styles.fileUpload}>
           <label htmlFor="avatarUpload" className={styles.fileLabel}>
             Choose File
@@ -67,7 +64,6 @@ const SettingsWidget = ({ avatar, setAvatar, onClose }) => {
           />
           <span className={styles.fileName}>{fileName}</span>
         </div>
-
         <div className={styles.formGroup}>
           <label>Username</label>
           <input
@@ -77,7 +73,6 @@ const SettingsWidget = ({ avatar, setAvatar, onClose }) => {
             placeholder="Enter new username"
           />
         </div>
-
         <div className={styles.formGroup}>
           <label>Email</label>
           <input
@@ -87,7 +82,6 @@ const SettingsWidget = ({ avatar, setAvatar, onClose }) => {
             placeholder="Enter new email"
           />
         </div>
-
         <div className={styles.formGroup}>
           <label>Password</label>
           <input
@@ -97,7 +91,30 @@ const SettingsWidget = ({ avatar, setAvatar, onClose }) => {
             placeholder="Enter new password"
           />
         </div>
+        <div className={styles.toggleGroup}>
+          <label>Enable 2FA</label>
+          <div className={styles.toggleContainer}>
+            {/* Slider */}
+            <div
+              className={`${styles.slider} ${is2FAEnabled ? styles.enabled : styles.disabled
+                }`}
+              onClick={() => setIs2FAEnabled(!is2FAEnabled)}
+            >
+              <div
+                className={`${styles.knob} ${is2FAEnabled ? styles.knobEnabled : styles.knobDisabled
+                  }`}
+              ></div>
+            </div>
 
+            {/* Lock Icon */}
+            <div
+              className={`${styles.lockIcon} ${is2FAEnabled ? styles.lockEnabled : styles.lockDisabled
+                }`}
+            >
+              {is2FAEnabled ? "🔒" : "🔓"}
+            </div>
+          </div>
+        </div>
         <div className={styles.actions}>
           <button className={styles.saveButton} onClick={handleSaveChanges}>
             Save
