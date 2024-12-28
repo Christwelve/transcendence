@@ -134,6 +134,8 @@ def login_with_42_callback(request):
             'token': token.key,
         }
 
+        request.session.save()
+
         return redirect(f"http://localhost:3000?logged_in=true")
 
     return redirect(f"http://localhost:3000?logged_in=false")
@@ -146,18 +148,16 @@ def get_user_data(request):
     return JsonResponse(user_data)
 
 @api_view(['GET'])
-# @authentication_classes([TokenAuthentication])  # Use TokenAuthentication to validate tokens
-# @permission_classes([IsAuthenticated])  # Ensure only authenticated users can access
 def validate_token_view(request):
     try:
-        # Retrieve the user from the authenticated request
         user = request.user
         return Response({
             'tid': user.id,
             'username': user.username,
         }, status=200)
-    except AuthenticationFailed:
-        return Response({'error': 'Invalid token'}, status=401)
+    except AuthenticationFailed as e:
+        return Response({'error': str(e)}, status=401)
+
 
 
 @api_view(['POST'])
@@ -190,8 +190,10 @@ def login_view(request):
                 'username': user.username,
                 'email': user.email,
                 'avatar': str(user.avatar),
+                'token': token.key,
             }
             request.session.save()
+
             return Response({
                 'user': serializer.data,
                 'token': token.key,  # Include authToken in response
@@ -220,25 +222,23 @@ def user_view(request, username=None):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['PATCH'])
+@api_view(['GET'])
 def user_status_view(request):
-    user_data = request.session.get('user_data', None)
-    status = request.status
+    try:
+        user = request.user
+        is_online = True if request.GET.get('status', None) == 'true' else False
 
-    if user_data == NONE:
-        return Response({'error': 'Internal Server Error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        user.status = is_online
 
-    user_data['status'] = status
+        if is_online == False:
+            iso_timestamp = now().isoformat()
+            user.last_online = iso_timestamp
 
-    if status == False:
-        iso_timestamp = now().isoformat()
-        user_data['last_online'] = iso_timestamp
+        user.save()
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    serializer = UserSerializer(data=userData)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return JsonResponse({'success': True}, status=status.HTTP_200_OK)
 
 @api_view(['GET', 'POST'])
 def match_view(request):

@@ -40,19 +40,19 @@ function App() {
     setUserStatus(status);
   };
 
-  const addUserToDatabase = (user) => {
-    if (!database[user.username]) {
-      const updatedDatabase = {
-        ...database,
-        [user.username]: { email: user.email, password: user.password },
-      };
-      setDatabase(updatedDatabase);
-      setUserStatus("login");
-      setErrorMessage(null);
-    } else {
-      setErrorMessage("User already exists");
-    }
-  };
+  // const addUserToDatabase = (user) => {
+  //   if (!database[user.username]) {
+  //     const updatedDatabase = {
+  //       ...database,
+  //       [user.username]: { email: user.email, password: user.password },
+  //     };
+  //     setDatabase(updatedDatabase);
+  //     setUserStatus("login");
+  //     setErrorMessage(null);
+  //   } else {
+  //     setErrorMessage("User already exists");
+  //   }
+  // };
 
   const userLogin = async (user, authenticated) => {
     if (authenticated) {
@@ -165,8 +165,8 @@ function App() {
           setAvatar(`http://localhost:8000/media/avatars/${avatarIcon}`);
         } else {
           setAvatar(user.avatar);
-          console.log("TODO: ADD FILE TO BACKEND AND STORE PATH: ", user.avatar);
-          setAvatar(user.avatar);
+          // console.log("TODO: ADD FILE TO BACKEND AND STORE PATH: ", user.avatar);
+          // setAvatar(user.avatar);
         }
 
       }

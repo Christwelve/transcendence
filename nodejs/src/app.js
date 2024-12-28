@@ -1,5 +1,6 @@
 import http from 'http'
 import express from 'express'
+import cookie from 'cookie'
 import { Server as WebSocketServer } from 'socket.io'
 import { createProxy, sendInstructions } from './proxy.js'
 import { ServerTick } from 'shared/tick'
@@ -10,7 +11,7 @@ const server = http.createServer(app);
 const io = new WebSocketServer(server, {
 	serveClient: false,
 	cors: {
-		origin: '*',
+		origin: 'http://localhost:3000',
 		methods: ['GET', 'POST'],
 		credentials: true
 	}
@@ -478,26 +479,28 @@ function createPlayer(id, tid, username) {
 }
 
 async function initConnection(socket) {
-	const { token } = socket.handshake.auth ?? {};
-
-	console.log('token', token);
-
-	if (token == null)
-		return socket.disconnect(true);
+	const { cookie: cookieHeader } = socket.handshake.headers
+	const cookies = cookie.parse(cookieHeader);
 
 	const options = {
 		method: 'GET',
 		headers: {
-			'Authorization': `Token ${token}`,
+			'Authorization': `Token ${cookies.authToken}`,
 			'Content-Type': 'application/json',
+			'Cookie': cookieHeader
 		},
 	};
-	const response = await fetch('http://django:8000/api/user/validate', options);
+	const response = await fetch('http://django:8000/api/user/validate/', options);
 
-	console.log('response', response);
+	if (!response.ok) {
 
-	if (!response.ok)
+		const body = await response.json();
+
+		console.log('verify failed', body);
+
 		return socket.disconnect(true);
+
+	}
 
 	const { tid, username } = await response.json();
 
@@ -505,9 +508,27 @@ async function initConnection(socket) {
 
 	data.players[player.id] = player;
 
+	setPlayerStatus(socket, true);
+
 	updateState();
 
 	return player;
+}
+
+function setPlayerStatus(socket, status) {
+	const { cookie: cookieHeader } = socket.handshake.headers
+	const cookies = cookie.parse(cookieHeader);
+
+	const options = {
+		method: 'GET',
+		headers: {
+			'Authorization': `Token ${cookies.authToken}`,
+			'Content-Type': 'application/json',
+			'Cookie': cookieHeader
+		},
+	};
+
+	fetch(`http://django:8000/api/user/status/?status=${status}`, options);
 }
 
 io.on('connection', async socket => {
@@ -716,6 +737,8 @@ io.on('connection', async socket => {
 
 		if (player == null)
 			return;
+
+		setPlayerStatus(socket, false);
 
 		const room = getRoomFromPlayer(player);
 

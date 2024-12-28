@@ -8,6 +8,10 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = '__all__'
 
+    def create(self, validated_data):
+        validated_data['is_active'] = True
+        return super().create(validated_data)
+
 class MatchSerializer(serializers.ModelSerializer):
     tournamentId = serializers.IntegerField(source='tournament_id', min_value=0, allow_null=True)
     startTime = serializers.DateTimeField(source='datetime_start')
