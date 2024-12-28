@@ -11,7 +11,7 @@ import ToastPresenter from './components/Toast/ToastPresenter'
 import { closeModalTop } from './utils/modal';
 
 function App() {
-	useEffect(() => {
+  useEffect(() => {
 
     const onKeyDown = event => {
       if (event.code !== 'Escape')
@@ -37,23 +37,23 @@ function App() {
   const [avatar, setAvatar] = useState(null);
   const [user, setUser] = useState(null);
 
-	const changeStatus = (status) => {
-		setUserStatus(status);
-	};
+  const changeStatus = (status) => {
+    setUserStatus(status);
+  };
 
-	const addUserToDatabase = (user) => {
-		if (!database[user.username]) {
-			const updatedDatabase = {
-				...database,
-				[user.username]: { email: user.email, password: user.password },
-			};
-			setDatabase(updatedDatabase);
-			setUserStatus("login");
-			setErrorMessage(null);
-		} else {
-			setErrorMessage("User already exists");
-		}
-	};
+  const addUserToDatabase = (user) => {
+    if (!database[user.username]) {
+      const updatedDatabase = {
+        ...database,
+        [user.username]: { email: user.email, password: user.password },
+      };
+      setDatabase(updatedDatabase);
+      setUserStatus("login");
+      setErrorMessage(null);
+    } else {
+      setErrorMessage("User already exists");
+    }
+  };
 
   const userLogin = async (user, authenticated) => {
     if (authenticated) {
@@ -75,7 +75,7 @@ function App() {
         }
       } else {
         Cookies.set('login', 'manual');
-        if(!userData.user.avatar)
+        if (!userData.user.avatar)
           setAvatar(`https://robohash.org/${userData.username}?200x200`);
         else {
           const avatarIcon = (userData.user.avatar).split('/').pop();
@@ -99,7 +99,7 @@ function App() {
         if (response.status === 400 || response.status === 404) {
           setErrorMessage("Wrong credentials!");
           return;
-        } else if (response.status === 401 ) {
+        } else if (response.status === 401) {
           setUserStatus("2fa");
           setErrorMessage(null);
           const userObject = Object.fromEntries(user.entries());
@@ -212,9 +212,9 @@ function App() {
           <ToastPresenter />
         </DataContextProvider>
 
-			)}
-		</>
-	);
+      )}
+    </>
+  );
 }
 
 export default App;

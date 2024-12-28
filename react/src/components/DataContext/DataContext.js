@@ -1,6 +1,7 @@
-import React, {createContext, useContext, useState, useReducer, useEffect, useRef} from 'react'
+import React, { createContext, useContext, useState, useReducer, useEffect, useRef } from 'react'
 import io from 'socket.io-client'
-import {showToast} from '../Toast/ToastPresenter'
+import { showToast } from '../Toast/ToastPresenter'
+import Cookies from 'js-cookie'
 
 const SOCKET_SERVER_URL = `http://${window.location.hostname}:4000`;
 
@@ -11,10 +12,10 @@ let lastInstructions = null;
 
 const useDataContext = () => {
 	return useContext(DataContext);
-  };
+};
 
 function DataContextProvider(props) {
-	const {children} = props;
+	const { children } = props;
 
 	const dataDefault = {
 		lastId: -1,
@@ -33,28 +34,40 @@ function DataContextProvider(props) {
 	const dataRef = useRef(null);
 	dataRef.current = data;
 
+	const token = Cookies.get('authToken');
+
+	console.log(data);
+
 	useEffect(() => {
-		const socket = io(SOCKET_SERVER_URL);
+		const socket = io(SOCKET_SERVER_URL, { auth: { token } });
 
 		socketRef.current = socket;
 
 		socket.on('connect', () => {
 			console.log('Connected to server');
+
+			socket.emit('initial');
 		});
 
 		socket.on('reconnect', () => {
 			socket.emit('initial');
 		});
 
+		socket.on('disconnect', () => {
+			console.log('You died.');
+		});
+
 		socket.on('state', payload => {
-			const {id, userId, data: incomingData} = payload;
+			const { id, userId, data: incomingData } = payload;
+
+			console.log('payload', id, payload);
 
 			const data = dataRef.current;
 
-			if(id <= data.lastId)
+			if (id <= data.lastId)
 				return;
 
-			const newData = {...data, lastId: id, userId: data.userId ?? userId, ...incomingData};
+			const newData = { ...data, lastId: id, userId: data.userId || userId, ...incomingData };
 
 			setData(newData);
 		});
@@ -63,13 +76,11 @@ function DataContextProvider(props) {
 
 		socket.on('notice', showToast);
 
-		socket.emit('initial');
-
 		return () => {
 			socket.disconnect();
 		};
 
-	}, []);
+	}, [token]);
 
 	const fns = {
 		getPlayer: getPlayer.bind(null, data),
@@ -178,7 +189,7 @@ function DataContextProvider(props) {
 
 // api functions
 function getPlayer(data) {
-	const {userId, players} = data;
+	const { userId, players } = data;
 
 	return players[userId] || null;
 }
@@ -200,12 +211,12 @@ function getPlayerList(data) {
 };
 
 function getPlayerListForRoom(data, roomId) {
-	if(roomId == null)
+	if (roomId == null)
 		return [];
 
 	const room = data.rooms[roomId];
 
-	if(room == null)
+	if (room == null)
 		return [];
 
 	return room.players.map(playerId => data.players[playerId]);
@@ -214,7 +225,7 @@ function getPlayerListForRoom(data, roomId) {
 function getTournamentForRoom(data, roomId) {
 	const room = data.rooms[roomId];
 
-	if(room == null)
+	if (room == null)
 		return null;
 
 	return data.tournaments[room.tournamentId];
@@ -225,7 +236,7 @@ function createRoom(send, options) {
 }
 
 function joinRoom(send, roomId) {
-	send('room.join', {id: roomId});
+	send('room.join', { id: roomId });
 }
 
 function quickJoinRoom(send) {
