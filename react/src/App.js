@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import "./App.css";
 import Register from "./components/Register/Register";
 import Login from "./components/Login/Login";
-import Home from "./components/Home/Home";
+import Page from "./pages/Page";
 import Cookies from 'js-cookie';
 import TwoFactor from "./components/TwoFactor/TwoFactor";
 import DataContextProvider from './components/DataContext/DataContext';
@@ -199,7 +199,7 @@ function App() {
         />
       ) : (
         <DataContextProvider>
-          <Home changeStatus={changeStatus} avatar={avatar} setAvatar={setAvatar} />
+          <Page changeStatus={changeStatus} avatar={avatar} setAvatar={setAvatar} />
           <ModalPresenter />
           <ToastPresenter />
         </DataContextProvider>
