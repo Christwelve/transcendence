@@ -138,6 +138,8 @@ function App() {
         console.error("Failed to get authorization URL:", response.statusText);
         setErrorMessage("An unexpected error occurred");
         return;
+      } else {
+        setErrorMessage(null);
       }
 
       const data = await response.json();
@@ -145,7 +147,6 @@ function App() {
       window.location.href = data.authorization_url; // Redirect the user
     } catch (error) {
       console.error("Network error:", error.message);
-      setErrorMessage("An unexpected error occurred");
     }
   };
 
@@ -188,7 +189,6 @@ function App() {
 
     } catch (error) {
       console.error("Network error:", error.message);
-      setErrorMessage("An unexpected error occurred");
     }
   };
   // return (
