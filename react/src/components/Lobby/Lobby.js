@@ -2,6 +2,7 @@ import React, {useState} from 'react'
 import RoomList from '../RoomList/RoomList'
 import Room from '../Room/Room'
 import Brackets from '../Brackets/Brackets'
+import Friends from '../Friends/Friends'
 import scss from './Lobby.module.scss'
 
 function Lobby() {
@@ -48,9 +49,14 @@ function Lobby() {
 
   return (
     <div className={scss.lobby}>
-      <RoomList />
-      <Room />
-      <Brackets brackets={brackets} />
+      <div className={scss.top}>
+        <RoomList />
+        <Room />
+        {/* <Brackets brackets={brackets} /> */}
+      </div>
+      <div className={scss.bottom}>
+  			<Friends />
+      </div>
     </div>
   )
 }

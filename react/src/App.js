@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import "./App.css";
 import Register from "./components/Register/Register";
 import Login from "./components/Login/Login";
-import Home from "./components/Home/Home";
+import Page from "./pages/Page";
 import Cookies from 'js-cookie';
 import TwoFactor from "./components/TwoFactor/TwoFactor";
 import DataContextProvider from './components/DataContext/DataContext';
@@ -31,9 +31,8 @@ function App() {
     }
   }, []);
 
-  const [userStatus, setUserStatus] = useState("register");
+  const [userStatus, setUserStatus] = useState("login");
   const [errorMessage, setErrorMessage] = useState(null);
-  const [database, setDatabase] = useState({});
   const [avatar, setAvatar] = useState(null);
   const [user, setUser] = useState(null);
 
@@ -152,21 +151,27 @@ function App() {
       }
 
       const user = await response.json();
+      // console.log("User: ", user);
       const authToken = Cookies.get('authToken');
       if (!authToken) {
         Cookies.set('authToken', user.token);
       }
       if (user.avatar) {
+        // if (user.avatar.includes('intra.42.fr')) {
+
+        // }
         if (user.avatar.includes('avatars/')) {
           const avatarIcon = (user.avatar).split('/').pop();
           setAvatar(`http://localhost:8000/media/avatars/${avatarIcon}`);
         } else {
           setAvatar(user.avatar);
+          console.log("TODO: ADD FILE TO BACKEND AND STORE PATH: ", user.avatar);
+          setAvatar(user.avatar);
         }
 
       }
-      else
-        setAvatar(`https://robohash.org/${user.username}?200x200`);
+      // else
+      //   setAvatar(`https://robohash.org/${user.username}?200x200`);
       setUserStatus("logged");
       setErrorMessage(null);
     } catch (error) {
@@ -188,14 +193,14 @@ function App() {
       {userStatus === "register" ? (
         <Register
           changeStatus={changeStatus}
-          addUserToDatabase={addUserToDatabase}
-          login_with_42={login_with_42}
-          errorMessage={errorMessage}
+        // addUserToDatabase={addUserToDatabase}
+        // errorMessage={errorMessage}
         />
       ) : userStatus === "login" ? (
         <Login
           changeStatus={changeStatus}
           userLogin={userLogin}
+          login_with_42={login_with_42}
           errorMessage={errorMessage}
         />
       ) : userStatus === "2fa" ? (
@@ -207,7 +212,7 @@ function App() {
         />
       ) : (
         <DataContextProvider>
-          <Home changeStatus={changeStatus} avatar={avatar} />
+          <Page changeStatus={changeStatus} avatar={avatar} />
           <ModalPresenter />
           <ToastPresenter />
         </DataContextProvider>

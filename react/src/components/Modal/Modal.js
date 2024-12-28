@@ -28,7 +28,7 @@ function Modal(props) {
 					{children}
 					<div className={scss.actions}>
 						<button className={scss.cancel} onClick={onClose}>Cancel</button>
-						<button className={scss.confirm} onClick={onConfirm}>{confirmLabel}</button>
+						{onConfirm && <button className={scss.confirm} onClick={onConfirm}>{confirmLabel}</button>}
 					</div>
 				</Card>
 			</div>

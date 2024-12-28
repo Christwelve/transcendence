@@ -2,23 +2,7 @@ import React, { useState } from "react";
 import Cookies from 'js-cookie';
 import styles from "./Header.module.scss";
 
-const Header = ({ changeStatus, changeComponent, avatar }) => {
-  const [homeIsActive, setHomeIsActive] = useState(true);
-  const [gameIsActive, setGameIsActive] = useState(false);
-
-  const activateTab = (tab) => {
-    if (tab === "main") {
-      setHomeIsActive(true);
-      setGameIsActive(false);
-    } else if (tab === "game") {
-      setGameIsActive(true);
-      setHomeIsActive(false);
-    } else {
-      setHomeIsActive(false);
-      setGameIsActive(false);
-    }
-    changeComponent(tab);
-  };
+const Header = ({ changeStatus, avatar }) => {
 
   const logout = async () => {
     const response = await fetch(`http://localhost:8000/api/logout/`, {
@@ -50,7 +34,7 @@ const Header = ({ changeStatus, changeComponent, avatar }) => {
         <div
           className={styles.navbarBrand}
           onClick={() => {
-            activateTab("home");
+            window.location.reload();
           }}
         >
           <img
@@ -78,7 +62,6 @@ const Header = ({ changeStatus, changeComponent, avatar }) => {
                 <button
                   className={`dropdown-item ${styles.dropdownItem}`}
                   onClick={() => {
-                    activateTab("profile");
                   }}
                 >
                   Settings
@@ -88,7 +71,6 @@ const Header = ({ changeStatus, changeComponent, avatar }) => {
                 <button
                   className={`dropdown-item ${styles.dropdownItem}`}
                   onClick={() => {
-                    activateTab("stats");
                   }}
                 >
                   Statistics

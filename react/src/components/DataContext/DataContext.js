@@ -112,6 +112,7 @@ function DataContextProvider(props) {
 // reducer functions
 // function dataReducer(state, instructions) {
 
+
 // 	if(instructions === lastInstructions)
 // 		return state;
 
@@ -122,6 +123,7 @@ function DataContextProvider(props) {
 
 // 	console.log('state', state);
 // 	console.log('inst', instructions);
+
 
 // 	let newState = {...state};
 
@@ -135,10 +137,12 @@ function DataContextProvider(props) {
 
 // 		const [entity, property] = getEntity(newState, path);
 
+
 // 		console.log(entity, property, action, value);
 
 // 		if(entity == null)
 // 			continue;
+
 
 // 		fns[type](entity, property, action, value);
 // 	}

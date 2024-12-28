@@ -201,7 +201,7 @@ $tongue-color: #ff99cc;
             }
           }
 
-          .mouth{
+          .mouth {
             display: none;
           }
         }
@@ -322,4 +322,28 @@ $tongue-color: #ff99cc;
     0 0 10px rgba(red($tongue-color), green($tongue-color), blue($tongue-color), 0.7),
     0 0 20px rgba(red($tongue-color), green($tongue-color), blue($tongue-color), 0.4),
     0 0 40px rgba(red($tongue-color), green($tongue-color), blue($tongue-color), 0.2);
+}
+
+.divider {
+  position: relative;
+  margin: 18px 0;
+
+  span {
+    position: relative;
+    padding: 3px 6px;
+    background-color: #00050e;
+    color: var(--color-gray-light);
+    border-radius: 6px;
+    z-index: 1;
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background-color: var(--color-gray-dark);
+  }
 }
