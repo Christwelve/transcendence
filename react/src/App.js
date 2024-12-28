@@ -35,6 +35,7 @@ function App() {
   const [errorMessage, setErrorMessage] = useState(null);
   const [avatar, setAvatar] = useState(null);
   const [user, setUser] = useState(null);
+  const [username, setUsername] = useState("");
 
   const changeStatus = (status) => {
     setUserStatus(status);
@@ -76,6 +77,7 @@ function App() {
         setUserStatus("logged");
         setErrorMessage(null);
         setUser(userData.user);
+        setUsername(userData.user.username);
       }
     } else {
       try {
@@ -93,6 +95,7 @@ function App() {
           setErrorMessage(null);
           const userObject = Object.fromEntries(user.entries());
           setUser(userObject);
+          setUsername(userObject.username);
         } else {
           setErrorMessage("An unexpected error occurred");
         }
@@ -160,6 +163,7 @@ function App() {
         console.log("TODO: ADD FILE TO BACKEND AND STORE PATH: ", user.avatar);
       }
 
+      setUsername(user.username);
       setUserStatus("logged");
       setErrorMessage(null);
 
@@ -200,7 +204,7 @@ function App() {
         />
       ) : (
         <DataContextProvider>
-          <Page changeStatus={changeStatus} avatar={avatar} setAvatar={setAvatar} />
+          <Page changeStatus={changeStatus} avatar={avatar} setAvatar={setAvatar} username={username}/>
           <ModalPresenter />
           <ToastPresenter />
         </DataContextProvider>

@@ -93,6 +93,19 @@ $text-color: #ffffff;
           text-shadow: 0 0 10px $primary-color, 0 0 20px lighten($primary-color, 15%);
         }
       }
+
+      .username {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        font-size: 1.2rem;
+        font-weight: bold;
+        background-color: $primary-color;
+        color: $background;
+        margin-bottom: 10px;
+        cursor: default
+      }
     }
 
   }

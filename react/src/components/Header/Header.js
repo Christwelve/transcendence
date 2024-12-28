@@ -4,7 +4,7 @@ import { FaCog, FaSignOutAlt } from 'react-icons/fa'
 import styles from './Header.module.scss'
 import SettingsWidget from '../Profile/SettingsWidget'
 
-const Header = ({ changeStatus, avatar, setAvatar }) => {
+const Header = ({ changeStatus, avatar, setAvatar, username }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
@@ -59,6 +59,10 @@ const Header = ({ changeStatus, avatar, setAvatar }) => {
           {/* Dropdown Menu */}
           {isDropdownOpen && (
             <div className={styles.dropdownMenu}>
+              <button
+                className={`disabled ${styles.username}`}>
+                {username}
+              </button>
               <button
                 className={styles.dropdownItem}
                 onClick={() => {
