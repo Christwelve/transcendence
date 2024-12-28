@@ -4,9 +4,22 @@ import { FaCog, FaSignOutAlt } from 'react-icons/fa'
 import styles from './Header.module.scss'
 import SettingsWidget from '../Profile/SettingsWidget'
 
-const Header = ({ changeStatus, avatar, setAvatar, username }) => {
+const Header = ({ changeStatus, avatar, setAvatar, username, setUsername, set2fa }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [twoFactor, setTwoFactor] = useState(false);
+
+  const updateDropdownData = async () => {
+    fetch(`http://localhost:8000/api/users/${username}`)
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.has_2fa) {
+          setTwoFactor(data.has_2fa);
+        }
+      })
+      .catch((error) => console.error("Error updating profile:", error));
+    setIsDropdownOpen(!isDropdownOpen);
+  };
 
   const logout = async () => {
     const response = await fetch(`http://localhost:8000/api/logout/`, {
@@ -53,7 +66,7 @@ const Header = ({ changeStatus, avatar, setAvatar, username }) => {
             src={avatar}
             alt="profile"
             className={styles.profile}
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            onClick={updateDropdownData}
           />
 
           {/* Dropdown Menu */}
@@ -84,7 +97,10 @@ const Header = ({ changeStatus, avatar, setAvatar, username }) => {
       {isSettingsOpen && (
         <div className={styles.settingsContainer}>
           <SettingsWidget
+            set2fa={set2fa}
             avatar={avatar}
+            twoFactor={twoFactor}
+            setNewUsername={setUsername}
             setAvatar={(newAvatar) => {
               console.log("setAvatar in Header.js:", setAvatar);
               setAvatar(newAvatar);

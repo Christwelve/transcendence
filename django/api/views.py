@@ -54,6 +54,37 @@ def setup_2fa(request):
 
 # from api.models import User, Friend
 
+@api_view(['POST'])
+def enable_2fa(request):
+    try:
+        if not request.session.get('user_data'):
+            return Response({'error': 'User not logged in or session expired'}, status=401)
+
+        username = request.session['user_data'].get('username', None)
+        if not username:
+            return Response({'error': 'User not logged in or session expired'}, status=401)
+
+        user = get_object_or_404(User, username=username)
+
+        if not request.data:
+            return Response({'error': 'No data provided'}, status=400)
+
+        data = request.data
+        has_2fa = data.get('has_2fa', False)
+        if has_2fa.lower() == 'true':
+            has_2fa = True
+        elif has_2fa.lower() == 'false':
+            has_2fa = False
+        user.has_2fa = has_2fa
+        user.save()
+
+        return Response({
+            'success': 'TwoFactor updated successfully!'
+        }, status=200)
+    except Exception as e:
+        return Response({'message': str(e)}, status=500)
+
+
 # @csrf_exempt
 @api_view(['GET'])
 def login_with_42(request):
@@ -116,7 +147,7 @@ def login_with_42_callback(request):
                 user = serializer.save()
             else:
                 return JsonResponse({'error': 'User creation failed', 'details': serializer.errors}, status=400)
-            
+
         # Create or retrieve the token for the user
         token, _ = Token.objects.get_or_create(user=user)
 
@@ -169,31 +200,32 @@ def login_view(request):
         password = request.data['password']
         user = get_object_or_404(User, username=username)
         if check_password(password, user.password):
-            totp_device = TOTPDevice.objects.filter(user=user, confirmed=True).first()
-            if not totp_device:
-                 # Retrieve the unconfirmed TOTP device
-                totp_device = TOTPDevice.objects.filter(user=user, confirmed=False).first()
+            if user.has_2fa:
+                totp_device = TOTPDevice.objects.filter(user=user, confirmed=True).first()
                 if not totp_device:
-                    return Response({'error': 'No 2FA device found'}, status=status.HTTP_401_UNAUTHORIZED)
-                else:
-                    totp_device.confirmed = True
-                    totp_device.save()
+                    # Retrieve the unconfirmed TOTP device
+                    totp_device = TOTPDevice.objects.filter(user=user, confirmed=False).first()
+                    if not totp_device:
+                        return Response({'error': 'No 2FA device found'}, status=status.HTTP_401_UNAUTHORIZED)
+                    else:
+                        totp_device.confirmed = True
+                        totp_device.save()
 
-            if totp_device:  # If user has a TOTP device, validate the token
-                otp_token = request.data.get('otp_token')
-                if not otp_token:  # If no 2FA token is provided, return an error
-                    return Response({'error': '2FA token is required'}, status=status.HTTP_401_UNAUTHORIZED)
-                if not totp_device.verify_token(otp_token):  # Validate the token
-                    return Response({'error': 'Invalid 2FA token'}, status=status.HTTP_401_UNAUTHORIZED)
+                if totp_device:  # If user has a TOTP device, validate the token
+                    otp_token = request.data.get('otp_token')
+                    if not otp_token:  # If no 2FA token is provided, return an error
+                        return Response({'error': '2FA token is required'}, status=status.HTTP_401_UNAUTHORIZED)
+                    if not totp_device.verify_token(otp_token):  # Validate the token
+                        return Response({'error': 'Invalid 2FA token'}, status=status.HTTP_401_UNAUTHORIZED)
 
             token, _ = Token.objects.get_or_create(user=user)  # Efficient token retrieval
             serializer = UserSerializer(user)
 
             avatar_url = user.avatar.url if user.avatar else None
-            
+
             if avatar_url and not avatar_url.startswith("http"):
                 avatar_url = f"http://{request.get_host()}{avatar_url}"
-                
+
             request.session['user_data'] = {
                 'username': user.username,
                 'email': user.email,
@@ -379,22 +411,22 @@ def update_profile(request):
         data = request.data
         if 'username' in data:
             new_username = data['username'].strip()
-            
+
             if not new_username:
                 return Response({'error': 'Username is required and cannot be empty'}, status=400)
 
             if User.objects.filter(username=new_username).exists() and new_username != user.username:
                 return Response({'error': 'Username already taken'}, status=400)
-            
+
             user.username = new_username
-            request.session['user_data']['username'] = new_username  
+            request.session['user_data']['username'] = new_username
             request.session.modified = True
 
         if 'email' in data:
             new_email = data['email'].strip()
             if not new_email:
                 return Response({'error': 'Email cannot be empty'}, status=400)
-            
+
             if User.objects.filter(email=new_email).exists() and new_email != user.email:
                 return Response({'error' : 'Email already in use'}, status=400)
 
@@ -406,7 +438,7 @@ def update_profile(request):
             user.avatar = request.FILES['avatar']
 
         user.save()
-        
+
         # Construct the full avatar URL
         avatar_url = user.avatar.url if user.avatar else None
         if avatar_url and not avatar_url.startswith("http"):

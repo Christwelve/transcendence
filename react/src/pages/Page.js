@@ -14,13 +14,13 @@ function Content(props) {
 }
 
 function Page(props) {
-	const {changeStatus, avatar, setAvatar, username} = props;
+	const {changeStatus, avatar, setAvatar, username, setUsername} = props;
 	const {getPlayer} = useDataContext();
 	const player = getPlayer();
 
 	return (
 		<>
-			<Header changeStatus={changeStatus} avatar={avatar} setAvatar={setAvatar} username={username}/>
+			<Header changeStatus={changeStatus} avatar={avatar} setAvatar={setAvatar} username={username} setUsername={setUsername}/>
 			<Content player={player} />
 		</>
 	);

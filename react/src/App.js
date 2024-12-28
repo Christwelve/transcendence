@@ -96,6 +96,25 @@ function App() {
           const userObject = Object.fromEntries(user.entries());
           setUser(userObject);
           setUsername(userObject.username);
+        } else if (response.status === 200) {
+          const userData = await response.json();
+          Cookies.set('login', 'manual');
+          if (userData.user.avatar) {
+            const avatarUrl = userData.user.avatar;
+            if (avatarUrl.startsWith('http')) {
+              setAvatar(avatarUrl);
+            } else {
+              setAvatar(`http://localhost:8000${avatarUrl}`);
+            }
+          } else {
+            setAvatar(`https://robohash.org/${userData.username}?200x200`);
+          }
+
+          Cookies.set('authToken', userData.token);
+          setUserStatus("logged");
+          setErrorMessage(null);
+          setUser(userData.user);
+          setUsername(userData.user.username);
         } else {
           setErrorMessage("An unexpected error occurred");
         }
@@ -204,7 +223,7 @@ function App() {
         />
       ) : (
         <DataContextProvider>
-          <Page changeStatus={changeStatus} avatar={avatar} setAvatar={setAvatar} username={username}/>
+          <Page changeStatus={changeStatus} avatar={avatar} setAvatar={setAvatar} username={username} setUsername={setUsername}/>
           <ModalPresenter />
           <ToastPresenter />
         </DataContextProvider>

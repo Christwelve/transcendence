@@ -1,14 +1,35 @@
-import React, { useState } from 'react'
+import React, {useState} from 'react'
 import styles from './Profile.module.scss'
 
-const SettingsWidget = ({ avatar, setAvatar, onClose }) => {
+const SettingsWidget = ({ avatar, setAvatar, onClose, twoFactor, setNewUsername}) => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [avatarPreview, setAvatarPreview] = useState(avatar);
   const [avatarFile, setAvatarFile] = useState(null);
   const [fileName, setFileName] = useState("No file chosen");
-  const [is2FAEnabled, setIs2FAEnabled] = useState(false);
+  const [is2FAEnabled, setIs2FAEnabled] = useState(twoFactor);
+
+  const enable2FA = () => {
+    const formData = new FormData();
+    const has_2fa = !is2FAEnabled;
+    formData.append("has_2fa", has_2fa);
+    fetch("http://localhost:8000/api/2fa/enable/", {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          setIs2FAEnabled(has_2fa);
+        } else {
+          alert("Failed to enable 2FA.");
+        }
+      })
+      .catch((error) => console.error("Error updating profile:", error));
+
+  };
 
   const handleSaveChanges = () => {
     const formData = new FormData();
@@ -26,6 +47,7 @@ const SettingsWidget = ({ avatar, setAvatar, onClose }) => {
       .then((data) => {
         if (data.message) {
           alert(data.message);
+          setNewUsername(username);
           if (data.avatar) {
             setAvatar(data.avatar);
             setAvatarPreview(data.avatar);
@@ -99,7 +121,7 @@ const SettingsWidget = ({ avatar, setAvatar, onClose }) => {
             <div
               className={`${styles.slider} ${is2FAEnabled ? styles.enabled : styles.disabled
                 }`}
-              onClick={() => setIs2FAEnabled(!is2FAEnabled)}
+              onClick={enable2FA}
             >
               <div
                 className={`${styles.knob} ${is2FAEnabled ? styles.knobEnabled : styles.knobDisabled
