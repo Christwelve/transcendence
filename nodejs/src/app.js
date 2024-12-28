@@ -236,7 +236,7 @@ function createRoom(player, options) {
 
 	return room;
 }
-
+// TODO: 60*60
 function resetRoom(room) {
 	room.scores = [...Array(4)].map(() => ({ scored: 0, received: 0 }));
 	room.timer = 60 * 10;
@@ -407,8 +407,7 @@ async function endGame(room) {
 			const score = room.scores[i];
 
 			const obj = {
-				// TODO: remove ?? 1 when proper user is implemented
-				userId: player.tid ?? 1,
+				userId: player.tid,
 				goalsScored: score.scored,
 				goalsReceived: score.received,
 				datetimeLeft: endTime,
@@ -462,40 +461,61 @@ function updateState() {
 	io.emit('state', payload);
 }
 
-io.on('connection', async socket => {
+function createPlayer(id, tid, username) {
+	const fallbackName = Math.random().toString(36).substring(2, 7);
 
 	const player = {
-		id: socket.id,
-		name: Math.random().toString(36).substring(2, 7),
+		id,
+		tid,
+		name: username ?? fallbackName,
 		state: 0,
 		roomId: null,
 		ready: false,
 		index: -1,
 	};
 
+	return player;
+}
+
+async function initConnection(socket) {
+	const { token } = socket.handshake.auth ?? {};
+
+	console.log('token', token);
+
+	if (token == null)
+		return socket.disconnect(true);
+
+	const options = {
+		method: 'GET',
+		headers: {
+			'Authorization': `Token ${token}`,
+			'Content-Type': 'application/json',
+		},
+	};
+	const response = await fetch('http://django:8000/api/user/validate', options);
+
+	console.log('response', response);
+
+	if (!response.ok)
+		return socket.disconnect(true);
+
+	const { tid, username } = await response.json();
+
+	const player = createPlayer(socket.id, tid, username);
+
 	data.players[player.id] = player;
 
-	// const room = createRoom(player, {name: 'test', type: 0, playersMax: 4});
-	// data.rooms[room.id] = room;
+	updateState();
 
-	// ---- test
-	// const roomIds = Reflect.ownKeys(data.rooms);
-	// let room;
+	return player;
+}
 
-	// if(roomIds.length === 0) {
-	// 	room = createRoom(player, {name: 'test', type: 0, playersMax: 4});
-	// 	data.rooms[room.id] = room;
-	// 	games[room.id] = new ServerTick([player], onTick);
-	// } else {
-	// 	room = data.rooms[roomIds[0]];
-	// }
+io.on('connection', async socket => {
 
-	// player.roomId = room.id;
-	// room.players.push(player.id);
-	// ---- test
+	socket.on('initial', async () => {
+		const player = await initConnection(socket);
 
-	socket.on('initial', () => {
-		socket.emit('state', { id: stateId, userId: player.id, data });
+		socket.emit('state', { id: ++stateId, userId: player.id, data });
 	});
 
 	socket.on('room.create', options => {
@@ -693,6 +713,10 @@ io.on('connection', async socket => {
 
 	socket.on('disconnect', () => {
 		const player = getPlayerFromSocket(socket);
+
+		if (player == null)
+			return;
+
 		const room = getRoomFromPlayer(player);
 
 		removePlayerFromRoom(player, room);

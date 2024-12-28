@@ -6,6 +6,7 @@ urlpatterns = [
     path('users/', views.user_view, name='user_view'),
 	path('users/<str:username>/', views.user_view, name='user_view_by_username'),
 	path('user/data/', views.get_user_data, name='user_data'),
+    path('user/validate', views.validate_token_view, name='validate_token_view'),
     path('matches/', views.match_view, name='match_view'),
     path('statistics/', views.statistic_view, name='statistic_view'),
     path('tournaments/', views.tournament_view, name='tournament_view'),

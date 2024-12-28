@@ -144,6 +144,20 @@ def get_user_data(request):
         return JsonResponse({'error': 'No user data found', 'session': request.session.get('user_data')}, status=404)
     return JsonResponse(user_data)
 
+@api_view(['GET'])
+# @authentication_classes([TokenAuthentication])  # Use TokenAuthentication to validate tokens
+# @permission_classes([IsAuthenticated])  # Ensure only authenticated users can access
+def validate_token_view(request):
+    try:
+        # Retrieve the user from the authenticated request
+        user = request.user
+        return Response({
+            'tid': user.id,
+            'username': user.username,
+        }, status=200)
+    except AuthenticationFailed:
+        return Response({'error': 'Invalid token'}, status=401)
+
 
 @api_view(['POST'])
 def login_view(request):
