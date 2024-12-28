@@ -8,6 +8,7 @@ from .serializers import UserSerializer, MatchSerializer, StatisticSerializer, F
 from django.contrib.auth.hashers import make_password, check_password
 from django.shortcuts import get_object_or_404, redirect
 from django.http import JsonResponse
+from django.utils.timezone import now
 
 from django.conf import settings
 from django_otp.plugins.otp_totp.models import TOTPDevice
@@ -204,6 +205,26 @@ def user_view(request, username=None):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['PATCH'])
+def user_status_view(request):
+    user_data = request.session.get('user_data', None)
+    status = request.status
+
+    if user_data == NONE:
+        return Response({'error': 'Internal Server Error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    user_data['status'] = status
+
+    if status == False:
+        iso_timestamp = now().isoformat()
+        user_data['last_online'] = iso_timestamp
+
+    serializer = UserSerializer(data=userData)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET', 'POST'])
 def match_view(request):
