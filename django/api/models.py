@@ -50,25 +50,28 @@ class Match(models.Model):
     id = models.AutoField(primary_key=True)
     datetime_start = models.DateTimeField()
     datetime_end = models.DateTimeField()
+    tournament_id = models.PositiveIntegerField(null=True)
 
     def __str__(self):
-        return f"Match {self.id} ({self.datetime_start} - {self.datetime_end})"
+        return f"Match {self.id} ({self.datetime_start} - {self.datetime_end}, {self.tournament_id})"
 
 
 class Statistic(models.Model):
     id = models.AutoField(primary_key=True)
-    match = models.ForeignKey(
-        Match, on_delete=models.CASCADE, related_name="statistics"
-    )
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="statistics"
-    )
+    match_id = models.PositiveIntegerField(null=True)
+    user_id = models.PositiveIntegerField(null=True)
     goals_scored = models.PositiveSmallIntegerField(default=0)
     goals_received = models.PositiveSmallIntegerField(default=0)
     datetime_left = models.DateTimeField()
 
     def __str__(self):
-        return f"Statistic {self.id}: Match {self.match.id}, User {self.user.username}"
+        return f"Statistic {self.id}: Match {self.match_id}, User {self.user_id}"
+
+class Tournament(models.Model):
+    id = models.AutoField(primary_key=True)
+
+    def __str__(self):
+        return f"Tournament {self.id}"
 
 class Friend(models.Model):
     user = models.ForeignKey(

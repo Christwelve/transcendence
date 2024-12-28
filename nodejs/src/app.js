@@ -1,8 +1,9 @@
 import http from 'http'
 import express from 'express'
-import {Server as WebSocketServer} from 'socket.io'
-import {createProxy, sendInstructions} from './proxy.js'
-import {ServerTick} from 'shared/tick'
+import cookie from 'cookie'
+import { Server as WebSocketServer } from 'socket.io'
+import { createProxy, sendInstructions } from './proxy.js'
+import { ServerTick } from 'shared/tick'
 
 const app = express();
 const server = http.createServer(app);
@@ -10,7 +11,7 @@ const server = http.createServer(app);
 const io = new WebSocketServer(server, {
 	serveClient: false,
 	cors: {
-		origin: '*',
+		origin: 'http://localhost:3000',
 		methods: ['GET', 'POST'],
 		credentials: true
 	}
@@ -28,6 +29,92 @@ const data = {
 }
 
 const games = {};
+
+// async function fetchMatches() {
+// 	try {
+// 		const response = await fetch('http://django:8000/api/matches/', {
+// 			method: 'GET',
+// 			headers: {
+// 				'Content-Type': 'application/json',
+// 			},
+// 		});
+
+// 		if (!response.ok) {
+// 			throw new Error('Failed to fetch matches');
+// 		}
+// 		const data = await response.json();
+// 		console.log('Fetched matches:', data);
+// 		return data;
+// 	} catch (error) {
+// 		console.error('Error fetching matches:', error);
+// 	}
+// }
+
+// async function fetchStatistics() {
+// 	try {
+// 		const response = await fetch('http://django:8000/api/statistics/', {
+// 			method: 'GET',
+// 			headers: {
+// 				'Content-Type': 'application/json',
+// 			},
+// 		});
+
+// 		if (!response.ok) {
+// 			throw new Error('Failed to fetch statistics');
+// 		}
+// 		const data = await response.json();
+// 		console.log('Fetched statistics:', data);
+// 		return data;
+// 	} catch (error) {
+// 		console.error('Error fetching statistics:', error);
+// 	}
+// }
+
+async function postMatch(matchData) {
+	try {
+		const response = await fetch('http://django:8000/api/matches/', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify(matchData),
+		});
+
+		if (!response.ok) {
+			throw new Error('Failed to post match data');
+		}
+
+		const data = await response.json();
+		console.log('Posted match data:', data);
+		return data.id;
+	} catch (error) {
+		console.error('Error posting match data:', error);
+	}
+}
+
+async function postStatistic(statisticData) {
+	try {
+
+		const response = await fetch('http://django:8000/api/statistics/', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify(statisticData),
+		});
+
+		if (!response.ok) {
+			throw new Error('Failed to post statistics');
+		}
+
+		const data = await response.json();
+		console.log('Posted statistics data:', data);
+		return data;
+	} catch (error) {
+		console.error('Error posting statistics data:', error);
+	}
+}
+
 
 setInterval(sendInstructions.bind(null, io.emit.bind(io, 'instruction')), 0);
 
@@ -48,26 +135,26 @@ function getPlayersFromRoom(room) {
 }
 
 function removePlayerFromRoom(player, room) {
-	if(room == null)
+	if (room == null)
 		return;
 
-	const {id, players, masterId} = room;
+	const { id, players, masterId } = room;
 
 	const playerIndex = players.findIndex(playerId => playerId === player.id);
 	players.splice(playerIndex, 1);
 
 	const activePlayerIndex = room.activePlayers.indexOf(player.id);
 
-	if(activePlayerIndex !== -1)
+	if (activePlayerIndex !== -1)
 		room.activePlayers[activePlayerIndex] = null;
 
-	if(players.length === 0) {
+	if (players.length === 0) {
 		games[id]?.detach();
 
 		delete games[id];
 		delete data.rooms[id];
 	}
-	else if(player.id === masterId) {
+	else if (player.id === masterId) {
 		const newMasterId = players[0];
 
 		data.players[newMasterId].ready = false;
@@ -75,11 +162,11 @@ function removePlayerFromRoom(player, room) {
 		room.masterId = newMasterId;
 	}
 
-	if(room.type === 1) {
+	if (room.type === 1) {
 		const tournament = data.tournaments[room.id];
 		const match = getMatchForPlayer(tournament, player.id);
 
-		if(match != null && match.stage === 0)
+		if (match != null && match.stage === 0)
 			endMatch(tournament, match, player.id);
 	}
 
@@ -89,7 +176,7 @@ function removePlayerFromRoom(player, room) {
 }
 
 function getMatchForPlayer(tournament, playerId) {
-	const {level, brackets} = tournament;
+	const { level, brackets } = tournament;
 
 	const bracket = brackets[level];
 
@@ -109,20 +196,20 @@ function endMatch(tournament, match, leavingPlayerId) {
 function getWinnerForMatch(match, leavingPlayerId) {
 	const winningPlayerIndex = +!match.players.indexOf(leavingPlayerId);
 
-	if(leavingPlayerId != null)
+	if (leavingPlayerId != null)
 		return winningPlayerIndex;
 
-	const {scores} = match;
+	const { scores } = match;
 	const [score1, score2] = scores;
 
-	if(score1 > score2)
+	if (score1 > score2)
 		return 0;
 
 	return 1;
 }
 
 function createRoom(player, options) {
-	const {name: nameRaw, type, playersMax} = options;
+	const { name: nameRaw, type, playersMax } = options;
 
 	const name = nameRaw == null || nameRaw === '' ? Math.random().toString(36).substring(2, 9) : nameRaw.trim().substring(0, 16);
 
@@ -135,6 +222,7 @@ function createRoom(player, options) {
 		id,
 		name,
 		type,
+		startTime: null,
 		status,
 		players,
 		playersMax,
@@ -149,10 +237,10 @@ function createRoom(player, options) {
 
 	return room;
 }
-
+// TODO: 60*60
 function resetRoom(room) {
-	room.scores = [...Array(4)].map(() => ({scored: 0, received: 0}));
-	room.timer = 60 * 60;
+	room.scores = [...Array(4)].map(() => ({ scored: 0, received: 0 }));
+	room.timer = 60 * 10;
 }
 
 function createTournament(room) {
@@ -181,7 +269,7 @@ function startBracket(tournament) {
 }
 
 function startMatch(tournament) {
-	const {roomId, level, brackets} = tournament;
+	const { roomId, level, brackets } = tournament;
 
 	const bracket = brackets[level];
 
@@ -197,7 +285,7 @@ function createBracket(tournament) {
 
 	const matches = [];
 
-	while(players.length > 0) {
+	while (players.length > 0) {
 		const player1 = extractPlayer(players);
 		const player2 = extractPlayer(players);
 
@@ -216,19 +304,19 @@ function createBracket(tournament) {
 }
 
 function getActivePlayers(tournament) {
-	const {level, activePlayers, brackets} = tournament;
+	const { level, activePlayers, brackets } = tournament;
 
-	if(level === -1)
+	if (level === -1)
 		return activePlayers.filter(player => data.players[player.id]);
 
 	const bracket = brackets[level];
 
 	return bracket.reduce((acc, match) => {
-		const {players, scores} = match;
+		const { players, scores } = match;
 		const [player1, player2] = players;
 		const [score1, score2] = scores;
 
-		if(score1 > score2)
+		if (score1 > score2)
 			return [...acc, player1];
 
 		return [...acc, player2];
@@ -238,10 +326,10 @@ function getActivePlayers(tournament) {
 function extractPlayer(players) {
 	const player = players.shift();
 
-	if(player == null)
+	if (player == null)
 		return null;
 
-	if(data.players[player] == null)
+	if (data.players[player] == null)
 		return null;
 
 	return player;
@@ -255,28 +343,30 @@ const onTick = tick => {
 
 	tick.sendGoalToPlayers(io, updateState, room)
 
-	if(tick.getTick() % 300 === 0)
+	if (tick.getTick() % 300 === 0)
 		updateState();
 
-	if(room.running && room.timer > 0)
+	if (room.running && room.timer > 0)
 		room.timer--;
 
-	if(tick.getTick() % 20 === 0) {
+	if (tick.getTick() % 20 === 0) {
 		const roomId = room.id;
 		const game = games[roomId];
 		game.sendCollisionToPlayers(io);
 	}
 
-	if(room.timer === 0 && room.running) {
+	if (room.timer === 0 && room.running) {
 		room.running = false;
 		room.status = 3;
 
-		setTimeout(() => {
+		setTimeout(async () => {
+			await endGame(room);
+
 			room.status = 0;
 			room.players.forEach(id => {
 				const player = data.players[id];
 
-				if(player == null)
+				if (player == null)
 					return;
 
 				player.state = 1;
@@ -293,11 +383,53 @@ const onTick = tick => {
 	}
 };
 
+async function endGame(room) {
+	const endTime = new Date().toISOString();
+	// TODO: Adjust Tourmanent Id
+	const matchData = {
+		startTime: room.startTime,
+		endTime: endTime,
+		tournamentId: null
+	};
+
+	console.log('Sending match data:', matchData);
+
+	const matchId = await postMatch(matchData);
+
+	if (matchId) {
+		// STATISTIC DATA
+		// TODO: handle logged out player (maybe store preliminary stats while game is running)
+		const statisticData = room.activePlayers.reduce((acc, playerId, i) => {
+
+			if (playerId == null)
+				return acc;
+
+			const player = data.players[playerId];
+			const score = room.scores[i];
+
+			const obj = {
+				userId: player.tid,
+				goalsScored: score.scored,
+				goalsReceived: score.received,
+				datetimeLeft: endTime,
+				matchId
+			};
+
+			return [...acc, obj];
+		}, []);
+
+		console.log('Sending statistic data:', statisticData);
+		await postStatistic(statisticData, matchId);
+	} else {
+		console.error('Match ID is undefined, cannot post statistics.');
+	}
+}
+
 function updateBall(tick) {
-	const {activePlayers} = tick.getRoom();
+	const { activePlayers } = tick.getRoom();
 	const collided = tick.moveBall(activePlayers);
 
-	if(!collided)
+	if (!collided)
 		return;
 
 	tick.sendCollisionToPlayers(io);
@@ -306,11 +438,11 @@ function updateBall(tick) {
 function updatePlayers(tick) {
 	const entries = tick.getQueueEntries();
 
-	if(entries.length === 0)
+	if (entries.length === 0)
 		return;
 
 	entries.forEach(entry => {
-		const {player, event} = entry;
+		const { player, event } = entry;
 		const eventId = event[0];
 		const input = event[3];
 
@@ -330,40 +462,81 @@ function updateState() {
 	io.emit('state', payload);
 }
 
-io.on('connection', async socket => {
+function createPlayer(id, tid, username) {
+	const fallbackName = Math.random().toString(36).substring(2, 7);
 
 	const player = {
-		id: socket.id,
-		name: Math.random().toString(36).substring(2, 7),
+		id,
+		tid,
+		name: username ?? fallbackName,
 		state: 0,
 		roomId: null,
 		ready: false,
 		index: -1,
 	};
 
+	return player;
+}
+
+async function initConnection(socket) {
+	const { cookie: cookieHeader } = socket.handshake.headers
+	const cookies = cookie.parse(cookieHeader);
+
+	const options = {
+		method: 'GET',
+		headers: {
+			'Authorization': `Token ${cookies.authToken}`,
+			'Content-Type': 'application/json',
+			'Cookie': cookieHeader
+		},
+	};
+	const response = await fetch('http://django:8000/api/user/validate/', options);
+
+	if (!response.ok) {
+
+		const body = await response.json();
+
+		console.log('verify failed', body);
+
+		return socket.disconnect(true);
+
+	}
+
+	const { tid, username } = await response.json();
+
+	const player = createPlayer(socket.id, tid, username);
+
 	data.players[player.id] = player;
 
-	// const room = createRoom(player, {name: 'test', type: 0, playersMax: 4});
-	// data.rooms[room.id] = room;
+	setPlayerStatus(socket, true);
 
-	// ---- test
-	// const roomIds = Reflect.ownKeys(data.rooms);
-	// let room;
+	updateState();
 
-	// if(roomIds.length === 0) {
-	// 	room = createRoom(player, {name: 'test', type: 0, playersMax: 4});
-	// 	data.rooms[room.id] = room;
-	// 	games[room.id] = new ServerTick([player], onTick);
-	// } else {
-	// 	room = data.rooms[roomIds[0]];
-	// }
+	return player;
+}
 
-	// player.roomId = room.id;
-	// room.players.push(player.id);
-	// ---- test
+function setPlayerStatus(socket, status) {
+	const { cookie: cookieHeader } = socket.handshake.headers
+	const cookies = cookie.parse(cookieHeader);
 
-	socket.on('initial', () => {
-		socket.emit('state', {id: stateId, userId: player.id, data});
+	const options = {
+		method: 'GET',
+		headers: {
+			'Authorization': `Token ${cookies.authToken}`,
+			'Content-Type': 'application/json',
+			'Cookie': cookieHeader
+		},
+	};
+
+	fetch(`http://django:8000/api/user/status/?status=${status}`, options);
+}
+
+io.on('connection', async socket => {
+
+	socket.on('initial', async () => {
+		const player = await initConnection(socket);
+
+		socket.emit('state', { id: ++stateId, userId: player.id, data });
 	});
 
 	socket.on('room.create', options => {
@@ -383,27 +556,27 @@ io.on('connection', async socket => {
 	});
 
 	socket.on('room.join', options => {
-		const {id} = options;
+		const { id } = options;
 		const player = getPlayerFromSocket(socket);
 
-		if(player == null)
+		if (player == null)
 			return;
 
 		const room = data.rooms[id];
 
-		if(room == null)
-			return socket.emit('notice', {type: 'error', title: 'Can not join room', message: `Room with id ${id} does not exist.`});
+		if (room == null)
+			return socket.emit('notice', { type: 'error', title: 'Can not join room', message: `Room with id ${id} does not exist.` });
 
-		if(player.roomId === room.id)
+		if (player.roomId === room.id)
 			return;
 
-		const {status, players, playersMax} = room;
+		const { status, players, playersMax } = room;
 
-		if(status !== 0)
-			return socket.emit('notice', {type: 'error', title: 'Can not join room', message: `Room already started.`});
+		if (status !== 0)
+			return socket.emit('notice', { type: 'error', title: 'Can not join room', message: `Room already started.` });
 
-		if(players.length === playersMax)
-			return socket.emit('notice', {type: 'error', title: 'Can not join room', message: `Room is full.`});
+		if (players.length === playersMax)
+			return socket.emit('notice', { type: 'error', title: 'Can not join room', message: `Room is full.` });
 
 		const currentRoom = getRoomFromPlayer(player);
 
@@ -419,13 +592,13 @@ io.on('connection', async socket => {
 	socket.on('room.join.quick', () => {
 		const player = getPlayerFromSocket(socket);
 
-		if(player == null || player.state !== 0)
+		if (player == null || player.state !== 0)
 			return;
 
 		const availableRooms = Object.values(data.rooms).filter(room => room.status === 0 && room.players.length < room.playersMax);
 
-		if(availableRooms.length === 0)
-			return socket.emit('notice', {type: 'error', title: 'Can not join room', message: `No available rooms.`});
+		if (availableRooms.length === 0)
+			return socket.emit('notice', { type: 'error', title: 'Can not join room', message: `No available rooms.` });
 
 		availableRooms.sort((a, b) => b.players.length - a.players.length);
 
@@ -442,7 +615,7 @@ io.on('connection', async socket => {
 		const player = getPlayerFromSocket(socket);
 		const room = getRoomFromPlayer(player);
 
-		if(room == null)
+		if (room == null)
 			return;
 
 		removePlayerFromRoom(player, room);
@@ -455,9 +628,9 @@ io.on('connection', async socket => {
 	socket.on('player.ready', () => {
 		const player = getPlayerFromSocket(socket);
 
-		if(player.state !== 1)
+		if (player.state !== 1)
 			return;
-		if(player.roomId == null)
+		if (player.roomId == null)
 			return;
 
 		player.ready = !player.ready;
@@ -469,25 +642,25 @@ io.on('connection', async socket => {
 		const player = getPlayerFromSocket(socket);
 		const room = getRoomFromPlayer(player);
 
-		if(room == null)
+		if (room == null)
 			return;
-		if(player.id !== room.masterId)
+		if (player.id !== room.masterId)
 			return;
-		if(player.state !== 1)
+		if (player.state !== 1)
 			return;
 
 		const players = getPlayersFromRoom(room);
 
 		const activePlayers = players.slice(0, 4);
 
-		if(activePlayers.length < 2)
-			return socket.emit('notice', {type: 'error', title: 'Can not start game', message: `Not enough players.`});
+		if (activePlayers.length < 2)
+			return socket.emit('notice', { type: 'error', title: 'Can not start game', message: `Not enough players.` });
 
 		const otherPlayers = players.filter(player => player.id !== room.masterId);
 		const allReady = otherPlayers.every(player => player.ready);
 
-		if(!allReady)
-			return socket.emit('notice', {type: 'error', title: 'Can not start game', message: `Not all players are ready.`});
+		if (!allReady)
+			return socket.emit('notice', { type: 'error', title: 'Can not start game', message: `Not all players are ready.` });
 
 		const activePlayerIds = activePlayers.map(player => player.id);
 
@@ -506,6 +679,7 @@ io.on('connection', async socket => {
 		setTimeout(() => {
 
 			game.startGame(io);
+			room.startTime = new Date().toISOString();
 
 			setTimeout(() => {
 				room.status = 2;
@@ -523,17 +697,17 @@ io.on('connection', async socket => {
 		const player = getPlayerFromSocket(socket);
 		const room = getRoomFromPlayer(player);
 
-		if(room == null)
+		if (room == null)
 			return;
 
 		const tick = games[room.id];
 
-		if(tickClient == null)
+		if (tickClient == null)
 			return socket.emit('game.tick', 'set', tick.getTick());
 
 		const difference = tick.calculateOffsetDelta(tickClient);
 
-		if(difference === 0)
+		if (difference === 0)
 			return;
 
 		socket.emit('game.tick', 'adjust', difference);
@@ -543,12 +717,12 @@ io.on('connection', async socket => {
 		const player = getPlayerFromSocket(socket);
 		const room = getRoomFromPlayer(player);
 
-		if(room == null)
+		if (room == null)
 			return;
 
 		const tick = games[room.id];
 
-		if(tick.canQueueEvent(event))
+		if (tick.canQueueEvent(event))
 			return tick.queueEvent(player, event);
 
 		const [eventId] = event;
@@ -560,6 +734,12 @@ io.on('connection', async socket => {
 
 	socket.on('disconnect', () => {
 		const player = getPlayerFromSocket(socket);
+
+		if (player == null)
+			return;
+
+		setPlayerStatus(socket, false);
+
 		const room = getRoomFromPlayer(player);
 
 		removePlayerFromRoom(player, room);
