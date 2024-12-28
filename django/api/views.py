@@ -378,9 +378,10 @@ def update_profile(request):
 
         data = request.data
         if 'username' in data:
-            new_username = data['username']
+            new_username = data['username'].strip()
+            
             if not new_username:
-                return Response({'error': 'Username is required'}, status=400)
+                return Response({'error': 'Username is required and cannot be empty'}, status=400)
 
             if User.objects.filter(username=new_username).exists() and new_username != user.username:
                 return Response({'error': 'Username already taken'}, status=400)
@@ -390,7 +391,15 @@ def update_profile(request):
             request.session.modified = True
 
         if 'email' in data:
-            user.email = data['email']
+            new_email = data['email'].strip()
+            if not new_email:
+                return Response({'error': 'Email cannot be empty'}, status=400)
+            
+            if User.objects.filter(email=new_email).exists() and new_email != user.email:
+                return Response({'error' : 'Email already in use'}, status=400)
+
+            user.email = new_email
+
         if 'password' in data:
             user.password = make_password(data['password'])
         if 'avatar' in request.FILES:
