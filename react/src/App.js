@@ -60,11 +60,15 @@ function App() {
         }
       } else {
         Cookies.set('login', 'manual');
-        if (!userData.user.avatar)
+        if (userData.user.avatar) {
+          const avatarUrl = userData.user.avatar;
+          if (avatarUrl.startsWith('http')) {
+            setAvatar(avatarUrl);
+          } else {
+            setAvatar(`http://localhost:8000${avatarUrl}`);
+          }
+        } else {
           setAvatar(`https://robohash.org/${userData.username}?200x200`);
-        else {
-          const avatarIcon = (userData.user.avatar).split('/').pop();
-          setAvatar(`http://localhost:8000/media/avatars/${avatarIcon}`);
         }
 
         //when we change the domain to a secure one we must add { secure: true } as 3rd parameter
@@ -84,7 +88,7 @@ function App() {
         if (response.status === 400 || response.status === 404) {
           setErrorMessage("Wrong credentials!");
           return;
-        } else if (response.status === 401 ) {
+        } else if (response.status === 401) {
           setUserStatus("2fa");
           setErrorMessage(null);
           const userObject = Object.fromEntries(user.entries());
@@ -143,29 +147,26 @@ function App() {
         Cookies.set('authToken', user.token);
       }
       if (user.avatar) {
-        // if (user.avatar.includes('intra.42.fr')) {
 
-        // }
-        if (user.avatar.includes('avatars/')) {
-          const avatarIcon = (user.avatar).split('/').pop();
-          setAvatar(`http://localhost:8000/media/avatars/${avatarIcon}`);
+        const avatarUrl = user.avatar;
+        if (avatarUrl.startsWith('http')) {
+          setAvatar(avatarUrl); // Absolute URL, use directly
         } else {
-          setAvatar(user.avatar);
-          console.log("TODO: ADD FILE TO BACKEND AND STORE PATH: ", user.avatar);
-          setAvatar(user.avatar);
+          setAvatar(`http://localhost:8000${avatarUrl}`);
         }
-
+      } else {
+        setAvatar(`https://robohash.org/${user.username}?200x200`);
+        console.log("TODO: ADD FILE TO BACKEND AND STORE PATH: ", user.avatar);
       }
-      // else
-      //   setAvatar(`https://robohash.org/${user.username}?200x200`);
+
       setUserStatus("logged");
       setErrorMessage(null);
+
     } catch (error) {
       console.error("Network error:", error.message);
       setErrorMessage("An unexpected error occurred");
     }
   };
-
   // return (
   //   <DataContextProvider>
   //     <Home changeStatus={changeStatus} avatar={avatar} />
@@ -198,7 +199,7 @@ function App() {
         />
       ) : (
         <DataContextProvider>
-          <Home changeStatus={changeStatus} avatar={avatar} setAvatar={setAvatar}/>
+          <Home changeStatus={changeStatus} avatar={avatar} setAvatar={setAvatar} />
           <ModalPresenter />
           <ToastPresenter />
         </DataContextProvider>

@@ -116,6 +116,7 @@ def login_with_42_callback(request):
             else:
                 return JsonResponse({'error': 'User creation failed', 'details': serializer.errors}, status=400)
 
+        # Update avatar only if not already set
         if not user.avatar:
             user.avatar = api_avatar
             user.save()
@@ -123,11 +124,17 @@ def login_with_42_callback(request):
         # Create or retrieve the token for the user
         token, _ = Token.objects.get_or_create(user=user)
 
+        # Construct the full avatar URL
+        if user.avatar and not str(user.avatar).startswith("https"):
+            avatar_url = f"http://{request.get_host()}/{user.avatar}"  # Add host to relative paths
+        else:
+            avatar_url = user.avatar.url if user.avatar else api_avatar  # Fallback to API avatar
+
         # Store user session data
         request.session['user_data'] = {
             'username': username,
             'email': email,
-            'avatar': user.avatar.url if user.avatar else None,
+            'avatar': avatar_url,
             'token': token.key,
         }
         return redirect(f"http://localhost:3000?logged_in=true")
@@ -168,10 +175,16 @@ def login_view(request):
 
             token, _ = Token.objects.get_or_create(user=user)  # Efficient token retrieval
             serializer = UserSerializer(user)
+
+            avatar_url = user.avatar.url if user.avatar else None
+            
+            if avatar_url and not avatar_url.startswith("http"):
+                avatar_url = f"http://{request.get_host()}{avatar_url}"
+                
             request.session['user_data'] = {
                 'username': user.username,
                 'email': user.email,
-                'avatar': str(user.avatar),
+                'avatar': avatar_url,
             }
             request.session.save()
             return Response({
@@ -321,17 +334,16 @@ def update_profile(request):
         if not request.session.get('user_data'):
             return Response({'error': 'User not logged in or session expired'}, status=401)
 
-        username = request.session['user_data'].get('username', None)
-        if not username:
+        old_username = request.session['user_data'].get('username', None)
+        if not old_username:
             return Response({'error': 'User not logged in or session expired'}, status=401)
 
-        user = get_object_or_404(User, username=username)
+        user = get_object_or_404(User, username=old_username)
 
         if not request.data:
             return Response({'error': 'No data provided'}, status=400)
 
         data = request.data
-
         if 'username' in data:
             new_username = data['username']
             if not new_username:
@@ -341,18 +353,19 @@ def update_profile(request):
                 return Response({'error': 'Username already taken'}, status=400)
             
             user.username = new_username
+            request.session['user_data']['username'] = new_username  
+            request.session.modified = True
 
         if 'email' in data:
             user.email = data['email']
-
         if 'password' in data:
             user.password = make_password(data['password'])
-
         if 'avatar' in request.FILES:
             user.avatar = request.FILES['avatar']
-            
-        user.save()
 
+        user.save()
+        
+        # Construct the full avatar URL
         avatar_url = user.avatar.url if user.avatar else None
         if avatar_url and not avatar_url.startswith("http"):
             avatar_url = f"http://{request.get_host()}{avatar_url}"

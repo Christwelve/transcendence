@@ -21,11 +21,12 @@ const Home = ({ changeStatus, avatar, setAvatar }) => {
         changeStatus={changeStatus}
         changeComponent={changeComponent}
         avatar={avatar}
+        setAvatar={setAvatar}
       />
 
       <div className={styles.mainContent}>
         {mainComponent === "stats" && <Statistics />}
-        {mainComponent === "profile" && <Profile avatar={avatar} setAvatar={setAvatar} />}
+        {mainComponent === "profile" && <Profile avatar={avatar} setAvatar={setAvatar} changeStatus={changeStatus} />}
         {mainComponent === "main" && <Main />}
         {mainComponent === "game" && <Game />}
       </div>
