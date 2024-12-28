@@ -146,8 +146,9 @@ function App() {
       if (!authToken) {
         Cookies.set('authToken', user.token);
       }
-      if (user.avatar) {
 
+      console.log("Avatar URL received:", user.avatar);
+      if (user.avatar) {
         const avatarUrl = user.avatar;
         if (avatarUrl.startsWith('http')) {
           setAvatar(avatarUrl); // Absolute URL, use directly

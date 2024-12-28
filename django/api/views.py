@@ -104,6 +104,7 @@ def login_with_42_callback(request):
         username = user_info_data.get('login')
         email = user_info_data.get('email')
         api_avatar = user_info_data.get('image', {}).get('link', None)
+        print("API Avatar:", api_avatar)
         password = make_password('')  # Empty password as it is OAuth-based login
 
         user = User.objects.filter(username=username).first()
@@ -126,10 +127,15 @@ def login_with_42_callback(request):
         token, _ = Token.objects.get_or_create(user=user)
 
         # Construct the full avatar URL
-        if user.avatar and not str(user.avatar).startswith("https"):
-            avatar_url = f"http://{request.get_host()}/{user.avatar}"  # Add host to relative paths
+        if user.avatar:
+            if str(user.avatar).startswith("http"):
+                avatar_url = str(user.avatar)
+            else:
+                avatar_url = f"http://{request.get_host()}{user.avatar.url}"
         else:
-            avatar_url = user.avatar.url if user.avatar else api_avatar  # Fallback to API avatar
+            avatar_url = api_avatar if api_avatar.startswith("http") else f"http://{request.get_host()}/media/{api_avatar}"
+
+        print("Avatar url:", avatar_url)
 
         # Store user session data
         request.session['user_data'] = {
