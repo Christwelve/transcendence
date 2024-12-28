@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from "react";
-import "./App.css";
-import Register from "./components/Register/Register";
-import Login from "./components/Login/Login";
-import Page from "./pages/Page";
-import Cookies from 'js-cookie';
-import TwoFactor from "./components/TwoFactor/TwoFactor";
-import DataContextProvider from './components/DataContext/DataContext';
-import ModalPresenter from './components/Modal/ModalPresenter';
+import React, { useEffect, useState } from 'react'
+import './App.css'
+import Register from './components/Register/Register'
+import Login from './components/Login/Login'
+import Page from './pages/Page'
+import Cookies from 'js-cookie'
+import TwoFactor from './components/TwoFactor/TwoFactor'
+import DataContextProvider from './components/DataContext/DataContext'
+import ModalPresenter from './components/Modal/ModalPresenter'
 import ToastPresenter from './components/Toast/ToastPresenter'
-import { closeModalTop } from './utils/modal';
+import { closeModalTop } from './utils/modal'
 
 function App() {
   useEffect(() => {

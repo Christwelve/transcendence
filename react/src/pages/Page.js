@@ -1,4 +1,4 @@
-import React, {useState} from 'react'
+import React from 'react'
 import {useDataContext} from '../components/DataContext/DataContext'
 import Header from '../components/Header/Header'
 import Lobby from '../components/Lobby/Lobby'
@@ -14,13 +14,13 @@ function Content(props) {
 }
 
 function Page(props) {
-	const {changeStatus, avatar} = props;
+	const {changeStatus, avatar, setAvatar} = props;
 	const {getPlayer} = useDataContext();
 	const player = getPlayer();
 
 	return (
 		<>
-			<Header changeStatus={changeStatus} avatar={avatar} />
+			<Header changeStatus={changeStatus} avatar={avatar} setAvatar={setAvatar}/>
 			<Content player={player} />
 		</>
 	);

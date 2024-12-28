@@ -1,8 +1,8 @@
-import React, { useState } from "react";
-import Cookies from "js-cookie";
-import { FaCog, FaSignOutAlt } from "react-icons/fa";
-import styles from "./Header.module.scss";
-import SettingsWidget from "../Profile/SettingsWidget";
+import React, { useState } from 'react'
+import Cookies from 'js-cookie'
+import { FaCog, FaSignOutAlt } from 'react-icons/fa'
+import styles from './Header.module.scss'
+import SettingsWidget from '../Profile/SettingsWidget'
 
 const Header = ({ changeStatus, avatar, setAvatar }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -82,6 +82,7 @@ const Header = ({ changeStatus, avatar, setAvatar }) => {
           <SettingsWidget
             avatar={avatar}
             setAvatar={(newAvatar) => {
+              console.log("setAvatar in Header.js:", setAvatar);
               setAvatar(newAvatar);
               setIsSettingsOpen(false);
             }}

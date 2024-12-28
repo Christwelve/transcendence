@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import styles from "./Profile.module.scss";
+import React, { useState } from 'react'
+import styles from './Profile.module.scss'
 
 const SettingsWidget = ({ avatar, setAvatar, onClose }) => {
   const [username, setUsername] = useState("");

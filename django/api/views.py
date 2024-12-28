@@ -104,7 +104,6 @@ def login_with_42_callback(request):
         username = user_info_data.get('login')
         email = user_info_data.get('email')
         api_avatar = user_info_data.get('image', {}).get('link', None)
-        print("API Avatar:", api_avatar)
         password = make_password('')  # Empty password as it is OAuth-based login
 
         user = User.objects.filter(username=username).first()
@@ -117,26 +116,32 @@ def login_with_42_callback(request):
                 user = serializer.save()
             else:
                 return JsonResponse({'error': 'User creation failed', 'details': serializer.errors}, status=400)
-
-        # Update avatar only if not already set
-        if not user.avatar:
-            user.avatar = api_avatar
-            user.save()
-
+            
         # Create or retrieve the token for the user
         token, _ = Token.objects.get_or_create(user=user)
 
+        # # Construct the full avatar URL
+        # if user.avatar:
+        #     if str(user.avatar).startswith("http"):
+        #         avatar_url = str(user.avatar)
+        #     else:
+        #         avatar_url = f"http://{request.get_host()}{user.avatar.url}"
+        # else:
+        #     avatar_url = api_avatar if str(api_avatar).startswith("http") else f"http://{request.get_host()}/media/{api_avatar}"
+
         # Construct the full avatar URL
-        if user.avatar:
-            if str(user.avatar).startswith("http"):
-                avatar_url = str(user.avatar)
-            else:
-                avatar_url = f"http://{request.get_host()}{user.avatar.url}"
+        if user.avatar and user.avatar.url:
+            avatar_url = f"http://{request.get_host()}{user.avatar.url}"
+        elif api_avatar and str(api_avatar).startswith("http"):
+            avatar_url = api_avatar
         else:
-            avatar_url = api_avatar if api_avatar.startswith("http") else f"http://{request.get_host()}/media/{api_avatar}"
+            None
+
+
 
         print("Avatar url:", avatar_url)
 
+        request.session.flush()
         # Store user session data
         request.session['user_data'] = {
             'username': username,
@@ -144,6 +149,7 @@ def login_with_42_callback(request):
             'avatar': avatar_url,
             'token': token.key,
         }
+        request.session.modified = True
         return redirect(f"http://localhost:3000?logged_in=true")
 
     return redirect(f"http://localhost:3000?logged_in=false")
