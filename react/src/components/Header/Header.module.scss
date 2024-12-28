@@ -105,4 +105,11 @@ $text-color: #ffffff;
       transform: scale(1.05);
     }
   }
+
+  .username {
+    color: $background !important;
+    font-weight: bold;
+    text-align: center;
+    margin: 10px 0;
+  }
 }

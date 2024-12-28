@@ -198,7 +198,7 @@ function App() {
         />
       ) : (
         <DataContextProvider>
-          <Home changeStatus={changeStatus} avatar={avatar} />
+          <Home changeStatus={changeStatus} avatar={avatar} user={user}/>
           <ModalPresenter />
           <ToastPresenter />
         </DataContextProvider>

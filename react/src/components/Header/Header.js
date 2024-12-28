@@ -1,10 +1,28 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Cookies from 'js-cookie';
 import styles from "./Header.module.scss";
 
-const Header = ({ changeStatus, changeComponent, avatar }) => {
+const Header = ({ changeStatus, changeComponent, avatar, username }) => {
   const [homeIsActive, setHomeIsActive] = useState(true);
   const [gameIsActive, setGameIsActive] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const buttonRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownOpen && buttonRef.current && !buttonRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    };
+
+    // Add the event listener
+    document.addEventListener('mousedown', handleClickOutside);
+
+    // Clean up the event listener on component unmount
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [dropdownOpen]); // Only re-run the effect if dropdownOpen changes
 
   const activateTab = (tab) => {
     if (tab === "main") {
@@ -19,6 +37,12 @@ const Header = ({ changeStatus, changeComponent, avatar }) => {
     }
     changeComponent(tab);
   };
+
+  const toggleDropdown = (event) => {
+    event.stopPropagation();
+    buttonRef.current.setAttribute('aria-expanded', !dropdownOpen);
+    setDropdownOpen(!dropdownOpen);
+  }
 
   const logout = async () => {
     const response = await fetch(`http://localhost:8000/api/logout/`, {
@@ -64,14 +88,17 @@ const Header = ({ changeStatus, changeComponent, avatar }) => {
         </div>
 
         <div id="navbarNav">
-          <div className="btn-group dropstart">
+          <div className={`btn-group dropstart ${dropdownOpen ? 'show' : ''}`}>
             <button
               type="button"
               className={`btn dropdown-toggle ${styles.dropdownButton}`}
               data-bs-toggle="dropdown"
               aria-expanded="false"
+              onClick={toggleDropdown}
+              ref={buttonRef}
             >
               <img src={avatar} alt="profile" className={styles.profile} />
+              {dropdownOpen && <span className={styles.username}>{username}</span>}
             </button>
             <ul className={`dropdown-menu ${styles.dropdownMenu}`}>
               <li>

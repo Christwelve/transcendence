@@ -8,7 +8,7 @@ import FriendList from "../FriendList/FriendList";
 import styles from "./Home.module.scss";
 import Page from "../../pages/Page";
 
-const Home = ({ changeStatus, avatar }) => {
+const Home = ({ changeStatus, avatar, user }) => {
   const [mainComponent, setMainComponent] = useState("main");
 
   const changeComponent = (component) => {
@@ -21,6 +21,7 @@ const Home = ({ changeStatus, avatar }) => {
         changeStatus={changeStatus}
         changeComponent={changeComponent}
         avatar={avatar}
+        username={user.username}
       />
 
       <div className={styles.mainContent}>
