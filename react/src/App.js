@@ -87,10 +87,10 @@ function App() {
         }
 
         //when we change the domain to a secure one we must add { secure: true } as 3rd parameter
-        Cookies.set('authToken', userData.token);
         setUserStatus("logged");
         setErrorMessage(null);
         setUser(userData.user);
+        Cookies.set('authToken', userData.token);
         setUsername(userData.user.username);
       }
     } else {
@@ -124,12 +124,11 @@ function App() {
           } else {
             setAvatar(`https://robohash.org/${userData.username}?200x200`);
           }
-
-          Cookies.set('authToken', userData.token);
           setUserStatus("logged");
           setErrorMessage(null);
           setUser(userData.user);
           setUsername(userData.user.username);
+          Cookies.set('authToken', userData.access_token);
         } else {
           setErrorMessage("An unexpected error occurred");
         }
@@ -170,6 +169,9 @@ function App() {
       const response = await fetch("http://localhost:8000/api/user/data/", {
         method: "GET",
         credentials: "include", // Include cookies for session-based data
+        headers: {
+          'Authorization': `Bearer ${Cookies.get('authToken')}`,
+        }
       });
 
       if (!response.ok) {

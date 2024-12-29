@@ -9,12 +9,15 @@ from django.contrib.auth.hashers import make_password, check_password
 from django.shortcuts import get_object_or_404, redirect
 from django.http import JsonResponse
 from django.utils.timezone import now
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from django.conf import settings
 from django_otp.plugins.otp_totp.models import TOTPDevice
 import qrcode
 import io
 import base64
+import jwt
+from rest_framework.exceptions import PermissionDenied
 
 @api_view(['POST'])
 def setup_2fa(request):
@@ -149,7 +152,16 @@ def login_with_42_callback(request):
                 return JsonResponse({'error': 'User creation failed', 'details': serializer.errors}, status=400)
 
         # Create or retrieve the token for the user
-        token, _ = Token.objects.get_or_create(user=user)
+        payload = {
+                'username': user.username,
+                'email': user.email,
+                # Add other necessary claims here (e.g., username, roles)
+        }
+        token = jwt.encode(
+                payload,
+                settings.SECRET_KEY,
+                algorithm='HS256'
+        )
 
         # # Construct the full avatar URL
         # if user.avatar:
@@ -178,7 +190,7 @@ def login_with_42_callback(request):
             'username': username,
             'email': email,
             'avatar': avatar_url,
-            'token': token.key,
+            'token': token,
         }
         request.session.modified = True
         return redirect(f"http://localhost:3000?logged_in=true")
@@ -187,6 +199,28 @@ def login_with_42_callback(request):
 
 @api_view(['GET'])
 def get_user_data(request):
+    authorization_header = request.headers.get('Authorization')
+     # Check for the 'Authorization' header
+    if not authorization_header:
+        return JsonResponse({'error': 'Authorization header is missing.'}, status=401)
+
+    # Extract the token from the header
+    if not authorization_header.startswith('Bearer '):
+        return JsonResponse({'error': 'Invalid Authorization header format.', 'auth': authorization_header}, status=401)
+
+        # Extract the JWT token from the header
+    token = request.headers['Authorization'].split(' ')[1]
+    try:
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=['HS256']  # Adjust algorithm as needed
+        )
+    except jwt.ExpiredSignatureError:
+        return JsonResponse({'error': 'Token expired.'}, status=401)
+    except jwt.InvalidTokenError:
+        return JsonResponse({'error': 'Invalid token.', 'token': token}, status=401)
+
     user_data = request.session.get('user_data', None)
     if not user_data:
         return JsonResponse({'error': 'No user data found', 'session': request.session.get('user_data')}, status=404)
@@ -230,7 +264,18 @@ def login_view(request):
                     if not totp_device.verify_token(otp_token):  # Validate the token
                         return Response({'error': 'Invalid 2FA token'}, status=status.HTTP_401_UNAUTHORIZED)
 
-            token, _ = Token.objects.get_or_create(user=user)  # Efficient token retrieval
+            payload = {
+                'username': user.username,
+                'email': user.email,
+                # Add other necessary claims here (e.g., username, roles)
+            }
+            access_token = jwt.encode(
+                payload,
+                settings.SECRET_KEY,
+                algorithm='HS256'
+            )
+            # refresh = RefreshToken.for_user(user)
+            # access_token = str(refresh.access_token)
             serializer = UserSerializer(user)
 
             avatar_url = user.avatar.url if user.avatar else None
@@ -242,14 +287,14 @@ def login_view(request):
                 'username': user.username,
                 'email': user.email,
                 'avatar': avatar_url,
-                'token': token.key,
+                'token': access_token,
             }
             request.session.save()
 
             return Response({
                 'user': serializer.data,
-                'token': token.key,  # Include authToken in response
                 'user_data': request.session['user_data'],
+                'token': access_token,
             }, status=status.HTTP_200_OK)
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
 
