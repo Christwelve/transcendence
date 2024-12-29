@@ -3,7 +3,7 @@ import Cookies from 'js-cookie'
 import { FaCog, FaSignOutAlt } from 'react-icons/fa'
 import styles from './Header.module.scss'
 import SettingsWidget from '../Profile/SettingsWidget'
-import { protocol, hostname, djangoPort } from './utils/scheme'
+import { protocol, hostname, djangoPort } from '../../utils/scheme'
 
 
 const Header = ({ changeStatus, avatar, setAvatar, username, setUsername, set2fa }) => {

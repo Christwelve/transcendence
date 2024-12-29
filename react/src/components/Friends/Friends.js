@@ -8,7 +8,7 @@ import FriendSearchModal from '../Modal/FriendSearchModal'
 import scss from './Friends.module.scss'
 import { showModal } from '../../utils/modal'
 import { showToast } from '../Toast/ToastPresenter'
-import { protocol, hostname, djangoPort } from './utils/scheme'
+import { protocol, hostname, djangoPort } from '../../utils/scheme'
 
 
 function Friends() {

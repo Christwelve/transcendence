@@ -3,7 +3,7 @@ import Modal from './Modal'
 import CardSection from '../Card/CardSection'
 import FriendList from '../Friends/FriendList'
 import scss from './FriendSearchModal.module.scss'
-import { protocol, hostname, djangoPort } from './utils/scheme'
+import { protocol, hostname, djangoPort } from '../../utils/scheme'
 
 
 function FriendSearchModal(props) {

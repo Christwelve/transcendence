@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import styles from './TwoFactor.module.scss'
-import { protocol, hostname, djangoPort } from './utils/scheme'
+import { protocol, hostname, djangoPort } from '../../utils/scheme'
 
 
 

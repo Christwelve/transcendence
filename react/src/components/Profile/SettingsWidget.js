@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import styles from './Profile.module.scss'
-import { protocol, hostname, djangoPort } from './utils/scheme'
+import { protocol, hostname, djangoPort } from '../../utils/scheme'
 
 
 const SettingsWidget = ({ avatar, setAvatar, onClose, twoFactor, setNewUsername }) => {

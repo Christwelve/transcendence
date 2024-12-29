@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import '../genericStyles.css'
 import './Profile.module.scss'
-import { protocol, hostname, djangoPort } from './utils/scheme'
+import { protocol, hostname, djangoPort } from '../../utils/scheme'
 
 
 const Profile = ({ avatar, setAvatar }) => {

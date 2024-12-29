@@ -7,7 +7,7 @@ from .models import User, Match, Statistic, Friend, Tournament
 from .serializers import UserSerializer, MatchSerializer, StatisticSerializer, FriendSerializer, TournamentSerializer
 from django.contrib.auth.hashers import make_password, check_password
 from django.shortcuts import get_object_or_404, redirect
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpRequest
 from django.utils.timezone import now
 
 from django.conf import settings
@@ -15,6 +15,16 @@ from django_otp.plugins.otp_totp.models import TOTPDevice
 import qrcode
 import io
 import base64
+
+
+djangoPort = 8000
+reactPort = 3000
+
+def get_scheme(request):
+    protocol = 'https:' if request.is_secure() else 'http:'
+    hostname = request.get_host().split(':')[0]
+
+    return (protocol, hostname)
 
 @api_view(['POST'])
 def setup_2fa(request):
@@ -88,17 +98,24 @@ def enable_2fa(request):
 # @csrf_exempt
 @api_view(['GET'])
 def login_with_42(request):
+    global djangoPort
+    protocol, hostname = get_scheme(request)
+
     authorization_url = (
         'https://api.intra.42.fr/oauth/authorize?'
         f'client_id={settings.OAUTH2_PROVIDER["CLIENT_ID"]}'
         '&response_type=code'
-        '&redirect_uri=http://localhost:8000/api/42/login/callback/'
+        f'&redirect_uri={protocol}//{hostname}:{djangoPort}/api/42/login/callback/'
         '&scope=public'
     )
     return JsonResponse({'authorization_url': authorization_url})
 
 @api_view(['GET'])
 def login_with_42_callback(request):
+    global djangoPort
+    global reactPort
+    protocol, hostname = get_scheme(request)
+
     if request.method == 'GET':
         code = request.GET.get('code')
         if not code:
@@ -110,7 +127,7 @@ def login_with_42_callback(request):
             'client_id': settings.OAUTH2_PROVIDER['CLIENT_ID'],
             'client_secret': settings.OAUTH2_PROVIDER['CLIENT_SECRET'],
             'code': code,
-            'redirect_uri': 'http://localhost:8000/api/42/login/callback/',
+            'redirect_uri': f"{protocol}//{hostname}:{djangoPort}/api/42/login/callback/",
         }
 
         # Post request to get the access token
@@ -162,7 +179,7 @@ def login_with_42_callback(request):
 
         # Construct the full avatar URL
         if user.avatar and user.avatar.url:
-            avatar_url = f"http://{request.get_host()}{user.avatar.url}"
+            avatar_url = f"{protocol}//{hostname}:{djangoPort}{user.avatar.url}"
         elif api_avatar and str(api_avatar).startswith("http"):
             avatar_url = api_avatar
         else:
@@ -181,9 +198,9 @@ def login_with_42_callback(request):
             'token': token.key,
         }
         request.session.modified = True
-        return redirect(f"http://localhost:3000?logged_in=true")
+        return redirect(f"{protocol}//{hostname}:{reactPort}?logged_in=true")
 
-    return redirect(f"http://localhost:3000?logged_in=false")
+    return redirect(f"{protocol}//{hostname}:{reactPort}?logged_in=false")
 
 @api_view(['GET'])
 def get_user_data(request):
@@ -207,6 +224,9 @@ def validate_token_view(request):
 
 @api_view(['POST'])
 def login_view(request):
+    global djangoPort
+    protocol, hostname = get_scheme(request)
+
     if request.method == 'POST':
         username = request.data['username']
         password = request.data['password']
@@ -236,7 +256,7 @@ def login_view(request):
             avatar_url = user.avatar.url if user.avatar else None
 
             if avatar_url and not avatar_url.startswith("http"):
-                avatar_url = f"http://{request.get_host()}{avatar_url}"
+                avatar_url = f"{protocol}//{hostname}:{djangoPort}{avatar_url}"
 
             request.session['user_data'] = {
                 'username': user.username,
@@ -418,6 +438,9 @@ def logout_view(request):
 
 @api_view(['POST'])
 def update_profile(request):
+    global djangoPort
+    protocol, hostname = get_scheme(request)
+
     try:
         if not request.session.get('user_data'):
             return Response({'error': 'User not logged in or session expired'}, status=401)
@@ -463,7 +486,7 @@ def update_profile(request):
         # Construct the full avatar URL
         avatar_url = user.avatar.url if user.avatar else None
         if avatar_url and not avatar_url.startswith("http"):
-            avatar_url = f"http://{request.get_host()}{avatar_url}"
+            avatar_url = f"{protocol}//{hostname}:{djangoPort}{avatar_url}"
 
         return Response({
             'message': 'User updated successfully!',
