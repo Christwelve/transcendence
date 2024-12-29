@@ -434,8 +434,8 @@ def update_profile(request):
         data = request.data
         if 'username' in data:
             new_username = data['username'].strip()
-            if new_username:
-                if User.objects.filter(username=new_username).exists() and new_username != user.username:
+            if new_username and new_username != user.username:
+                if User.objects.filter(username=new_username).exists():
                     return Response({'error': 'Username already taken'}, status=400)
                 user.username = new_username
                 request.session['user_data']['username'] = new_username

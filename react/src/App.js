@@ -130,7 +130,8 @@ const AppContent= () => {
         console.log("TODO: ADD FILE TO BACKEND AND STORE PATH: ", userResponse.avatar);
       }
 
-      setUsername(userResponse.username);
+      if (userResponse.username)
+        setUsername(userResponse.username);
       setUserStatus("logged");
       setErrorMessage(null);
 
