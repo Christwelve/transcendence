@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-import styles from "./TwoFactor.module.scss";
+import React, { useState, useEffect, useRef } from 'react'
+import styles from './TwoFactor.module.scss'
 
 
 const TwoFactor = ({ changeStatus, userLogin, errorMessage, user }) => {

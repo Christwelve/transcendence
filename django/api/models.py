@@ -37,6 +37,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     last_online = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)  # Required by Django
     is_staff = models.BooleanField(default=False)  # Required by Django
+    has_2fa = models.BooleanField(default=False)
 
     objects = UserManager()
 

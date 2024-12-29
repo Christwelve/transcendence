@@ -1,5 +1,5 @@
-import React, { useState, useRef } from "react";
-import styles from "./Login.module.scss";
+import React, { useState, useRef } from 'react'
+import styles from './Login.module.scss'
 
 
 const Login = ({ changeStatus, userLogin, errorMessage, login_with_42 }) => {

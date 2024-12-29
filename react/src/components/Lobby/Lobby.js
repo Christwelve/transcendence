@@ -1,7 +1,7 @@
 import React, {useState} from 'react'
 import RoomList from '../RoomList/RoomList'
 import Room from '../Room/Room'
-import Brackets from '../Brackets/Brackets'
+// import Brackets from '../Brackets/Brackets'
 import Friends from '../Friends/Friends'
 import scss from './Lobby.module.scss'
 

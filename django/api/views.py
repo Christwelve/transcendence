@@ -54,6 +54,37 @@ def setup_2fa(request):
 
 # from api.models import User, Friend
 
+@api_view(['POST'])
+def enable_2fa(request):
+    try:
+        if not request.session.get('user_data'):
+            return Response({'error': 'User not logged in or session expired'}, status=401)
+
+        username = request.session['user_data'].get('username', None)
+        if not username:
+            return Response({'error': 'User not logged in or session expired'}, status=401)
+
+        user = get_object_or_404(User, username=username)
+
+        if not request.data:
+            return Response({'error': 'No data provided'}, status=400)
+
+        data = request.data
+        has_2fa = data.get('has_2fa', False)
+        if has_2fa.lower() == 'true':
+            has_2fa = True
+        elif has_2fa.lower() == 'false':
+            has_2fa = False
+        user.has_2fa = has_2fa
+        user.save()
+
+        return Response({
+            'success': 'TwoFactor updated successfully!'
+        }, status=200)
+    except Exception as e:
+        return Response({'message': str(e)}, status=500)
+
+
 # @csrf_exempt
 @api_view(['GET'])
 def login_with_42(request):
@@ -69,7 +100,6 @@ def login_with_42(request):
 @api_view(['GET'])
 def login_with_42_callback(request):
     if request.method == 'GET':
-        # Extract authorization code from the request
         code = request.GET.get('code')
         if not code:
             return JsonResponse({'error': 'Missing authorization code'}, status=400)
@@ -85,31 +115,26 @@ def login_with_42_callback(request):
 
         # Post request to get the access token
         token_response = requests.post(access_token_url, data=data)
-
-        # Handle potential errors in the token request
         if not token_response.ok:
-            return JsonResponse({'error': 'Failed to obtain access token', 'code': code, 'response': token_response.status_code}, status=token_response.status_code)
+            return JsonResponse({'error': 'Failed to obtain access token'}, status=token_response.status_code)
 
         token_data = token_response.json()
         access_token = token_data.get('access_token')
         if not access_token:
             return JsonResponse({'error': 'Missing access token in response'}, status=400)
 
-        # Use access token to fetch user information from the 42 API
-        user_info_url = f'https://api.intra.42.fr/v2/me'
+        user_info_url = 'https://api.intra.42.fr/v2/me'
         headers = {'Authorization': f'Bearer {access_token}'}
         user_info_response = requests.get(user_info_url, headers=headers)
-
-        # Handle potential errors in fetching user information
         if not user_info_response.ok:
-            return JsonResponse({'error': 'Failed to fetch user information', 'headers': headers, 'status': user_info_response.status_code, 'token_data': token_data}, status=user_info_response.status_code)
+            return JsonResponse({'error': 'Failed to fetch user information'}, status=user_info_response.status_code)
 
         user_info_data = user_info_response.json()
 
-        # Extract relevant user information from the response
+        # Extract user details
         username = user_info_data.get('login')
         email = user_info_data.get('email')
-        avatar = user_info_data.get('image')['link']
+        api_avatar = user_info_data.get('image', {}).get('link', None)
         password = make_password('')  # Empty password as it is OAuth-based login
 
         user = User.objects.filter(username=username).first()
@@ -126,16 +151,36 @@ def login_with_42_callback(request):
         # Create or retrieve the token for the user
         token, _ = Token.objects.get_or_create(user=user)
 
+        # # Construct the full avatar URL
+        # if user.avatar:
+        #     if str(user.avatar).startswith("http"):
+        #         avatar_url = str(user.avatar)
+        #     else:
+        #         avatar_url = f"http://{request.get_host()}{user.avatar.url}"
+        # else:
+        #     avatar_url = api_avatar if str(api_avatar).startswith("http") else f"http://{request.get_host()}/media/{api_avatar}"
+
+        # Construct the full avatar URL
+        if user.avatar and user.avatar.url:
+            avatar_url = f"http://{request.get_host()}{user.avatar.url}"
+        elif api_avatar and str(api_avatar).startswith("http"):
+            avatar_url = api_avatar
+        else:
+            None
+
+
+
+        print("Avatar url:", avatar_url)
+
+        request.session.flush()
         # Store user session data
         request.session['user_data'] = {
             'username': username,
             'email': email,
-            'avatar': avatar,
+            'avatar': avatar_url,
             'token': token.key,
         }
-
-        request.session.save()
-
+        request.session.modified = True
         return redirect(f"http://localhost:3000?logged_in=true")
 
     return redirect(f"http://localhost:3000?logged_in=false")
@@ -167,29 +212,36 @@ def login_view(request):
         password = request.data['password']
         user = get_object_or_404(User, username=username)
         if check_password(password, user.password):
-            totp_device = TOTPDevice.objects.filter(user=user, confirmed=True).first()
-            if not totp_device:
-                 # Retrieve the unconfirmed TOTP device
-                totp_device = TOTPDevice.objects.filter(user=user, confirmed=False).first()
+            if user.has_2fa:
+                totp_device = TOTPDevice.objects.filter(user=user, confirmed=True).first()
                 if not totp_device:
-                    return Response({'error': 'No 2FA device found'}, status=status.HTTP_401_UNAUTHORIZED)
-                else:
-                    totp_device.confirmed = True
-                    totp_device.save()
+                    # Retrieve the unconfirmed TOTP device
+                    totp_device = TOTPDevice.objects.filter(user=user, confirmed=False).first()
+                    if not totp_device:
+                        return Response({'error': 'No 2FA device found'}, status=status.HTTP_401_UNAUTHORIZED)
+                    else:
+                        totp_device.confirmed = True
+                        totp_device.save()
 
-            if totp_device:  # If user has a TOTP device, validate the token
-                otp_token = request.data.get('otp_token')
-                if not otp_token:  # If no 2FA token is provided, return an error
-                    return Response({'error': '2FA token is required'}, status=status.HTTP_401_UNAUTHORIZED)
-                if not totp_device.verify_token(otp_token):  # Validate the token
-                    return Response({'error': 'Invalid 2FA token'}, status=status.HTTP_401_UNAUTHORIZED)
+                if totp_device:  # If user has a TOTP device, validate the token
+                    otp_token = request.data.get('otp_token')
+                    if not otp_token:  # If no 2FA token is provided, return an error
+                        return Response({'error': '2FA token is required'}, status=status.HTTP_401_UNAUTHORIZED)
+                    if not totp_device.verify_token(otp_token):  # Validate the token
+                        return Response({'error': 'Invalid 2FA token'}, status=status.HTTP_401_UNAUTHORIZED)
 
             token, _ = Token.objects.get_or_create(user=user)  # Efficient token retrieval
             serializer = UserSerializer(user)
+
+            avatar_url = user.avatar.url if user.avatar else None
+
+            if avatar_url and not avatar_url.startswith("http"):
+                avatar_url = f"http://{request.get_host()}{avatar_url}"
+
             request.session['user_data'] = {
                 'username': user.username,
                 'email': user.email,
-                'avatar': str(user.avatar),
+                'avatar': avatar_url,
                 'token': token.key,
             }
             request.session.save()
@@ -363,3 +415,60 @@ def remove_friend(request):
 def logout_view(request):
     request.session.flush()
     return Response({"message": "Logged out successfully"})
+
+@api_view(['POST'])
+def update_profile(request):
+    try:
+        if not request.session.get('user_data'):
+            return Response({'error': 'User not logged in or session expired'}, status=401)
+
+        old_username = request.session['user_data'].get('username', None)
+        if not old_username:
+            return Response({'error': 'User not logged in or session expired'}, status=401)
+
+        user = get_object_or_404(User, username=old_username)
+
+        if not request.data:
+            return Response({'error': 'No data provided'}, status=400)
+
+        data = request.data
+        if 'username' in data:
+            new_username = data['username'].strip()
+
+            if new_username:
+                if User.objects.filter(username=new_username).exists() and new_username != user.username:
+                    return Response({'error': 'Username already taken'}, status=400)
+
+            user.username = new_username
+            request.session['user_data']['username'] = new_username
+            request.session.modified = True
+
+        if 'email' in data:
+            new_email = data['email'].strip()
+            if not new_email:
+                return Response({'error': 'Email cannot be empty'}, status=400)
+
+            if User.objects.filter(email=new_email).exists() and new_email != user.email:
+                return Response({'error' : 'Email already in use'}, status=400)
+
+            user.email = new_email
+
+        if 'password' in data:
+            user.password = make_password(data['password'])
+        if 'avatar' in request.FILES:
+            user.avatar = request.FILES['avatar']
+
+        user.save()
+
+        # Construct the full avatar URL
+        avatar_url = user.avatar.url if user.avatar else None
+        if avatar_url and not avatar_url.startswith("http"):
+            avatar_url = f"http://{request.get_host()}{avatar_url}"
+
+        return Response({
+            'message': 'User updated successfully!',
+            'avatar': avatar_url
+        }, status=200)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)

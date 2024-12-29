@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from "react";
-import "./App.css";
-import Register from "./components/Register/Register";
-import Login from "./components/Login/Login";
-import Page from "./pages/Page";
-import Cookies from 'js-cookie';
-import TwoFactor from "./components/TwoFactor/TwoFactor";
-import DataContextProvider from './components/DataContext/DataContext';
-import ModalPresenter from './components/Modal/ModalPresenter';
+import React, { useEffect, useState } from 'react'
+import './App.css'
+import Register from './components/Register/Register'
+import Login from './components/Login/Login'
+import Page from './pages/Page'
+import Cookies from 'js-cookie'
+import TwoFactor from './components/TwoFactor/TwoFactor'
+import DataContextProvider from './components/DataContext/DataContext'
+import ModalPresenter from './components/Modal/ModalPresenter'
 import ToastPresenter from './components/Toast/ToastPresenter'
-import { closeModalTop } from './utils/modal';
+import { closeModalTop } from './utils/modal'
 
 function App() {
   useEffect(() => {
@@ -35,6 +35,7 @@ function App() {
   const [errorMessage, setErrorMessage] = useState(null);
   const [avatar, setAvatar] = useState(null);
   const [user, setUser] = useState(null);
+  const [username, setUsername] = useState("");
 
   const changeStatus = (status) => {
     setUserStatus(status);
@@ -74,11 +75,15 @@ function App() {
         }
       } else {
         Cookies.set('login', 'manual');
-        if (!userData.user.avatar)
+        if (userData.user.avatar) {
+          const avatarUrl = userData.user.avatar;
+          if (avatarUrl.startsWith('http')) {
+            setAvatar(avatarUrl);
+          } else {
+            setAvatar(`http://localhost:8000${avatarUrl}`);
+          }
+        } else {
           setAvatar(`https://robohash.org/${userData.username}?200x200`);
-        else {
-          const avatarIcon = (userData.user.avatar).split('/').pop();
-          setAvatar(`http://localhost:8000/media/avatars/${avatarIcon}`);
         }
 
         //when we change the domain to a secure one we must add { secure: true } as 3rd parameter
@@ -86,6 +91,7 @@ function App() {
         setUserStatus("logged");
         setErrorMessage(null);
         setUser(userData.user);
+        setUsername(userData.user.username);
       }
     } else {
       try {
@@ -99,10 +105,31 @@ function App() {
           setErrorMessage("Wrong credentials!");
           return;
         } else if (response.status === 401) {
+        } else if (response.status === 401) {
           setUserStatus("2fa");
           setErrorMessage(null);
           const userObject = Object.fromEntries(user.entries());
           setUser(userObject);
+          setUsername(userObject.username);
+        } else if (response.status === 200) {
+          const userData = await response.json();
+          Cookies.set('login', 'manual');
+          if (userData.user.avatar) {
+            const avatarUrl = userData.user.avatar;
+            if (avatarUrl.startsWith('http')) {
+              setAvatar(avatarUrl);
+            } else {
+              setAvatar(`http://localhost:8000${avatarUrl}`);
+            }
+          } else {
+            setAvatar(`https://robohash.org/${userData.username}?200x200`);
+          }
+
+          Cookies.set('authToken', userData.token);
+          setUserStatus("logged");
+          setErrorMessage(null);
+          setUser(userData.user);
+          setUsername(userData.user.username);
         } else {
           setErrorMessage("An unexpected error occurred");
         }
@@ -126,6 +153,8 @@ function App() {
         console.error("Failed to get authorization URL:", response.statusText);
         setErrorMessage("An unexpected error occurred");
         return;
+      } else {
+        setErrorMessage(null);
       }
 
       const data = await response.json();
@@ -133,7 +162,6 @@ function App() {
       window.location.href = data.authorization_url; // Redirect the user
     } catch (error) {
       console.error("Network error:", error.message);
-      setErrorMessage("An unexpected error occurred");
     }
   };
 
@@ -156,30 +184,28 @@ function App() {
       if (!authToken) {
         Cookies.set('authToken', user.token);
       }
+
+      console.log("Avatar URL received:", user.avatar);
       if (user.avatar) {
-        // if (user.avatar.includes('intra.42.fr')) {
-
-        // }
-        if (user.avatar.includes('avatars/')) {
-          const avatarIcon = (user.avatar).split('/').pop();
-          setAvatar(`http://localhost:8000/media/avatars/${avatarIcon}`);
+        const avatarUrl = user.avatar;
+        if (avatarUrl.startsWith('http')) {
+          setAvatar(avatarUrl); // Absolute URL, use directly
         } else {
-          setAvatar(user.avatar);
-          // console.log("TODO: ADD FILE TO BACKEND AND STORE PATH: ", user.avatar);
-          // setAvatar(user.avatar);
+          setAvatar(`http://localhost:8000${avatarUrl}`);
         }
-
+      } else {
+        setAvatar(`https://robohash.org/${user.username}?200x200`);
+        console.log("TODO: ADD FILE TO BACKEND AND STORE PATH: ", user.avatar);
       }
-      // else
-      //   setAvatar(`https://robohash.org/${user.username}?200x200`);
+
+      setUsername(user.username);
       setUserStatus("logged");
       setErrorMessage(null);
+
     } catch (error) {
       console.error("Network error:", error.message);
-      setErrorMessage("An unexpected error occurred");
     }
   };
-
   // return (
   //   <DataContextProvider>
   //     <Home changeStatus={changeStatus} avatar={avatar} />
@@ -212,7 +238,7 @@ function App() {
         />
       ) : (
         <DataContextProvider>
-          <Page changeStatus={changeStatus} avatar={avatar} />
+          <Page changeStatus={changeStatus} avatar={avatar} setAvatar={setAvatar} username={username} setUsername={setUsername}/>
           <ModalPresenter />
           <ToastPresenter />
         </DataContextProvider>
