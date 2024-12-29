@@ -74,7 +74,7 @@ const Header = ({ changeStatus, avatar, setAvatar, username, setUsername, set2fa
             <div className={styles.dropdownMenu}>
               <button
                 className={`disabled ${styles.username}`}>
-                {username}
+                {username && username.trim() ? username : "Your Profile"}
               </button>
               <button
                 className={styles.dropdownItem}
