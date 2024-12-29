@@ -1,5 +1,5 @@
 import React from 'react'
-import { useDataContext } from '../DataContext/DataContext'
+import { useDataContext } from '.../context/DataContext'
 import RoomCreateModal from '../Modal/Modal'
 import { showModal } from '../../utils/modal'
 import cls from '../../utils/cls'
