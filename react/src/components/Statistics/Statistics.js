@@ -55,29 +55,29 @@ function Statistics() {
         console.error("Error fetching user data:", error);
       });
 
-    // Fetch user statistics
-    fetch("http://localhost:8000/api/user/statistics/", {
-      method: "GET",
-      credentials: "include",
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to fetch user statistics");
-        }
-        return response.json();
-      })
-      .then((statistics) => {
-        setUserStatistics(statistics); // Store user statistics
-        const totalGoalsScored = statistics.statistics.reduce((acc, stat) => acc + stat.goals_scored, 0);
-        const totalGoalsReceived = statistics.statistics.reduce((acc, stat) => acc + stat.goals_received, 0);
-  
-        setTotalGoalsScored(totalGoalsScored);
-        setTotalGoalsReceived(totalGoalsReceived);
-      })
-      .catch((error) => {
-        console.error("Error fetching user statistics:", error);
-      });
+    fetchUserStatistics();
   }, []);
+
+  const fetchUserStatistics = async () => {
+    try {
+      const response = await fetch("http://localhost:8000/api/user/statistics/", {
+        method: "GET",
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new Error("Failed to fetch user statistics");
+      }
+      const statistics = await response.json();
+      setUserStatistics(statistics); // Store user statistics
+      const totalGoalsScored = statistics.statistics.reduce((acc, stat) => acc + stat.goals_scored, 0);
+      const totalGoalsReceived = statistics.statistics.reduce((acc, stat) => acc + stat.goals_received, 0);
+
+      setTotalGoalsScored(totalGoalsScored);
+      setTotalGoalsReceived(totalGoalsReceived);
+    } catch (error) {
+      console.error("Error fetching user statistics:", error);
+    }
+  };
 
   useEffect(() => {
     if (fullUserData) {
@@ -89,18 +89,18 @@ function Statistics() {
   }, [fullUserData]);
 
   const chartData = {
-    labels: mockMatchHistory.map(match => `Match ${match.matchId}`),
+    labels: userStatistics ? userStatistics.statistics.map(stat => `Match ${stat.match}`) : [],
     datasets: [
       {
         label: 'Goals Scored',
-        data: mockMatchHistory.map(match => match.goalsScored),
+        data: userStatistics ? userStatistics.statistics.map(stat => stat.goals_scored) : [],
         borderColor: 'rgba(75, 192, 192, 1)',
         backgroundColor: 'rgba(75, 192, 192, 0.2)',
         fill: true,
       },
       {
         label: 'Goals Received',
-        data: mockMatchHistory.map(match => match.goalsReceived),
+        data: userStatistics ? userStatistics.statistics.map(stat => stat.goals_received) : [],
         borderColor: 'rgba(255, 99, 132, 1)',
         backgroundColor: 'rgba(255, 99, 132, 0.2)',
         fill: true,
