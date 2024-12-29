@@ -11,3 +11,4 @@ djangorestframework-simplejwt==5.3.1
 django-otp==1.5.4
 django-two-factor-auth==1.17.0
 phonenumbers==8.13.51
+python-dotenv==1.0.1
