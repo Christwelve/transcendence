@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 import os
+from dotenv import load_dotenv
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -178,18 +179,20 @@ PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.ScryptPasswordHasher",
 ]
 
+load_dotenv()
+
 OAUTH2_PROVIDER = {
     'BASE_DOMAIN': 'https://api.intra.42.fr',
     'AUTH_LOGIN_URL': '/oauth/authorize',
     'AUTH_ACCESS_TOKEN_URL': '/oauth/token',
     'AUTH_USERINFO_URL': '/v2/me',
-    'CLIENT_ID': 'u-s4t2ud-35200b91dbc192b0409be4fe981c496c78f0d18c705602b771e804d09f4fabab',
-    'CLIENT_SECRET': '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',
+    'CLIENT_ID': os.getenv('API_42_UID'),
+    'CLIENT_SECRET': os.getenv('API_42_SECRET'),
     'SCOPE': {'public': 'Public access'},  # Adjust scopes based on your needs
 }
 
 # LOGIN_URL = '/admin/login/'
-URL_42 = 'https://api.intra.42.fr/oauth/authorize?client_id=u-s4t2ud-35200b91dbc192b0409be4fe981c496c78f0d18c705602b771e804d09f4fabab&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fapi%2F42%2Flogin%2Fcallback%2F&response_type=code'
+URL_42 = os.getenv('API_42_URL')
 
 #needed for authentication
 
