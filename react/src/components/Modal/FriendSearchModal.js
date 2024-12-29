@@ -1,12 +1,14 @@
-import React, {useRef, useState, useEffect} from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import Modal from './Modal'
 import CardSection from '../Card/CardSection'
 import FriendList from '../Friends/FriendList'
 import scss from './FriendSearchModal.module.scss'
+import { protocol, hostname, djangoPort } from './utils/scheme'
+
 
 function FriendSearchModal(props) {
-	const {data, updateModal, closeModal} = props;
-	const {name} = data;
+	const { data, updateModal, closeModal } = props;
+	const { name } = data;
 
 	const [users, setUsers] = useState([]);
 	const [searchMessage, setSearchMessage] = useState("");
@@ -15,14 +17,14 @@ function FriendSearchModal(props) {
 
 	const handleSearch = async searchQuery => {
 
-		if(!searchQuery) {
+		if (!searchQuery) {
 			setSearchMessage("");
 			setUsers([]);
 			return;
 		}
 
 		try {
-			const response = await fetchWithCredentials(`http://localhost:8000/api/user/search/?query=${searchQuery}`, "GET");
+			const response = await fetchWithCredentials(`${protocol}//${hostname}:${djangoPort}/api/user/search/?query=${searchQuery}`, "GET");
 			const data = await response.json();
 
 			if (data.detail) {
@@ -44,7 +46,7 @@ function FriendSearchModal(props) {
 		console.log(username);
 
 		try {
-			const response = await fetchWithCredentials("http://localhost:8000/api/friend/add/", "POST", {
+			const response = await fetchWithCredentials(`${protocol}//${hostname}:${djangoPort}/api/friend/add/`, "POST", {
 				headers: {
 					"Content-Type": "application/json",
 				},

@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import styles from './TwoFactor.module.scss'
+import { protocol, hostname, djangoPort } from './utils/scheme'
+
 
 
 const TwoFactor = ({ changeStatus, userLogin, errorMessage, user }) => {
@@ -16,13 +18,13 @@ const TwoFactor = ({ changeStatus, userLogin, errorMessage, user }) => {
     generateQRCode();
 
 
-	}, []);
+  }, []);
 
   const generateQRCode = async () => {
     console.log("User:", user.username);
     const formData = new FormData();
     formData.append("username", user.username);
-    const response = await fetch(`http://localhost:8000/api/2fa/generate/`, {
+    const response = await fetch(`${protocol}//${hostname}:${djangoPort}/api/2fa/generate/`, {
       method: "POST",
       body: formData,
     });
@@ -74,11 +76,11 @@ const TwoFactor = ({ changeStatus, userLogin, errorMessage, user }) => {
         <div className={styles["form-group"]}>
           <p>
             Scan here with an authenticator app{" "}
-          <img
-            src={qrCode}
-            alt="QR code"
-            width={250}
-            height={250}/>
+            <img
+              src={qrCode}
+              alt="QR code"
+              width={250}
+              height={250} />
           </p>
         </div>
         <div className="mb-3">

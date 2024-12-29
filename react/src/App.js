@@ -9,6 +9,7 @@ import DataContextProvider from './components/DataContext/DataContext'
 import ModalPresenter from './components/Modal/ModalPresenter'
 import ToastPresenter from './components/Toast/ToastPresenter'
 import { closeModalTop } from './utils/modal'
+import { protocol, hostname, djangoPort } from './utils/scheme'
 
 function App() {
   useEffect(() => {
@@ -57,7 +58,7 @@ function App() {
 
   const userLogin = async (user, authenticated) => {
     if (authenticated) {
-      const response = await fetch(`http://localhost:8000/api/login/`, {
+      const response = await fetch(`${protocol}//${hostname}:${djangoPort}/api/login/`, {
         method: "POST",
         credentials: 'include',
         body: user,
@@ -80,7 +81,7 @@ function App() {
           if (avatarUrl.startsWith('http')) {
             setAvatar(avatarUrl);
           } else {
-            setAvatar(`http://localhost:8000${avatarUrl}`);
+            setAvatar(`${protocol}//${hostname}:${djangoPort}${avatarUrl}`);
           }
         } else {
           setAvatar(`https://robohash.org/${userData.username}?200x200`);
@@ -95,7 +96,7 @@ function App() {
       }
     } else {
       try {
-        const response = await fetch(`http://localhost:8000/api/login/`, {
+        const response = await fetch(`${protocol}//${hostname}:${djangoPort}/api/login/`, {
           method: "POST",
           credentials: 'include',
           body: user,
@@ -119,7 +120,7 @@ function App() {
             if (avatarUrl.startsWith('http')) {
               setAvatar(avatarUrl);
             } else {
-              setAvatar(`http://localhost:8000${avatarUrl}`);
+              setAvatar(`${protocol}//${hostname}:${djangoPort}${avatarUrl}`);
             }
           } else {
             setAvatar(`https://robohash.org/${userData.username}?200x200`);
@@ -142,7 +143,7 @@ function App() {
 
   const login_with_42 = async () => {
     try {
-      const response = await fetch("http://localhost:8000/api/auth/42/login/", {
+      const response = await fetch(`${protocol}//${hostname}:${djangoPort}/api/auth/42/login/`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -167,7 +168,7 @@ function App() {
 
   const fetchUserData = async () => {
     try {
-      const response = await fetch("http://localhost:8000/api/user/data/", {
+      const response = await fetch(`${protocol}//${hostname}:${djangoPort}/api/user/data/`, {
         method: "GET",
         credentials: "include", // Include cookies for session-based data
       });
@@ -191,7 +192,7 @@ function App() {
         if (avatarUrl.startsWith('http')) {
           setAvatar(avatarUrl); // Absolute URL, use directly
         } else {
-          setAvatar(`http://localhost:8000${avatarUrl}`);
+          setAvatar(`${protocol}//${hostname}:${djangoPort}${avatarUrl}`);
         }
       } else {
         setAvatar(`https://robohash.org/${user.username}?200x200`);
@@ -238,7 +239,7 @@ function App() {
         />
       ) : (
         <DataContextProvider>
-          <Page changeStatus={changeStatus} avatar={avatar} setAvatar={setAvatar} username={username} setUsername={setUsername}/>
+          <Page changeStatus={changeStatus} avatar={avatar} setAvatar={setAvatar} username={username} setUsername={setUsername} />
           <ModalPresenter />
           <ToastPresenter />
         </DataContextProvider>

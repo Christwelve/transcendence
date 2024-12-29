@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import '../genericStyles.css'
 import './Profile.module.scss'
+import { protocol, hostname, djangoPort } from './utils/scheme'
+
 
 const Profile = ({ avatar, setAvatar }) => {
   const [username, setUsername] = useState("");
@@ -15,8 +17,8 @@ const Profile = ({ avatar, setAvatar }) => {
     if (email) formData.append("email", email);
     if (newPassword) formData.append("password", newPassword);
     if (avatarFile) formData.append("avatar", avatarFile);
-  
-    fetch("http://localhost:8000/api/user/update/", {
+
+    fetch(`${protocol}//${hostname}:${djangoPort}/api/user/update/`, {
       method: "POST",
       credentials: "include",
       body: formData,

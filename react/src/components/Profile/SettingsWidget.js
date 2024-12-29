@@ -1,7 +1,9 @@
-import React, {useState} from 'react'
+import React, { useState } from 'react'
 import styles from './Profile.module.scss'
+import { protocol, hostname, djangoPort } from './utils/scheme'
 
-const SettingsWidget = ({ avatar, setAvatar, onClose, twoFactor, setNewUsername}) => {
+
+const SettingsWidget = ({ avatar, setAvatar, onClose, twoFactor, setNewUsername }) => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -14,7 +16,7 @@ const SettingsWidget = ({ avatar, setAvatar, onClose, twoFactor, setNewUsername}
     const formData = new FormData();
     const has_2fa = !is2FAEnabled;
     formData.append("has_2fa", has_2fa);
-    fetch("http://localhost:8000/api/2fa/enable/", {
+    fetch(`${protocol}//${hostname}:${djangoPort}/api/2fa/enable/`, {
       method: "POST",
       credentials: "include",
       body: formData,
@@ -38,7 +40,7 @@ const SettingsWidget = ({ avatar, setAvatar, onClose, twoFactor, setNewUsername}
     if (newPassword) formData.append("password", newPassword);
     if (avatarFile) formData.append("avatar", avatarFile);
 
-    fetch("http://localhost:8000/api/user/update/", {
+    fetch(`${protocol}//${hostname}:${djangoPort}/api/user/update/`, {
       method: "POST",
       credentials: "include",
       body: formData,

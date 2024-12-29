@@ -3,6 +3,8 @@ import Cookies from 'js-cookie'
 import { FaCog, FaSignOutAlt } from 'react-icons/fa'
 import styles from './Header.module.scss'
 import SettingsWidget from '../Profile/SettingsWidget'
+import { protocol, hostname, djangoPort } from './utils/scheme'
+
 
 const Header = ({ changeStatus, avatar, setAvatar, username, setUsername, set2fa }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -10,7 +12,7 @@ const Header = ({ changeStatus, avatar, setAvatar, username, setUsername, set2fa
   const [twoFactor, setTwoFactor] = useState(false);
 
   const updateDropdownData = async () => {
-    fetch(`http://localhost:8000/api/users/${username}`)
+    fetch(`${protocol}//${hostname}:${djangoPort}/api/users/${username}`)
       .then((response) => response.json())
       .then((data) => {
         if (data.has_2fa) {
@@ -22,7 +24,7 @@ const Header = ({ changeStatus, avatar, setAvatar, username, setUsername, set2fa
   };
 
   const logout = async () => {
-    const response = await fetch(`http://localhost:8000/api/logout/`, {
+    const response = await fetch(`${protocol}//${hostname}:${djangoPort}/api/logout/`, {
       method: "POST",
     });
 

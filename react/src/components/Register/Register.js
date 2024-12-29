@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import styles from './Register.module.scss'
+import { protocol, hostname, djangoPort } from './utils/scheme'
 
 const Register = ({ changeStatus }) => {
   const [email, setEmail] = useState("");
@@ -73,7 +74,7 @@ const Register = ({ changeStatus }) => {
 
   const addUserToDatabase = async (formData) => {
     try {
-      const response = await fetch("http://localhost:8000/api/users/", {
+      const response = await fetch(`${protocol}//${hostname}:${djangoPort}/api/users/`, {
         method: "POST",
         body: formData,
       });

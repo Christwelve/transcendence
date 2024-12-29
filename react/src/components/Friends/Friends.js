@@ -8,6 +8,8 @@ import FriendSearchModal from '../Modal/FriendSearchModal'
 import scss from './Friends.module.scss'
 import { showModal } from '../../utils/modal'
 import { showToast } from '../Toast/ToastPresenter'
+import { protocol, hostname, djangoPort } from './utils/scheme'
+
 
 function Friends() {
 	const { getStateId } = useDataContext();
@@ -33,7 +35,7 @@ function Friends() {
 
 	const removeFriend = async username => {
 		try {
-			const response = await fetchWithCredentials("http://localhost:8000/api/friend/remove/", "POST", {
+			const response = await fetchWithCredentials(`${protocol}//${hostname}:${djangoPort}/api/friend/remove/`, "POST", {
 				headers: {
 					"Content-Type": "application/json",
 				},
@@ -84,7 +86,7 @@ function fetchWithCredentials(path, method, extraOptions = {}) {
 
 async function fetchFriends() {
 	try {
-		const response = await fetchWithCredentials("http://localhost:8000/api/friend/", "GET");
+		const response = await fetchWithCredentials(`${protocol}//${hostname}:${djangoPort}/api/friend/`, "GET");
 		const data = await response.json();
 		return data.friends || [];
 	} catch (error) {

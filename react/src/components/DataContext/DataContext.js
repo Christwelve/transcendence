@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useState, useReducer, useEffect, useRef } from 'react'
 import io from 'socket.io-client'
 import { showToast } from '../Toast/ToastPresenter'
+import { protocol, hostname, nodePort } from './utils/scheme'
 // import Cookies from 'js-cookie'
 
-const SOCKET_SERVER_URL = `http://${window.location.hostname}:4000`;
+const SOCKET_SERVER_URL = `${protocol}//${hostname}:${nodePort}`;
 
 
 const DataContext = createContext();
