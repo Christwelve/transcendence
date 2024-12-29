@@ -491,7 +491,9 @@ class ServerTick extends Tick {
 			else {
 				this._ballData = [0, 0, 0, 0, -1];
 				this.sendCollisionToPlayers(io);
-				endGame(this._room, updateState);
+
+				if(this._room.players.length >= 2)
+					endGame(this._room.counter, this._room);
 			}
 
 			updateState();

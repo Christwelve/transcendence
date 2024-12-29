@@ -161,6 +161,7 @@ function removePlayerFromRoom(player, room) {
 		// TODO: store tournament data
 
 		room.status = 0;
+		room.counter++;
 
 		endRoom(room);
 		resetRoom(room);
@@ -185,17 +186,24 @@ function removePlayerFromRoom(player, room) {
 
 	} else {
 		if(players.length === 1 && games[id] != null) {
-			endSingleGame(room, true);
-			endRoom(room);
-			resetRoom(room);
-		}
+			endSingleGame(room, room.counter, true);
 
-		if (players.length === 0) {
-			games[id]?.detach();
+			games[id].detach();
 
 			// TODO: store match data
 
 			delete games[id];
+
+			endRoom(room);
+			resetRoom(room);
+
+			room.counter++;
+
+			updateState();
+		}
+
+		if (players.length === 0) {
+
 			delete data.rooms[id];
 
 			updateState();
@@ -349,17 +357,20 @@ function endGame(counter, room) {
 
 async function endSingleGame(room, counter, immediate = false) {
 
-	if(room.counter !== counter)
-		return;
-
 	room.status = 3;
 
 	updateState();
 
 	await storeMatchData(room);
 
+	if(room.counter !== counter || room.players.length < 2)
+		return;
+
 	if(!immediate)
 		await wait(10000);
+
+	if(room.counter !== counter || room.players.length < 2)
+		return;
 
 	endRoom(room);
 
@@ -802,7 +813,7 @@ function getCurrentMatch(tournament) {
 
 async function startRoom(room, players, activePlayers, counter) {
 
-	if(room.counter !== counter)
+	if(room.counter !== counter || room.players.length < 2)
 		return;
 
 	const spectators = players.filter(player => !activePlayers.includes(player));
@@ -819,7 +830,7 @@ async function startRoom(room, players, activePlayers, counter) {
 
 	await wait(1000);
 
-	if(room.counter !== counter)
+	if(room.counter !== counter || room.players.length < 2)
 		return;
 
 	game.startGame(io);
@@ -829,7 +840,7 @@ async function startRoom(room, players, activePlayers, counter) {
 
 	await wait(3000);
 
-	if(room.counter !== counter)
+	if(room.counter !== counter || room.players.length < 2)
 		return;
 
 	room.status = 2;
