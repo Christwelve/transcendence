@@ -187,7 +187,7 @@ def login_with_42_callback(request):
 
 @api_view(['GET'])
 def get_user_data(request):
-    user_data = request.session.get('user_data', None)
+    user_data = request.session.get('user_data')
     if not user_data:
         return JsonResponse({'error': 'No user data found', 'session': request.session.get('user_data')}, status=404)
     return JsonResponse(user_data)
@@ -434,14 +434,12 @@ def update_profile(request):
         data = request.data
         if 'username' in data:
             new_username = data['username'].strip()
-
             if new_username:
                 if User.objects.filter(username=new_username).exists() and new_username != user.username:
                     return Response({'error': 'Username already taken'}, status=400)
-
-            user.username = new_username
-            request.session['user_data']['username'] = new_username
-            request.session.modified = True
+                user.username = new_username
+                request.session['user_data']['username'] = new_username
+                request.session.modified = True
 
         if 'email' in data:
             new_email = data['email'].strip()
@@ -455,6 +453,7 @@ def update_profile(request):
 
         if 'password' in data:
             user.password = make_password(data['password'])
+
         if 'avatar' in request.FILES:
             user.avatar = request.FILES['avatar']
 

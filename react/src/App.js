@@ -54,6 +54,7 @@ const AppContent= () => {
 
   const userLogin = async (formData, authenticated) => {
     try {
+      setErrorMessage(null);
       const userData = await userLoginService(formData, authenticated);
 
       Cookies.set('login', 'manual');
