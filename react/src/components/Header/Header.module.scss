@@ -2,6 +2,11 @@ $primary-color: #00fff6;
 $background: #000000;
 $text-color: #ffffff;
 
+header {
+  position: relative;
+  z-index: 1000;
+}
+
 .inner {
   display: flex;
   align-items: center;

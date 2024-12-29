@@ -3,12 +3,9 @@ import io from 'socket.io-client'
 import { showToast } from '../Toast/ToastPresenter'
 // import Cookies from 'js-cookie'
 
-const SOCKET_SERVER_URL = `http://${window.location.hostname}:4000`;
-
+const SOCKET_SERVER_URL = `//${window.location.hostname}:4000`;
 
 const DataContext = createContext();
-
-let lastInstructions = null;
 
 const useDataContext = () => {
 	return useContext(DataContext);
@@ -85,7 +82,7 @@ function DataContextProvider(props) {
 		getRoomList: getRoomList.bind(null, data),
 		getPlayerList: getPlayerList.bind(null, data),
 		getPlayerListForRoom: getPlayerListForRoom.bind(null, data),
-		getTournamentForRoom: getTournamentForRoom.bind(null, data),
+		getTournament: getTournament.bind(null, data),
 		createRoom: createRoom.bind(null, send),
 		joinRoom: joinRoom.bind(null, send),
 		quickJoinRoom: quickJoinRoom.bind(null, send),
@@ -144,13 +141,12 @@ function getPlayerListForRoom(data, roomId) {
 	return room.players.map(playerId => data.players[playerId]);
 }
 
-function getTournamentForRoom(data, roomId) {
-	const room = data.rooms[roomId];
+function getTournament(data) {
+	const playerId = data.userId;
+	const player = data.players[playerId];
+	const tournament = data.tournaments[player?.roomId];
 
-	if (room == null)
-		return null;
-
-	return data.tournaments[room.tournamentId];
+	return tournament;
 }
 
 function createRoom(send, options) {

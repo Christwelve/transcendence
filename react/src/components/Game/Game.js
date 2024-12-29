@@ -57,9 +57,9 @@ function CameraLookAt(props) {
 		const multiplier = playerIndex % 2 === 0 ? -1 : 1;
 		const distance = sizes.boardSize * 1.5;
 		const axis = playerIndex > 1 ? 'x' : 'z';
-		const position = distance * multiplier;
+		const position = playerIndex === -1 ? 0 : distance * multiplier;
 
-		camera.position.y = sizes.boardSize / 1.5;
+		camera.position.set(0, sizes.boardSize / 1.5, 0);
 		camera.position[axis] = position;
 
 		const targetPosition = [0, 0, 0];
@@ -73,10 +73,11 @@ function CameraLookAt(props) {
 function TickHandler(props) {
 	const {paddleRefs, ballRef, goalRef, timeRef, countdownState, setGoalScored, setWinners} = props;
 
-	const {getPlayer, getPlayerById, getRoom, useListener, requestServerTick, requestTickAdjust, sendPlayerEvent} = useDataContext();
+	const {getPlayer, getRoom, useListener, requestServerTick, requestTickAdjust, sendPlayerEvent} = useDataContext();
 
 	const tickRef = useRef(null);
 	const roomRef = useRef(null);
+	const lastRef = useRef(null);
 
 	const player = getPlayer();
 	const room = getRoom(player.roomId);
@@ -95,7 +96,8 @@ function TickHandler(props) {
 		const seconds = Math.ceil(room.timer / 60);
 		const minutes = Math.floor(seconds / 60);
 
-		timeRef.current.textContent = room.timer ? `${padNumber(minutes, 2)}:${padNumber(seconds % 60, 2)}` : '';
+		if(timeRef.current)
+			timeRef.current.textContent = room.timer ? `${padNumber(minutes, 2)}:${padNumber(seconds % 60, 2)}` : '';
 
 		if(room.running && room.timer > 0)
 			room.timer--;
@@ -118,13 +120,21 @@ function TickHandler(props) {
 		}
 	}, []);
 
-	useFrame((_, delta) => {
+	useFrame((state, delta) => {
 		const tick = tickRef.current;
+		const last = lastRef.current;
+
+		const time = state.clock.getElapsedTime();
+
+		if(last != null && time - last > 1000)
+			requestServerTick();
 
 		renderPaddles(tick, paddleRefs);
 		renderBall(tick, ballRef);
 		renderGoal(tick, goalRef, delta);
 		renderCountdown(tick, countdownState);
+
+		lastRef.current = time;
 	});
 
 	useListener('player.index', index => {
@@ -198,24 +208,16 @@ function TickHandler(props) {
 			const room = roomRef.current;
 
 			if(room.running)
-				return;
+				setTimeout(() => tick.roundStart(0, direction), 500);
+			else {
+				const maxScore = room.scores.reduce((acc, {scored}) => Math.max(acc, scored), 0);
 
-			const maxScore = room.scores.reduce((acc, {scored}) => Math.max(acc, scored), 0);
+				const winners = room.activePlayers.filter((_, i) => room.scores[i].scored === maxScore).filter(player => player);
 
-			const winners = room.activePlayers.filter((_, i) => room.scores[i].scored === maxScore).filter(player => player);
-
-			setWinners(winners);
+				setWinners(winners);
+			}
 
 		}, 2500);
-
-		setTimeout(() => {
-			const room = roomRef.current;
-
-			if(!room.running)
-				return;
-
-			tick.roundStart(0, direction);
-		}, 3000);
 	});
 }
 

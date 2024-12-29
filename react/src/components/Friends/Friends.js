@@ -45,7 +45,7 @@ function Friends() {
 			}
 
 		} catch (error) {
-			console.error("Error removing friend:", error);
+			showToast({ type: "error", title: "Failure", message: "Friend could not be removed." });
 		}
 	};
 
@@ -88,7 +88,7 @@ async function fetchFriends() {
 		const data = await response.json();
 		return data.friends || [];
 	} catch (error) {
-		console.error("Error fetching friends:", error);
+		showToast({ type: "error", title: "Failure", message: "Could not fetch friends." });
 		return [];
 	}
 }

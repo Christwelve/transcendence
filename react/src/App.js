@@ -182,7 +182,7 @@ function App() {
 
   // return (
   //   <DataContextProvider>
-  //     <Home changeStatus={changeStatus} avatar={avatar} />
+  //     <Page changeStatus={changeStatus} avatar={avatar} />
   //     <ModalPresenter />
   //     <ToastPresenter />
   //   </DataContextProvider>
