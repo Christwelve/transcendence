@@ -91,6 +91,7 @@ function App() {
         setErrorMessage(null);
         setUser(userData.user);
         Cookies.set('authToken', userData.token);
+        Cookies.set('jwtToken', userData.jwtToken);
         setUsername(userData.user.username);
       }
     } else {
@@ -104,7 +105,6 @@ function App() {
         if (response.status === 400 || response.status === 404) {
           setErrorMessage("Wrong credentials!");
           return;
-        } else if (response.status === 401) {
         } else if (response.status === 401) {
           setUserStatus("2fa");
           setErrorMessage(null);
@@ -128,7 +128,8 @@ function App() {
           setErrorMessage(null);
           setUser(userData.user);
           setUsername(userData.user.username);
-          Cookies.set('authToken', userData.access_token);
+          Cookies.set('authToken', userData.token);
+          Cookies.set('jwtToken', userData.jwtToken);
         } else {
           setErrorMessage("An unexpected error occurred");
         }
@@ -170,7 +171,7 @@ function App() {
         method: "GET",
         credentials: "include", // Include cookies for session-based data
         headers: {
-          'Authorization': `Bearer ${Cookies.get('authToken')}`,
+          'Authorization': `Bearer ${Cookies.get('jwtToken')}`,
         }
       });
 
@@ -185,6 +186,11 @@ function App() {
       const authToken = Cookies.get('authToken');
       if (!authToken) {
         Cookies.set('authToken', user.token);
+      }
+
+      const jwtToken = Cookies.get('jwtToken');
+      if (!jwtToken) {
+        Cookies.set('jwtToken', user.jwtToken);
       }
 
       console.log("Avatar URL received:", user.avatar);

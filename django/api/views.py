@@ -157,11 +157,12 @@ def login_with_42_callback(request):
                 'email': user.email,
                 # Add other necessary claims here (e.g., username, roles)
         }
-        token = jwt.encode(
+        jwtToken = jwt.encode(
                 payload,
                 settings.SECRET_KEY,
                 algorithm='HS256'
         )
+        token, _ = Token.objects.get_or_create(user=user)
 
         # # Construct the full avatar URL
         # if user.avatar:
@@ -190,7 +191,8 @@ def login_with_42_callback(request):
             'username': username,
             'email': email,
             'avatar': avatar_url,
-            'token': token,
+            'token': token.key,
+            'jwtToken': jwtToken,
         }
         request.session.modified = True
         return redirect(f"http://localhost:3000?logged_in=true")
@@ -204,9 +206,9 @@ def get_user_data(request):
     if not authorization_header:
         return JsonResponse({'error': 'Authorization header is missing.'}, status=401)
 
-    # Extract the token from the header
-    if not authorization_header.startswith('Bearer '):
-        return JsonResponse({'error': 'Invalid Authorization header format.', 'auth': authorization_header}, status=401)
+    # # Extract the token from the header
+    # if not authorization_header.startswith('Bearer '):
+    #     return JsonResponse({'error': 'Invalid Authorization header format.', 'auth': authorization_header}, status=401)
 
         # Extract the JWT token from the header
     token = request.headers['Authorization'].split(' ')[1]
@@ -269,13 +271,15 @@ def login_view(request):
                 'email': user.email,
                 # Add other necessary claims here (e.g., username, roles)
             }
-            access_token = jwt.encode(
+            jwtToken = jwt.encode(
                 payload,
                 settings.SECRET_KEY,
                 algorithm='HS256'
             )
+
+            token, _ = Token.objects.get_or_create(user=user)
             # refresh = RefreshToken.for_user(user)
-            # access_token = str(refresh.access_token)
+            # jwtToken = str(refresh.jwtToken)
             serializer = UserSerializer(user)
 
             avatar_url = user.avatar.url if user.avatar else None
@@ -287,14 +291,16 @@ def login_view(request):
                 'username': user.username,
                 'email': user.email,
                 'avatar': avatar_url,
-                'token': access_token,
+                'token': token.key,
+                'jwtToken': jwtToken,
             }
             request.session.save()
 
             return Response({
                 'user': serializer.data,
                 'user_data': request.session['user_data'],
-                'token': access_token,
+                'token': token.key,
+                'jwtToken': jwtToken,
             }, status=status.HTTP_200_OK)
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
 
