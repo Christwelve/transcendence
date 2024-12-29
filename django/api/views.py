@@ -428,8 +428,8 @@ def update_profile(request):
 
         user = get_object_or_404(User, username=old_username)
 
-        if not request.data:
-            return Response({'error': 'No data provided'}, status=400)
+        if not request.data and request.FILES:
+            return Response({'message': 'No change made'}, status=200)
 
         data = request.data
         if 'username' in data:
