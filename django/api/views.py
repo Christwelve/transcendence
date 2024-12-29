@@ -412,11 +412,9 @@ def update_profile(request):
         if 'username' in data:
             new_username = data['username'].strip()
 
-            if not new_username:
-                return Response({'error': 'Username is required and cannot be empty'}, status=400)
-
-            if User.objects.filter(username=new_username).exists() and new_username != user.username:
-                return Response({'error': 'Username already taken'}, status=400)
+            if new_username:
+                if User.objects.filter(username=new_username).exists() and new_username != user.username:
+                    return Response({'error': 'Username already taken'}, status=400)
 
             user.username = new_username
             request.session['user_data']['username'] = new_username
