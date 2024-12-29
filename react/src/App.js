@@ -41,6 +41,20 @@ function App() {
     setUserStatus(status);
   };
 
+  // const addUserToDatabase = (user) => {
+  //   if (!database[user.username]) {
+  //     const updatedDatabase = {
+  //       ...database,
+  //       [user.username]: { email: user.email, password: user.password },
+  //     };
+  //     setDatabase(updatedDatabase);
+  //     setUserStatus("login");
+  //     setErrorMessage(null);
+  //   } else {
+  //     setErrorMessage("User already exists");
+  //   }
+  // };
+
   const userLogin = async (user, authenticated) => {
     if (authenticated) {
       const response = await fetch(`http://localhost:8000/api/login/`, {
@@ -90,6 +104,7 @@ function App() {
         if (response.status === 400 || response.status === 404) {
           setErrorMessage("Wrong credentials!");
           return;
+        } else if (response.status === 401) {
         } else if (response.status === 401) {
           setUserStatus("2fa");
           setErrorMessage(null);

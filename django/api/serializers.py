@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Match, Statistic, Friend
+from .models import User, Match, Statistic, Friend, Tournament
 
 class UserSerializer(serializers.ModelSerializer):
     avatar = serializers.ImageField(required=False)
@@ -8,15 +8,36 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = '__all__'
 
+    def create(self, validated_data):
+        validated_data['is_active'] = True
+        return super().create(validated_data)
+
 class MatchSerializer(serializers.ModelSerializer):
+    tournamentId = serializers.IntegerField(source='tournament_id', min_value=0, allow_null=True)
+    startTime = serializers.DateTimeField(source='datetime_start')
+    endTime = serializers.DateTimeField(source='datetime_end')
+
     class Meta:
         model = Match
-        fields = '__all__'
+        fields = ['id', 'startTime', 'endTime', 'tournamentId']
 
 class StatisticSerializer(serializers.ModelSerializer):
+    matchId = serializers.IntegerField(source='match_id', min_value=0)
+    userId = serializers.IntegerField(source='user_id', min_value=0)
+    goalsScored = serializers.IntegerField(source='goals_scored', min_value=0)
+    goalsReceived = serializers.IntegerField(source='goals_received', min_value=0)
+    datetimeLeft = serializers.DateTimeField(source='datetime_left')
+
     class Meta:
         model = Statistic
-        fields = '__all__'
+        fields = ['id', 'goalsScored', 'goalsReceived', 'datetimeLeft', 'matchId', 'userId']
+
+class TournamentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Tournament
+        fields = ['id']
+
 
 class FriendSerializer(serializers.ModelSerializer):
     friend = serializers.SerializerMethodField()
