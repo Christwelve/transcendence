@@ -43,7 +43,21 @@ const SettingsWidget = ({ avatar, setAvatar, onClose, twoFactor, setNewUsername}
       credentials: "include",
       body: formData,
     })
-      .then((response) => response.json())
+      .then(async (response) => {
+        if (!response.ok) {
+          let errMsg = "An unexpected error occurred";
+          try {
+            const errorData = await response.json();
+            if (errorData.error) {
+              errMsg = errorData.error;
+            }
+          } catch (parseError) {
+            console.error("Failed to parse JSON error:", parseError);
+          }
+          throw new Error(errMsg);
+        }
+        return response.json();
+      })
       .then((data) => {
         if (data.message) {
           alert(data.message);
@@ -56,7 +70,9 @@ const SettingsWidget = ({ avatar, setAvatar, onClose, twoFactor, setNewUsername}
           alert("Failed to update profile.");
         }
       })
-      .catch((error) => console.error("Error updating profile:", error));
+      .catch((error) => {
+        alert(`Failed to update profile: ${error.message}`);
+      });
   };
 
   const handleAvatarChange = (e) => {

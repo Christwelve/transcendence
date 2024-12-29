@@ -8,6 +8,7 @@ import TwoFactor from './components/TwoFactor/TwoFactor'
 import DataContextProvider from './context/DataContext'
 import ModalPresenter from './components/Modal/ModalPresenter'
 import ToastPresenter from './components/Toast/ToastPresenter'
+import { UserProvider, useUserContext } from './context/UserContext'
 import { closeModalTop } from './utils/modal'
 
 import {
@@ -16,7 +17,20 @@ import {
   loginWith42 as loginWith42Service,
 } from './services/userService';
 
-function App() {
+const AppContent= () => {
+  const {
+    userStatus,
+    setUserStatus,
+    errorMessage,
+    setErrorMessage,
+    avatar,
+    setAvatar,
+    user,
+    setUser,
+    username,
+    setUsername,
+  } = useUserContext();
+
   useEffect(() => {
     const onKeyDown = (event) => {
       if (event.code !== 'Escape') return;
@@ -33,15 +47,10 @@ function App() {
     }
   }, []);
 
-  const [userStatus, setUserStatus] = useState("login");
-  const [errorMessage, setErrorMessage] = useState(null);
-  const [avatar, setAvatar] = useState(null);
-  const [user, setUser] = useState(null);
-  const [username, setUsername] = useState("");
-
   const changeStatus = (status) => {
     setUserStatus(status);
   };
+
 
   const userLogin = async (formData, authenticated) => {
     try {
@@ -98,6 +107,10 @@ function App() {
     try {
       const userResponse = await fetchUserDataService();
 
+      if (!userResponse) {
+        throw new Error("No user data received");
+      }
+
       const authToken = Cookies.get('authToken');
       if (!authToken) {
         Cookies.set('authToken', userResponse.token);
@@ -121,8 +134,29 @@ function App() {
       setErrorMessage(null);
 
     } catch (error) {
-      console.error("Failed to fetch user data:", error.message);
-      setErrorMessage("An unexpected error occurred");
+      if (error.status) {
+        switch (error.status) {
+          case 400:
+            console.error("Bad Request:", error.message);
+            setErrorMessage(error.message);
+            break;
+          case 401:
+            console.error("Unauthorized:", error.message);
+            setUserStatus("login");
+            setErrorMessage(error.message);
+            break;
+          case 404:
+            console.error("Not found:", error.message);
+            setErrorMessage(error.message);
+            break;
+          default:
+            console.error("Unexpected error:", error.message);
+            setErrorMessage(error.message);
+        }
+      } else {
+        console.error("Failed to fetch user data:", error.message);
+        setErrorMessage(error.message || "An unexpected error occurred");
+      }
     }
   };
 
@@ -161,6 +195,12 @@ function App() {
       )}
     </>
   );
-}
+};
+
+const App = () => (
+  <UserProvider>
+    <AppContent />
+  </UserProvider>
+);
 
 export default App;

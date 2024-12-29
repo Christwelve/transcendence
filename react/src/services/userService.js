@@ -9,14 +9,23 @@ export const fetchUserData = async () => {
   });
 
   if (!response.ok) {
-    console.error("Failed to fetch user data:", response.statusText);
-    throw new Error("An unexpected error occurred");
+    let errMsg = "An unexpected error occurred";
+    try {
+      const errorData = await response.json();
+      if (errorData.error) {
+        errMsg = errorData.error; 
+      }
+    } catch (parseError) {
+      console.error("Failed to parse error JSON:", parseError);
+    }
+
+    const err = new Error(errMsg);
+    err.status = response.status; 
+    throw err;
   }
 
   const user = await response.json();
   const authToken = Cookies.get('authToken');
-
-  // Set auth token if not present
   if (!authToken && user.token) {
     Cookies.set('authToken', user.token);
   }
