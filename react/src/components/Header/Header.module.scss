@@ -11,98 +11,102 @@ $text-color: #ffffff;
 }
 
 .customNavbar {
-  position: fixed !important;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
-  font-family: "Roboto", sans-serif;
-  background: $background !important;
+  background: $background;
   border-bottom: 2px solid $primary-color;
   box-shadow: 0 0 10px $primary-color;
 
-
   .navbarBrand {
-    font-family: "Orbitron", sans-serif;
-    color: $primary-color !important;
-    text-shadow: 0 0 10px $primary-color;
-    cursor: pointer;
     display: flex;
     align-items: center;
-    justify-content: center;
+    cursor: pointer;
+    color: $primary-color;
+    font-family: "Orbitron", sans-serif;
     font-size: 2rem;
     font-weight: bold;
     text-transform: uppercase;
 
     img {
-      filter: drop-shadow(0 0 5px $primary-color);
       width: 60px;
       height: 60px;
       margin-right: 10px;
+      filter: drop-shadow(0 0 5px $primary-color);
     }
   }
 
-  .navbarLink {
-    color: $text-color !important;
+  .profileContainer {
     position: relative;
-    transition: color 0.3s;
 
-    &:hover {
-      color: lighten($text-color, 20%) !important;
-      text-shadow: 0 0 5px $primary-color;
+    .profile {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      border: 2px solid $primary-color;
+      box-shadow: 0 0 5px $primary-color, 0 0 10px $primary-color;
+      cursor: pointer;
+      transition: 0.3s;
+
+      &:hover {
+        box-shadow: 0 0 10px $primary-color, 0 0 20px $primary-color;
+      }
     }
 
-    &.active {
-      color: $primary-color !important;
-      text-shadow: 0 0 10px $primary-color;
+    .dropdownMenu {
+      position: absolute;
+      right: 70px;
+      top: 10px;
+
+      background: $background;
+      border: 1px solid $primary-color;
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 0 0 10px $primary-color;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      z-index: 10;
+
+      .dropdownItem {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        color: $primary-color;
+        padding: 12px 15px;
+        width: 100%;
+        border: none;
+        background: none;
+        cursor: pointer;
+        transition: background 0.3s, transform 0.2s, text-shadow 0.3s;
+
+        svg {
+          margin-right: 8px;
+          font-size: 1.5rem;
+          color: $primary-color;
+        }
+
+        &:hover {
+          background: rgba(0, 255, 246, 0.1);
+          transform: scale(1.05);
+          text-shadow: 0 0 10px $primary-color, 0 0 20px lighten($primary-color, 15%);
+        }
+      }
+
+      .username {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        font-size: 1.2rem;
+        font-weight: bold;
+        background-color: $primary-color;
+        color: $background;
+        margin-bottom: 10px;
+        cursor: default
+      }
     }
-  }
 
-  .dropdownButton {
-    background: $primary-color !important;
-    border: none !important;
-    box-shadow: 0 0 10px $primary-color;
-    transition: 0.3s ease;
-
-    &:hover {
-      background: lighten($primary-color, 10%) !important;
-      box-shadow: 0 0 20px $primary-color;
-    }
-  }
-
-  .profile {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    border: 2px solid $primary-color;
-    box-shadow: 0 0 20px $primary-color, 0 0 40px $primary-color !important;
-    transition: 0.3s;
-    object-fit: cover !important;
-    object-position: center;
-
-    &:hover {
-      box-shadow: 0 0 30px $primary-color, 0 0 60px $primary-color;
-    }
-  }
-
-  .dropdownMenu {
-    background: $background !important;
-    border: 1px solid $primary-color;
-    box-shadow: 0 0 10px $primary-color;
-    border-radius: 5px;
-    justify-content: space-evenly !important;
-    padding: 10px 0;
-  }
-
-  .dropdownItem {
-    color: $text-color !important;
-    width: 100%;
-    text-align: center;
-    transition: background 0.3s, transform 0.2s;
-
-    &:hover {
-      background: rgba(255, 255, 255, 0.1) !important;
-      color: $text-color !important;
-      transform: scale(1.05);
-    }
   }
 }

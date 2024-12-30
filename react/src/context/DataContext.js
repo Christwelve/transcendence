@@ -1,6 +1,7 @@
-import React, {createContext, useContext, useState, useReducer, useEffect, useRef} from 'react'
+import React, { createContext, useContext, useState, useReducer, useEffect, useRef } from 'react'
 import io from 'socket.io-client'
-import {showToast} from '../Toast/ToastPresenter'
+import { showToast } from '../components/Toast/ToastPresenter'
+// import Cookies from 'js-cookie'
 
 const SOCKET_SERVER_URL = `http://${window.location.hostname}:4000`;
 
@@ -11,10 +12,10 @@ let lastInstructions = null;
 
 const useDataContext = () => {
 	return useContext(DataContext);
-  };
+};
 
 function DataContextProvider(props) {
-	const {children} = props;
+	const { children } = props;
 
 	const dataDefault = {
 		lastId: -1,
@@ -24,7 +25,6 @@ function DataContextProvider(props) {
 		tournaments: {},
 	};
 
-	// const [data, setData] = useReducer(dataReducer, dataDefault);
 	const [data, setData] = useState(dataDefault);
 
 	const socketRef = useRef(null);
@@ -34,27 +34,35 @@ function DataContextProvider(props) {
 	dataRef.current = data;
 
 	useEffect(() => {
-		const socket = io(SOCKET_SERVER_URL);
+		const socket = io(SOCKET_SERVER_URL, { withCredentials: true });
 
 		socketRef.current = socket;
 
 		socket.on('connect', () => {
 			console.log('Connected to server');
+
+			socket.emit('initial');
 		});
 
 		socket.on('reconnect', () => {
 			socket.emit('initial');
 		});
 
+		socket.on('disconnect', () => {
+			console.log('Disconnected');
+		});
+
 		socket.on('state', payload => {
-			const {id, userId, data: incomingData} = payload;
+			const { id, userId, data: incomingData } = payload;
+
+			console.log('payload', id, payload);
 
 			const data = dataRef.current;
 
-			if(id <= data.lastId)
+			if (id <= data.lastId)
 				return;
 
-			const newData = {...data, lastId: id, userId: data.userId ?? userId, ...incomingData};
+			const newData = { ...data, lastId: id, userId: data.userId || userId, ...incomingData };
 
 			setData(newData);
 		});
@@ -63,8 +71,6 @@ function DataContextProvider(props) {
 
 		socket.on('notice', showToast);
 
-		socket.emit('initial');
-
 		return () => {
 			socket.disconnect();
 		};
@@ -72,6 +78,7 @@ function DataContextProvider(props) {
 	}, []);
 
 	const fns = {
+		getStateId: getStateId.bind(null, data),
 		getPlayer: getPlayer.bind(null, data),
 		getPlayerById: getPlayerById.bind(null, data),
 		getRoom: getRoom.bind(null, data),
@@ -98,87 +105,13 @@ function DataContextProvider(props) {
 	);
 };
 
-// reducer functions
-// function dataReducer(state, instructions) {
-
-// 	if(instructions === lastInstructions)
-// 		return state;
-
-// 	const fns = {
-// 		object: applyStateObject,
-// 		array: applyStateArray,
-// 	};
-
-// 	console.log('state', state);
-// 	console.log('inst', instructions);
-
-// 	let newState = {...state};
-
-// 	for(const instruction of instructions) {
-// 		const {type, action, path, value} = instruction;
-
-// 		if(action === 'overwrite') {
-// 			newState = {...newState, ...value};
-// 			continue;
-// 		}
-
-// 		const [entity, property] = getEntity(newState, path);
-
-// 		console.log(entity, property, action, value);
-
-// 		if(entity == null)
-// 			continue;
-
-// 		fns[type](entity, property, action, value);
-// 	}
-
-// 	lastInstructions = instructions;
-
-// 	console.log('newState', newState);
-
-// 	return {...newState};
-// }
-
-// function applyStateObject(entity, property, action, value) {
-// 	switch(action) {
-// 		case 'set':
-// 			return entity[property] = value;
-// 		case 'unset':
-// 			return delete entity[property];
-// 		default:
-// 			return;
-// 	}
-// }
-
-// function applyStateArray(entity, property, action, value) {
-// 	switch(action) {
-// 		case 'push':
-// 			return entity[property].push(value);
-// 		case 'pop':
-// 			return entity[property].pop();
-// 		case 'splice':
-// 			return entity[property].splice(...value);
-// 		case 'set':
-// 			return entity[property] = value;
-// 		case 'unset':
-// 			return delete entity[property];
-// 		default:
-// 			return;
-// 	}
-// }
-
-// function getEntity(state, path) {
-// 	const parts = path.split('.');
-// 	const last = parts.pop();
-
-// 	const entity = parts.reduce((result, part) => result == null ? null : result[part], state);
-
-// 	return [entity, last];
-// }
-
 // api functions
+function getStateId(data) {
+	return data.lastId;
+}
+
 function getPlayer(data) {
-	const {userId, players} = data;
+	const { userId, players } = data;
 
 	return players[userId] || null;
 }
@@ -200,12 +133,12 @@ function getPlayerList(data) {
 };
 
 function getPlayerListForRoom(data, roomId) {
-	if(roomId == null)
+	if (roomId == null)
 		return [];
 
 	const room = data.rooms[roomId];
 
-	if(room == null)
+	if (room == null)
 		return [];
 
 	return room.players.map(playerId => data.players[playerId]);
@@ -214,7 +147,7 @@ function getPlayerListForRoom(data, roomId) {
 function getTournamentForRoom(data, roomId) {
 	const room = data.rooms[roomId];
 
-	if(room == null)
+	if (room == null)
 		return null;
 
 	return data.tournaments[room.tournamentId];
@@ -225,7 +158,7 @@ function createRoom(send, options) {
 }
 
 function joinRoom(send, roomId) {
-	send('room.join', {id: roomId});
+	send('room.join', { id: roomId });
 }
 
 function quickJoinRoom(send) {

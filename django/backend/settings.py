@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 import os
+from dotenv import load_dotenv
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -29,7 +30,7 @@ SECRET_KEY = 'django-insecure-hm&9x%9_a1pt==vdw_&dy+0y)_pct&*1&rxc3c%yif2m$4o!zr
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['django', 'localhost', '127.0.0.1']
 
 # Application definition
 
@@ -80,6 +81,7 @@ MIDDLEWARE.insert(0, 'corsheaders.middleware.CorsMiddleware')
 # TODO:
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "http://localhost:4000"
 ]
 
 # Optional: Allow credentials (e.g., cookies, sessions)
@@ -180,18 +182,20 @@ PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.ScryptPasswordHasher",
 ]
 
+load_dotenv()
+
 OAUTH2_PROVIDER = {
     'BASE_DOMAIN': 'https://api.intra.42.fr',
     'AUTH_LOGIN_URL': '/oauth/authorize',
     'AUTH_ACCESS_TOKEN_URL': '/oauth/token',
     'AUTH_USERINFO_URL': '/v2/me',
-    'CLIENT_ID': 'u-s4t2ud-35200b91dbc192b0409be4fe981c496c78f0d18c705602b771e804d09f4fabab',
-    'CLIENT_SECRET': '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',
+    'CLIENT_ID': os.getenv('API_42_UID'),
+    'CLIENT_SECRET': os.getenv('API_42_SECRET'),
     'SCOPE': {'public': 'Public access'},  # Adjust scopes based on your needs
 }
 
 # LOGIN_URL = '/admin/login/'
-URL_42 = 'https://api.intra.42.fr/oauth/authorize?client_id=u-s4t2ud-35200b91dbc192b0409be4fe981c496c78f0d18c705602b771e804d09f4fabab&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fapi%2F42%2Flogin%2Fcallback%2F&response_type=code'
+URL_42 = os.getenv('API_42_URL')
 
 #needed for authentication
 

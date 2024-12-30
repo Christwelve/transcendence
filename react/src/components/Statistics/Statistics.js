@@ -131,6 +131,9 @@ function Statistics() {
     }
   }, [isStatisticsOpen]);
 
+import React from 'react'
+
+const Statistics = () => {
   return (
     <div className={`${styles.statistics} ${isStatisticsOpen ? styles.open : ""}`}>
       <button

@@ -33,10 +33,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     status = models.BooleanField(default=True)
     wins = models.PositiveIntegerField(default=0)
     losses = models.PositiveIntegerField(default=0)
-    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+    avatar = models.ImageField(upload_to=avatar_upload_path, null=True, blank=True)
     last_online = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)  # Required by Django
     is_staff = models.BooleanField(default=False)  # Required by Django
+    has_2fa = models.BooleanField(default=False)
 
     objects = UserManager()
 
@@ -50,25 +51,28 @@ class Match(models.Model):
     id = models.AutoField(primary_key=True)
     datetime_start = models.DateTimeField()
     datetime_end = models.DateTimeField()
+    tournament_id = models.PositiveIntegerField(null=True)
 
     def __str__(self):
-        return f"Match {self.id} ({self.datetime_start} - {self.datetime_end})"
+        return f"Match {self.id} ({self.datetime_start} - {self.datetime_end}, {self.tournament_id})"
 
 
 class Statistic(models.Model):
     id = models.AutoField(primary_key=True)
-    match = models.ForeignKey(
-        Match, on_delete=models.CASCADE, related_name="statistics"
-    )
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="statistics"
-    )
+    match_id = models.PositiveIntegerField(null=True)
+    user_id = models.PositiveIntegerField(null=True)
     goals_scored = models.PositiveSmallIntegerField(default=0)
     goals_received = models.PositiveSmallIntegerField(default=0)
     datetime_left = models.DateTimeField()
 
     def __str__(self):
-        return f"Statistic {self.id}: Match {self.match.id}, User {self.user.username}"
+        return f"Statistic {self.id}: Match {self.match_id}, User {self.user_id}"
+
+class Tournament(models.Model):
+    id = models.AutoField(primary_key=True)
+
+    def __str__(self):
+        return f"Tournament {self.id}"
 
 class Friend(models.Model):
     user = models.ForeignKey(
@@ -81,6 +85,6 @@ class Friend(models.Model):
 
     class Meta:
         unique_together = ("user", "friend")
-        
+
     def __str__(self):
         return f"{self.user.username} is friends with {self.friend.username}"

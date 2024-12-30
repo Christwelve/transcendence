@@ -1,0 +1,46 @@
+.friend {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	background-color: var(--color-gray-dark);
+	padding: 12px;
+	border-radius: 6px;
+	width: 100%;
+
+	.name {
+		line-height: 1;
+	}
+
+	.status {
+		margin-top: 3px;
+		font-size: 12px;
+		color: var(--color-gray-light);
+		line-height: 1;
+	}
+
+	.icon {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin-left: 24px;
+		color: var(--color-gray-light);
+		cursor: pointer;
+		transition: opacity 200ms ease, color 200ms ease;
+
+		&:not(.show) {
+			display: none;
+		}
+	}
+
+	.add:hover {
+		color: var(--color-primary);
+	}
+
+	.remove:hover {
+		color: var(--color-red);
+	}
+
+	&:not(:hover) .icon {
+		opacity: 0;
+	}
+}

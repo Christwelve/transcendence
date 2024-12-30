@@ -1,26 +1,29 @@
-import React, {useState} from 'react'
-import {useDataContext} from '../components/DataContext/DataContext'
+import React from 'react'
+import { useDataContext } from '../context/DataContext'
+import Header from '../components/Header/Header'
 import Lobby from '../components/Lobby/Lobby'
 import Game from '../components/Game/Game'
-import cls from '../utils/cls'
-import scss from './Page.module.scss'
 
-function Page() {
+function Content(props) {
+	const { player } = props;
 
-	const [stats, statsUpdate] = useState({});
-	const {getPlayer} = useDataContext();
+	if (player == null)
+		return null;
 
+	return player.state === 2 ? <Game /> : <Lobby />;
+}
+
+function Page(props) {
+	const { changeStatus, avatar, setAvatar, username, setUsername } = props;
+	const { getPlayer } = useDataContext();
 	const player = getPlayer();
 
-	if(player == null)
-		return (<div>nix da</div>);
-
-	const playerState = player.state;
-
-	if(playerState === 2)
-		return <Game />;
-
-	return <Lobby />;
+	return (
+		<>
+			<Header changeStatus={changeStatus} avatar={avatar} setAvatar={setAvatar} username={username} setUsername={setUsername} />
+			<Content player={player} />
+		</>
+	);
 }
 
 export default Page;
