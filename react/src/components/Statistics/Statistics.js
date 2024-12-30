@@ -14,13 +14,6 @@ function Statistics() {
   const [fullUserData, setFullUserData] = useState(null);
   const [userStatistics, setUserStatistics] = useState(null);
   const [matchDetails, setMatchDetails] = useState([]);
-  const mockMatchHistory = [
-    { matchId: 1, goalsScored: 5, goalsReceived: 3 },
-    { matchId: 2, goalsScored: 2, goalsReceived: 4 },
-    { matchId: 3, goalsScored: 6, goalsReceived: 6 },
-    { matchId: 4, goalsScored: 5, goalsReceived: 7 },
-    // Add more match data as needed
-  ];
 
   useEffect(() => {
     fetch("http://localhost:8000/api/user/data/", {
@@ -153,6 +146,7 @@ function Statistics() {
             {fullUserData ? (
               <>
                 <p>Name: {fullUserData.username}</p>
+                <p>XP: {fullUserData.wins * 200}</p>
                 <p>WINRATE: {winRate}%</p>
                 <p>WINS: {fullUserData.wins}</p>
                 <p>LOSSES: {fullUserData.losses}</p>
