@@ -2,6 +2,7 @@ import React, {useRef, useState, useEffect} from 'react'
 import Modal from './Modal'
 import CardSection from '../Card/CardSection'
 import FriendList from '../Friends/FriendList'
+import {showToast} from '../Toast/ToastPresenter'
 import scss from './FriendSearchModal.module.scss'
 
 function FriendSearchModal(props) {
@@ -33,15 +34,12 @@ function FriendSearchModal(props) {
 				setUsers(data.users || []);
 			}
 		} catch (error) {
-			console.error("Error searching users:", error);
 			setSearchMessage("An error occurred while searching. Please try again.");
 			setUsers([]);
 		}
 	};
 
 	const addFriend = async username => {
-
-		console.log(username);
 
 		try {
 			const response = await fetchWithCredentials("http://localhost:8000/api/friend/add/", "POST", {
@@ -55,7 +53,7 @@ function FriendSearchModal(props) {
 				closeModal('added');
 
 		} catch (error) {
-			console.error("Error adding friend:", error);
+			showToast({ type: "error", title: "Error", message: "Friend could not be added." });
 		}
 	};
 

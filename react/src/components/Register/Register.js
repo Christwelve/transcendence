@@ -1,5 +1,7 @@
-import React, { useState } from 'react'
-import styles from './Register.module.scss'
+import React, { useState } from "react";
+import ToastPresenter, { showToast } from "../Toast/ToastPresenter";
+import styles from "./Register.module.scss";
+
 
 const Register = ({ changeStatus }) => {
   const [email, setEmail] = useState("");
@@ -84,14 +86,16 @@ const Register = ({ changeStatus }) => {
           setEmailError(errorData.email ? errorData.email.join(", ") : "");
           setUsernameError(errorData.username ? errorData.username.join(", ") : "");
         } else {
-          console.error("An unexpected error occurred:", response.statusText);
+          showToast({type: "error", title: "Error", message: `An unexpected error occured: ${response.status} ${response.statusText}`});
+
         }
       } else {
-        console.log("User successfully registered.");
+        showToast({type: "success", title: "Success", message: "User successfully registered."});
         changeStatus("login");
       }
     } catch (error) {
-      console.error("Network error:", error.message);
+      showToast({type: "error", title: "Error", message: error.message});
+
     }
   };
 
@@ -204,6 +208,7 @@ const Register = ({ changeStatus }) => {
           </span>
         </div>
       </form>
+      <ToastPresenter />
     </div>
   );
 };

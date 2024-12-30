@@ -3,15 +3,11 @@ import Icon from '../Icon/Icon';
 import cls from '../../utils/cls'
 import scss from './ToastPresenter.module.scss'
 
-let showToast = null;
+let toasts = [];
 let toastId = 0;
+let showToast = null;
 
 function ToastPresenter() {
-	const [toasts, setToasts] = useState([]);
-
-	const toastsRef = useRef(null);
-
-	toastsRef.current = toasts;
 
 	showToast = options => {
 		const {type, title, message} = options;
@@ -28,12 +24,11 @@ function ToastPresenter() {
 			</div>
 		);
 
-		const latestToasts = toastsRef.current.slice(-4);
-
-		setToasts([...latestToasts, toast]);
+		toasts.splice(5);
+		toasts.push(toast);
 
 		setTimeout(() => {
-			setToasts(toastsRef.current.filter(t => t !== toast));
+			toasts = toasts.filter(t => t !== toast);
 		}, 3000);
 	};
 

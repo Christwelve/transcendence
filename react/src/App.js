@@ -87,7 +87,6 @@ const AppContent= () => {
       } else if (error.message === "Unable to authenticate!") {
         setErrorMessage("Unable to authenticate!");
       } else {
-        console.error("An unexpected error occurred:", error.message);
         setErrorMessage("An unexpected error occurred");
       }
     }
@@ -99,7 +98,6 @@ const AppContent= () => {
       Cookies.set('login', '42');
       window.location.href = data.authorization_url;
     } catch (error) {
-      console.error("Network error:", error.message);
       setErrorMessage("An unexpected error occurred");
     }
   };
@@ -139,24 +137,19 @@ const AppContent= () => {
       if (error.status) {
         switch (error.status) {
           case 400:
-            console.error("Bad Request:", error.message);
             setErrorMessage(error.message);
             break;
           case 401:
-            console.error("Unauthorized:", error.message);
             setUserStatus("login");
             setErrorMessage(error.message);
             break;
           case 404:
-            console.error("Not found:", error.message);
             setErrorMessage(error.message);
             break;
           default:
-            console.error("Unexpected error:", error.message);
             setErrorMessage(error.message);
         }
       } else {
-        console.error("Failed to fetch user data:", error.message);
         setErrorMessage(error.message || "An unexpected error occurred");
       }
     }
