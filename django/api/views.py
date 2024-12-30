@@ -393,7 +393,7 @@ def fetch_friends(request):
             return JsonResponse({'error': 'Token expired.'}, status=401)
         except jwt.InvalidTokenError:
             return JsonResponse({'error': 'Invalid token.', 'token': token}, status=401)
-        
+
         username = request.session.get('user_data', {}).get('username', None)
         user = get_object_or_404(User, username=username)
         if not user:
@@ -597,6 +597,12 @@ def update_profile(request):
         avatar_url = user.avatar.url if user.avatar else None
         if avatar_url and not avatar_url.startswith("http"):
             avatar_url = f"http://{request.get_host()}{avatar_url}"
+
+        request.session['user_data'] = {
+                'username': user.username,
+                'email': user.email,
+                'avatar': avatar_url,
+            }
 
         return Response({
             'message': 'User updated successfully!',
