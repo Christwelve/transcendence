@@ -78,7 +78,7 @@ def setup_2fa(request):
         return Response({"error": "An unexpected error occurred"}, status=500)
         
 
-
+# should we maybe add an isAuthenticated decorator here?
 @api_view(['POST'])
 def enable_2fa(request):
     try:
@@ -86,6 +86,8 @@ def enable_2fa(request):
             return Response({'error': 'User not logged in or session expired'}, status=401)
 
         username = request.session['user_data'].get('username', None)
+        username = bleachThe(username)
+        
         if not username:
             return Response({'error': 'User not logged in or session expired'}, status=401)
 
@@ -95,17 +97,22 @@ def enable_2fa(request):
             return Response({'error': 'No data provided'}, status=400)
 
         data = request.data
-        has_2fa = data.get('has_2fa', False)
-        if has_2fa.lower() == 'true':
-            has_2fa = True
-        elif has_2fa.lower() == 'false':
-            has_2fa = False
-        user.has_2fa = has_2fa
+        
+        is_2fa_enabled_raw = data.get('has_2fa', False)
+        is_2fa_enabled = bleachThe(is_2fa_enabled_raw).lower()
+
+        if is_2fa_enabled == 'true':
+            is_2fa_enabled = True
+        elif is_2fa_enabled == 'false':
+            is_2fa_enabled = False
+        else:
+            return Response({'error': 'Invalid value for 2FA status'}, status=400)
+        
+        user.has_2fa = is_2fa_enabled
         user.save()
 
         return Response({
-            'success': 'TwoFactor updated successfully!'
-        }, status=200)
+            'success': 'TwoFactor updated successfully!'}, status=200)
     except Exception as e:
         return Response({'message': str(e)}, status=500)
 
