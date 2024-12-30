@@ -88,6 +88,16 @@ function Statistics() {
     }
   }, [fullUserData]);
 
+  const getLastFiveMatches = (statistics) => {
+    return statistics.slice(-5).map(stat => ({
+      match: stat.match,
+      isWin: stat.goals_scored > stat.goals_received,
+      isDraw: stat.goals_scored === stat.goals_received
+    }));
+  };
+
+  const lastFiveMatches = userStatistics ? getLastFiveMatches(userStatistics.statistics) : [];
+
   const chartData = {
     labels: userStatistics ? userStatistics.statistics.map(stat => `Match ${stat.match}`) : [],
     datasets: [
@@ -139,8 +149,19 @@ function Statistics() {
             ) : (
               <p>Loading full user data...</p>
             )}
-            <h3>User Statistics:</h3>
+            {/* <h3>User Statistics:</h3> */}
             {/* <pre>{JSON.stringify(userStatistics, null, 2)}</pre> */}
+          </div>
+          <div className={styles.lastFiveMatches}>
+            <h3>Last 5 Matches</h3>
+            <div className={styles.bars}>
+              {lastFiveMatches.map((match, index) => (
+                <div
+                  key={index}
+                  className={`${styles.bar} ${match.isWin ? styles.win : match.isDraw ? styles.draw : styles.loss}`}
+                  />
+              ))}
+            </div>
           </div>
           <button
             className={`${styles.chartBox__toggle} ${isChartBoxOpen ? styles.statistics__close : ""}`}
@@ -170,22 +191,22 @@ function Statistics() {
               <div className={styles.matchHistory__box__content}>
                 <h3>Match History</h3>
                 <ul>
-                  {mockMatchHistory.map((match) => (
-                    <li key={match.matchId} className={styles.list}>
-                      <p>Match ID: {match.matchId}</p>
-                      <p>Goals Scored: {match.goalsScored}</p>
-                      <p>Goals Received: {match.goalsReceived}</p>
+                  {userStatistics.statistics.map((match) => (
+                    <li key={match.match} className={styles.list}>
+                      <p>Match ID: {match.match}</p>
+                      <p>Goals Scored: {match.goals_scored}</p>
+                      <p>Goals Received: {match.goals_received}</p>
                       <p
-                        className={`${styles.result} ${match.goalsScored > match.goalsReceived
+                        className={`${styles.result} ${match.goals_scored > match.goals_received
                             ? styles.win
-                            : match.goalsScored < match.goalsReceived
+                            : match.goals_scored < match.goals_received
                               ? styles.loss
                               : styles.draw}`}
                       >
                         Result:{" "}
-                        {match.goalsScored > match.goalsReceived
+                        {match.goals_scored > match.goals_received
                           ? "Win"
-                          : match.goalsScored < match.goalsReceived
+                          : match.goals_scored < match.goals_received
                             ? "Loss"
                             : "Draw"}
                       </p>
