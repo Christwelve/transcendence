@@ -13,7 +13,7 @@ function Statistics() {
   const [userData, setUserData] = useState(null);
   const [fullUserData, setFullUserData] = useState(null);
   const [userStatistics, setUserStatistics] = useState(null);
-
+  const [matchDetails, setMatchDetails] = useState([]);
   const mockMatchHistory = [
     { matchId: 1, goalsScored: 5, goalsReceived: 3 },
     { matchId: 2, goalsScored: 2, goalsReceived: 4 },
@@ -74,9 +74,22 @@ function Statistics() {
 
       setTotalGoalsScored(totalGoalsScored);
       setTotalGoalsReceived(totalGoalsReceived);
+      const matchIds = statistics.statistics.map(stat => stat.match);
+      const matchDetailsResponse = await fetch("http://localhost:8000/api/matches/", {
+        method: "GET",
+        credentials: "include",
+      });
+      if (!matchDetailsResponse.ok) {
+        throw new Error("Failed to fetch match details");
+      }
+      const allMatches = await matchDetailsResponse.json();
+      const filteredMatches = allMatches.filter(match => matchIds.includes(match.id));
+      setMatchDetails(filteredMatches);
+
     } catch (error) {
       console.error("Error fetching user statistics:", error);
     }
+    
   };
 
   useEffect(() => {
@@ -137,7 +150,6 @@ function Statistics() {
         <div className={styles.statistics__box}>
           <div>
             <h3>User Data Overview:</h3>
-            {/* <pre>{JSON.stringify(userData, null, 2)}</pre> */}
             {fullUserData ? (
               <>
                 <p>Name: {fullUserData.username}</p>
@@ -145,12 +157,12 @@ function Statistics() {
                 <p>WINS: {fullUserData.wins}</p>
                 <p>LOSSES: {fullUserData.losses}</p>
                 <p>Total goals scored: {totalGoalsScored || 0}</p>
-                <p>Total goals received: {totalGoalsReceived || 0}</p>              </>
+                <p>Total goals received: {totalGoalsReceived || 0}</p>
+              </>
             ) : (
               <p>Loading full user data...</p>
             )}
-            {/* <h3>User Statistics:</h3> */}
-            {/* <pre>{JSON.stringify(userStatistics, null, 2)}</pre> */}
+            <pre>{JSON.stringify(userStatistics, null, 2)}</pre>
           </div>
           <div className={styles.lastFiveMatches}>
             <h3>Last 5 Matches</h3>
@@ -159,7 +171,7 @@ function Statistics() {
                 <div
                   key={index}
                   className={`${styles.bar} ${match.isWin ? styles.win : match.isDraw ? styles.draw : styles.loss}`}
-                  />
+                />
               ))}
             </div>
           </div>
@@ -191,27 +203,31 @@ function Statistics() {
               <div className={styles.matchHistory__box__content}>
                 <h3>Match History</h3>
                 <ul>
-                  {userStatistics.statistics.map((match) => (
-                    <li key={match.match} className={styles.list}>
-                      <p>Match ID: {match.match}</p>
-                      <p>Goals Scored: {match.goals_scored}</p>
-                      <p>Goals Received: {match.goals_received}</p>
-                      <p
-                        className={`${styles.result} ${match.goals_scored > match.goals_received
+                  {matchDetails.map((match) => {
+                    const userStat = userStatistics.statistics.find(stat => stat.match === match.id);
+                    return (
+                      <li key={match.id} className={styles.list}>
+                        <p>Match ID: {match.id}</p>
+                        <p>Match Date: {new Date(match.datetime_start).toLocaleString()}</p>
+                        <p>Goals Scored: {userStat ? userStat.goals_scored : 'N/A'}</p>
+                        <p>Goals Received: {userStat ? userStat.goals_received : 'N/A'}</p>
+                        <p
+                          className={`${styles.result} ${userStat && userStat.goals_scored > userStat.goals_received
                             ? styles.win
-                            : match.goals_scored < match.goals_received
+                            : userStat && userStat.goals_scored < userStat.goals_received
                               ? styles.loss
                               : styles.draw}`}
-                      >
-                        Result:{" "}
-                        {match.goals_scored > match.goals_received
-                          ? "Win"
-                          : match.goals_scored < match.goals_received
-                            ? "Loss"
-                            : "Draw"}
-                      </p>
-                    </li>
-                  ))}
+                        >
+                          Result:{" "}
+                          {userStat && userStat.goals_scored > userStat.goals_received
+                            ? "Win"
+                            : userStat && userStat.goals_scored < userStat.goals_received
+                              ? "Loss"
+                              : "Draw"}
+                        </p>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             </div>
