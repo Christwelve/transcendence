@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 def setup_2fa(request):
     try:
         username = request.data['username']
-        username = bleachThe(username)
+        username = username.strip()
         if not username:
             logger.warning("Setup 2FA request missing username.")
             return Response({"error": "Username is required"}, status=400)
@@ -158,7 +158,6 @@ def login_with_42(request):
 def login_with_42_callback(request):
     if request.method == 'GET':
         code = request.GET.get('code')
-        code = bleachThe(code)
         if not code:
             return JsonResponse({'error': 'Missing authorization code'}, status=400)
 
@@ -255,7 +254,7 @@ def login_view(request):
     if request.method == 'POST':
         try:
             username = bleachThe(request.data['username'].strip())
-            password = bleachThe(request.data['password'].strip())
+            password = request.data['password'].strip()
             user = get_object_or_404(User, username=username)
             
             if check_password(password, user.password):
@@ -333,7 +332,7 @@ def user_view(request, username=None):
 def user_status_view(request):
     try:
         user = request.user
-        status = bleachThe(request.GET.get('status', '')).lower()
+        status = request.GET.get('status', '').lower()
         is_online = status == 'true'
 
 
@@ -357,8 +356,7 @@ def match_view(request):
         return Response(serializer.data)
 
     elif request.method == 'POST':
-        data = {key: bleachThe(value) if isinstance(value, str) else value for key, value in request.data.items()}
-        serializer = MatchSerializer(data=data)
+        serializer = MatchSerializer(data={})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -411,7 +409,7 @@ def fetch_friends(request):
 @api_view(['GET'])
 def search_users(request):
     try:
-        query = bleachThe(request.GET.get('query', '').strip())
+        query = request.GET.get('query', '').strip()
         if not query:
             return Response({'error': 'Query parameter is required'}, status=400)
 
@@ -518,8 +516,7 @@ def update_profile(request):
             user.email = new_email
 
         if 'password' in data:
-            bleached_pass = bleachThe(data['password'])
-            user.password = make_password(bleached_pass)
+            user.password = make_password(data['password'].strip())
 
         if 'avatar' in request.FILES:
             user.avatar = request.FILES['avatar']
