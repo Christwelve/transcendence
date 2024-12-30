@@ -21,8 +21,10 @@ djangoPort = 8000
 reactPort = 3000
 
 def get_scheme(request):
-    protocol = 'https:' if request.is_secure() else 'http:'
-    hostname = request.get_host().split(':')[0]
+    protocol = 'https:'
+    # protocol = 'https:' if request.is_secure() else 'http:'
+    hostname = '10.11.2.25'
+    # hostname = request.get_host().split(':')[0]
 
     return (protocol, hostname)
 
@@ -105,9 +107,11 @@ def login_with_42(request):
         'https://api.intra.42.fr/oauth/authorize?'
         f'client_id={settings.OAUTH2_PROVIDER["CLIENT_ID"]}'
         '&response_type=code'
+        # '&redirect_uri=http://localhost:8000/api/42/login/callback/'
         f'&redirect_uri={protocol}//{hostname}:{djangoPort}/api/42/login/callback/'
         '&scope=public'
     )
+    # logger.debug("Auth_url: %s", authorization_url)
     return JsonResponse({'authorization_url': authorization_url})
 
 @api_view(['GET'])
@@ -127,6 +131,7 @@ def login_with_42_callback(request):
             'client_id': settings.OAUTH2_PROVIDER['CLIENT_ID'],
             'client_secret': settings.OAUTH2_PROVIDER['CLIENT_SECRET'],
             'code': code,
+            # 'redirect_uri': 'http://localhost:8000/api/42/login/callback/',
             'redirect_uri': f"{protocol}//{hostname}:{djangoPort}/api/42/login/callback/",
         }
 
@@ -199,8 +204,10 @@ def login_with_42_callback(request):
         }
         request.session.modified = True
         return redirect(f"{protocol}//{hostname}:{reactPort}?logged_in=true")
+        # return redirect(f"http://localhost:3000?logged_in=true")
 
     return redirect(f"{protocol}//{hostname}:{reactPort}?logged_in=false")
+    # return redirect(f"http://localhost:3000?logged_in=false")
 
 @api_view(['GET'])
 def get_user_data(request):

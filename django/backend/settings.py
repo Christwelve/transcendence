@@ -24,6 +24,12 @@ MEDIA_URL = '/media/'
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
+if os.getenv("USE_HTTPS", "False") == "True":
+    SECURE_SSL_REDIRECT = True
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 0  # Set to non-zero for production
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-hm&9x%9_a1pt==vdw_&dy+0y)_pct&*1&rxc3c%yif2m$4o!zr'
 
@@ -57,6 +63,7 @@ INSTALLED_APPS = [
 
     #local apps
     'api',
+    'django_extensions',
 ]
 
 MIDDLEWARE = [

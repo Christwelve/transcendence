@@ -4,6 +4,7 @@ WORKDIR /code/nodejs
 
 COPY ./package*.json ./
 COPY ./src ./
+COPY ./certs ./
 RUN npm install
 RUN ln -s /shared /code/nodejs/node_modules/shared
 

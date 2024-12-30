@@ -13,9 +13,10 @@ services:
     volumes:
       - ${PWD}/nodejs:/code/nodejs
       - ${PWD}/shared:/shared
+      - ${PWD}/certs:/certs:ro
       - nodejs_data:/code/nodejs/node_modules
       # - ./nodejs/node_modules:/code/nodejs/node_modules
-      # - /code/nodejs/node_modules
+      # - /code/nodejs/node_modul
 
   django:
     networks:
@@ -26,6 +27,7 @@ services:
       - "8000:8000"
     volumes:
       - ${PWD}/django:/app
+      - ${PWD}/django/certs:/certs:ro
     env_file:
       - .env
     depends_on:
@@ -41,6 +43,7 @@ services:
     volumes:
       - ${PWD}/react:/app
       - ${PWD}/shared:/shared
+      - ${PWD}/certs:/certs:ro
       - /app/node_modules
     env_file:
       - .env
@@ -71,7 +74,6 @@ services:
       - .env
     depends_on:
       - postgres
-
 volumes:
   nodejs_data:
   postgres_data:

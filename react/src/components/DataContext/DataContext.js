@@ -4,7 +4,8 @@ import { showToast } from '../Toast/ToastPresenter'
 import { protocol, hostname, nodePort } from '../../utils/scheme'
 // import Cookies from 'js-cookie'
 
-const SOCKET_SERVER_URL = `${protocol}//${hostname}:${nodePort}`;
+const SOCKET_SERVER_URL = `wss://${hostname}:${nodePort}`;
+// const SOCKET_SERVER_URL = `${protocol}//${hostname}:${nodePort}`;
 
 
 const DataContext = createContext();
