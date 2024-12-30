@@ -246,61 +246,66 @@ def validate_token_view(request):
             'username': user.username,
         }, status=200)
     except AuthenticationFailed as e:
+        logger.warning(f"Authentication failed: {str(e)}")
         return Response({'error': str(e)}, status=401)
 
 
 @api_view(['POST'])
 def login_view(request):
     if request.method == 'POST':
-        username = request.data['username']
-        password = request.data['password']
-        user = get_object_or_404(User, username=username)
-        if check_password(password, user.password):
-            if user.has_2fa:
-                totp_device = TOTPDevice.objects.filter(
-                    user=user, confirmed=True).first()
-                if not totp_device:
-                    # Retrieve the unconfirmed TOTP device
+        try:
+            username = bleachThe(request.data['username'].strip())
+            password = bleachThe(request.data['password'].strip())
+            user = get_object_or_404(User, username=username)
+            
+            if check_password(password, user.password):
+                if user.has_2fa:
                     totp_device = TOTPDevice.objects.filter(
-                        user=user, confirmed=False).first()
+                        user=user, confirmed=True).first()
                     if not totp_device:
-                        return Response({'error': 'No 2FA device found'}, status=status.HTTP_401_UNAUTHORIZED)
-                    else:
-                        totp_device.confirmed = True
-                        totp_device.save()
+                        # Retrieve the unconfirmed TOTP device
+                        totp_device = TOTPDevice.objects.filter(
+                            user=user, confirmed=False).first()
+                        if not totp_device:
+                            return Response({'error': 'No 2FA device found'}, status=status.HTTP_401_UNAUTHORIZED)
+                        else:
+                            totp_device.confirmed = True
+                            totp_device.save()
 
-                if totp_device:  # If user has a TOTP device, validate the token
-                    otp_token = request.data.get('otp_token')
-                    if not otp_token:  # If no 2FA token is provided, return an error
-                        return Response({'error': '2FA token is required'}, status=status.HTTP_401_UNAUTHORIZED)
-                    # Validate the token
-                    if not totp_device.verify_token(otp_token):
-                        return Response({'error': 'Invalid 2FA token'}, status=status.HTTP_401_UNAUTHORIZED)
+                    if totp_device:  # If user has a TOTP device, validate the token
+                        otp_token = request.data.get('otp_token')
+                        if not otp_token:  # If no 2FA token is provided, return an error
+                            return Response({'error': '2FA token is required'}, status=status.HTTP_401_UNAUTHORIZED)
+                        # Validate the token
+                        if not totp_device.verify_token(otp_token):
+                            return Response({'error': 'Invalid 2FA token'}, status=status.HTTP_401_UNAUTHORIZED)
 
-            token, _ = Token.objects.get_or_create(
-                user=user)  # Efficient token retrieval
-            serializer = UserSerializer(user)
+                token, _ = Token.objects.get_or_create(
+                    user=user)  # Efficient token retrieval
+                serializer = UserSerializer(user)
 
-            avatar_url = user.avatar.url if user.avatar else None
+                avatar_url = user.avatar.url if user.avatar else None
 
-            if avatar_url and not avatar_url.startswith("http"):
-                avatar_url = f"http://{request.get_host()}{avatar_url}"
+                if avatar_url and not avatar_url.startswith("http"):
+                    avatar_url = f"http://{request.get_host()}{avatar_url}"
 
-            request.session['user_data'] = {
-                'username': user.username,
-                'email': user.email,
-                'avatar': avatar_url,
-                'token': token.key,
-            }
-            request.session.save()
+                request.session['user_data'] = {
+                    'username': bleachThe(user.username),
+                    'email': bleachThe(user.email),
+                    'avatar': avatar_url,
+                    'token': token.key,
+                }
+                request.session.save()
 
-            return Response({
-                'user': serializer.data,
-                'token': token.key,  # Include authToken in response
-                'user_data': request.session['user_data'],
-            }, status=status.HTTP_200_OK)
-        return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
-
+                return Response({
+                    'user': serializer.data,
+                    'token': token.key,  # Include authToken in response
+                    'user_data': request.session['user_data'],
+                }, status=status.HTTP_200_OK)
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.error(f"Unexpected error during login: {str(e)}", exc_info=True)
+            return Response({'error': 'An unexpected error occurred'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)    
 
 @api_view(['GET', 'POST'])
 def user_view(request, username=None):
@@ -328,8 +333,9 @@ def user_view(request, username=None):
 def user_status_view(request):
     try:
         user = request.user
-        is_online = True if request.GET.get(
-            'status', None) == 'true' else False
+        status = bleachThe(request.GET.get('status', '')).lower()
+        is_online = status == 'true'
+
 
         user.status = is_online
 
@@ -351,7 +357,8 @@ def match_view(request):
         return Response(serializer.data)
 
     elif request.method == 'POST':
-        serializer = MatchSerializer(data=request.data)
+        data = {key: bleachThe(value) if isinstance(value, str) else value for key, value in request.data.items()}
+        serializer = MatchSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -363,8 +370,8 @@ def match_view(request):
 @api_view(['POST'])
 def statistic_view(request):
     if request.method == 'POST':
-
-        serializer = StatisticSerializer(data=request.data, many=True)
+        data = [ {key: bleachThe(value) if isinstance(value, str) else value for key, value in item.items()} for item in request.data ]
+        serializer = StatisticSerializer(data=data, many=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -377,8 +384,8 @@ def statistic_view(request):
 @api_view(['POST'])
 def tournament_view(request):
     if request.method == 'POST':
-
-        serializer = TournamentSerializer(data={})
+        data = {key: bleachThe(value) if isinstance(value, str) else value for key, value in request.data.items()}
+        serializer = TournamentSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -389,7 +396,7 @@ def tournament_view(request):
 @api_view(['GET'])
 def fetch_friends(request):
     try:
-        username = request.session.get('user_data', {}).get('username', None)
+        username = bleachThe(request.session.get('user_data', {}).get('username', None))
         user = get_object_or_404(User, username=username)
         if not user:
             return Response({'error': 'User not found'}, status=404)
@@ -404,7 +411,7 @@ def fetch_friends(request):
 @api_view(['GET'])
 def search_users(request):
     try:
-        query = request.GET.get('query', '').strip()
+        query = bleachThe(request.GET.get('query', '').strip())
         if not query:
             return Response({'error': 'Query parameter is required'}, status=400)
 
@@ -429,11 +436,11 @@ def search_users(request):
 @api_view(['POST'])
 def add_friend(request):
     try:
-        username = request.session.get('user_data', {}).get('username', None)
+        username = bleachThe(request.session.get('user_data', {}).get('username', None))
         user = get_object_or_404(User, username=username)
         if not user:
             return Response({'error': 'User not found'}, status=404)
-        friend_username = request.data.get('username')
+        friend_username = bleachThe(request.data.get('username'))
         if not friend_username:
             return Response({'error': 'Username is required'}, status=400)
         friend = User.objects.filter(username=friend_username).first()
@@ -450,7 +457,7 @@ def add_friend(request):
 @api_view(['POST'])
 def remove_friend(request):
     try:
-        username = request.session.get('user_data', {}).get('username', None)
+        username = bleachThe(request.session.get('user_data', {}).get('username', None))
         user = get_object_or_404(User, username=username)
         if not user:
             return Response({'error': 'User not found'}, status=404)
@@ -481,7 +488,7 @@ def update_profile(request):
         if not request.session.get('user_data'):
             return Response({'error': 'User not logged in or session expired'}, status=401)
 
-        old_username = request.session['user_data'].get('username', None)
+        old_username = bleachThe(request.session['user_data'].get('username', None))
         if not old_username:
             return Response({'error': 'User not logged in or session expired'}, status=401)
 
@@ -492,7 +499,7 @@ def update_profile(request):
 
         data = request.data
         if 'username' in data:
-            new_username = data['username'].strip()
+            new_username = bleachThe(data['username'].strip())
             if new_username and new_username != user.username:
                 if User.objects.filter(username=new_username).exists():
                     return Response({'error': 'Username already taken'}, status=400)
@@ -501,7 +508,7 @@ def update_profile(request):
                 request.session.modified = True
 
         if 'email' in data:
-            new_email = data['email'].strip()
+            new_email = bleachThe(data['email'].strip())
             if not new_email:
                 return Response({'error': 'Email cannot be empty'}, status=400)
 
@@ -511,7 +518,8 @@ def update_profile(request):
             user.email = new_email
 
         if 'password' in data:
-            user.password = make_password(data['password'])
+            bleached_pass = bleachThe(data['password'])
+            user.password = make_password(bleached_pass)
 
         if 'avatar' in request.FILES:
             user.avatar = request.FILES['avatar']
