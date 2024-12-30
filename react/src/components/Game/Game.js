@@ -1,12 +1,12 @@
-import React, {useRef, useEffect, useState, forwardRef} from 'react'
-import {Canvas, useThree, useFrame} from '@react-three/fiber'
-import * as THREE from 'three'
-import {Text} from '@react-three/drei'
-import {useDataContext} from '../DataContext/DataContext'
-import {ClientTick} from 'shared/tick'
+import React, { useRef, useEffect, useState, forwardRef } from 'react'
+import { Canvas, useThree, useFrame } from '@react-three/fiber'
+// import * as THREE from 'three'
+// import {Text} from '@react-three/drei'
+import { useDataContext } from '../../context/DataContext'
+import { ClientTick } from 'shared/tick'
 import sizes from 'shared/sizes'
 import colors from 'shared/colors'
-import {getCuboids} from 'shared/cuboids'
+import { getCuboids } from 'shared/cuboids'
 import cls from '../../utils/cls'
 import padNumber from '../../utils/padNumber'
 import scss from './Game.module.scss'
@@ -14,7 +14,7 @@ import scss from './Game.module.scss'
 const keysDown = {};
 
 const Cuboid = forwardRef((props, ref) => {
-	const {size, color} = props;
+	const { size, color } = props;
 
 	return (
 		<mesh {...props} ref={ref} >
@@ -25,7 +25,7 @@ const Cuboid = forwardRef((props, ref) => {
 });
 
 function ResizeListener() {
-	const {camera, gl} = useThree();
+	const { camera, gl } = useThree();
 
 	useEffect(() => {
 		const onResize = () => {
@@ -50,8 +50,8 @@ function ResizeListener() {
 }
 
 function CameraLookAt(props) {
-	const {playerIndex} = props;
-	const {camera} = useThree();
+	const { playerIndex } = props;
+	const { camera } = useThree();
 
 	useEffect(() => {
 		const multiplier = playerIndex % 2 === 0 ? -1 : 1;
@@ -71,7 +71,7 @@ function CameraLookAt(props) {
 }
 
 function TickHandler(props) {
-	const {paddleRefs, ballRef, goalRef, timeRef, countdownState, setGoalScored, setWinners} = props;
+	const { paddleRefs, ballRef, goalRef, timeRef, countdownState, setGoalScored, setWinners } = props;
 
 	const {getPlayer, getRoom, useListener, requestServerTick, requestTickAdjust, sendPlayerEvent} = useDataContext();
 
@@ -99,7 +99,7 @@ function TickHandler(props) {
 		if(timeRef.current)
 			timeRef.current.textContent = room.timer ? `${padNumber(minutes, 2)}:${padNumber(seconds % 60, 2)}` : '';
 
-		if(room.running && room.timer > 0)
+		if (room.running && room.timer > 0)
 			room.timer--;
 	};
 
@@ -162,7 +162,7 @@ function TickHandler(props) {
 		const tick = tickRef.current;
 
 		verifiedPositions.forEach((position, i) => {
-			if(tick.isPlayerIndex(i)) {
+			if (tick.isPlayerIndex(i)) {
 				tick.clearOldHistory(verifiedEventId);
 				tick.reconcilePosition(position);
 			} else {
@@ -189,7 +189,7 @@ function TickHandler(props) {
 	});
 
 	useListener('goal', payload => {
-		const {goal, direction} = payload;
+		const { goal, direction } = payload;
 		const tick = tickRef.current;
 
 		setGoalScored(goal);
@@ -222,13 +222,13 @@ function TickHandler(props) {
 }
 
 function handleInput(tick, sendPlayerEvent) {
-	if(tick.getPlayerIndex() === -1)
+	if (tick.getPlayerIndex() === -1)
 		return;
 
 	const left = isKeyDown('KeyA');
 	const right = isKeyDown('KeyD');
 
-	if(!(left || right))
+	if (!(left || right))
 		return;
 
 	const input = right - left;
@@ -244,7 +244,7 @@ function updateEnemyPositions(tick) {
 	const entries = tick.extractQueueEntries('position');
 
 	entries.forEach(entry => {
-		const {playerIndex, position} = entry.data;
+		const { playerIndex, position } = entry.data;
 
 		tick.setPositionFor(playerIndex, position);
 	});
@@ -256,10 +256,10 @@ function renderPaddles(tick, paddleRefs) {
 	positions.forEach((value, i) => {
 		const paddle = paddleRefs[i].current;
 
-		if(paddle == null)
+		if (paddle == null)
 			return;
 
-		const {position, axis} = paddle;
+		const { position, axis } = paddle;
 
 		position[axis] = value;
 	});
@@ -268,7 +268,7 @@ function renderPaddles(tick, paddleRefs) {
 function renderBall(tick, ballRef) {
 	const ball = ballRef.current;
 
-	if(ball == null)
+	if (ball == null)
 		return;
 
 	const [x, z, dx, dz, lastHitIndex] = tick.getBallData();
@@ -280,10 +280,10 @@ function renderBall(tick, ballRef) {
 function renderGoal(tick, goalRef, delta) {
 	const goal = goalRef.current;
 
-	if(goal == null)
+	if (goal == null)
 		return;
 
-	if(goal.timer <= 0) {
+	if (goal.timer <= 0) {
 		goal.scale.set(0, 0, 0);
 		goal.timer = 0;
 		return;
@@ -303,14 +303,14 @@ function renderCountdown(tick, countdownState) {
 	const [countdown, setCountdown] = countdownState;
 	const seconds = tick.getCountdownSeconds();
 
-	if(countdown === seconds)
+	if (countdown === seconds)
 		return;
 
 	setCountdown(seconds);
 }
 
 function onKeyAction(event) {
-	const {type, code} = event;
+	const { type, code } = event;
 
 	keysDown[code] = type === 'keydown';
 }
@@ -320,17 +320,17 @@ function isKeyDown(code) {
 }
 
 function getScoreDisplay(room, getPlayerById, highlightWinners) {
-	const {activePlayers} = room;
+	const { activePlayers } = room;
 
-	const maxScore = highlightWinners ? room.scores.reduce((acc, {scored}) => Math.max(acc, scored), 0) : -1;
+	const maxScore = highlightWinners ? room.scores.reduce((acc, { scored }) => Math.max(acc, scored), 0) : -1;
 
 	return activePlayers.reduce((acc, id, i) => {
-		if(id == null)
+		if (id == null)
 			return acc;
 
 		const player = getPlayerById(id);
 		const colorClass = scss[`c${i + 1}`];
-		const {scored, received} = room.scores[i];
+		const { scored, received } = room.scores[i];
 		const fade = scored < maxScore;
 
 		return [
@@ -354,7 +354,7 @@ function Game(props) {
 	const [goalScored, setGoalScored] = useState(null);
 	const [winners, setWinners] = useState(null);
 
-	const {getPlayer, getPlayerById, getRoom} = useDataContext();
+	const { getPlayer, getPlayerById, getRoom } = useDataContext();
 
 	const player = getPlayer();
 	const room = getRoom(player.roomId);
@@ -418,7 +418,7 @@ function Game(props) {
 					far: 1000,
 					position: [0, sizes.boardSize * 2, 0]
 				}
-			}>
+				}>
 				<ResizeListener />
 				<CameraLookAt playerIndex={player.index} />
 				<TickHandler paddleRefs={paddleRefs} ballRef={ballRef} goalRef={goalRef} timeRef={timeRef} countdownState={[countdown, setCountdown]} setGoalScored={setGoalScored} setWinners={setWinners} />

@@ -1,15 +1,15 @@
-import React, {useEffect} from 'react'
-import {useDataContext} from '../DataContext/DataContext'
+import React, { useEffect } from 'react'
+import { useDataContext } from '../../context/DataContext'
 import Card from '../Card/Card'
 import CardSection from '../Card/CardSection'
 import RoomListItem from './RoomListItem'
 import Icon from '../Icon/Icon'
 import RoomCreateModal from '../Modal/RoomCreateModal'
-import {showModal} from '../../utils/modal'
+import { showModal } from '../../utils/modal'
 import scss from './RoomList.module.scss'
 
 function RoomList() {
-	const {getPlayer, getRoomList, createRoom, joinRoom, quickJoinRoom} = useDataContext();
+	const { getPlayer, getRoomList, createRoom, joinRoom, quickJoinRoom } = useDataContext();
 
 	const player = getPlayer();
 	const rooms = getRoomList();
@@ -19,12 +19,12 @@ function RoomList() {
 
 	useEffect(() => {
 		const onKeydown = event => {
-			const {target, code} = event;
+			const { target, code } = event;
 
-			if(target !== document.body)
+			if (target !== document.body)
 				return;
 
-			if(code !== 'KeyQ')
+			if (code !== 'KeyQ')
 				return;
 
 			quickJoinRoom();
@@ -46,7 +46,7 @@ function RoomList() {
 
 		const [action, data] = await showModal(RoomCreateModal, defaultValues);
 
-		if(action !== 'confirm')
+		if (action !== 'confirm')
 			return;
 
 		createRoom(data);

@@ -1,31 +1,31 @@
-import React, {useEffect} from 'react'
+import React, { useEffect } from 'react'
 import Card from '../Card/Card'
 import CardSection from '../Card/CardSection'
 import PlayerList from './PlayerList'
 import Icon from '../Icon/Icon'
-import {useDataContext} from '../DataContext/DataContext'
+import { useDataContext } from '../../context/DataContext'
 import cls from '../../utils/cls'
 import scss from './Room.module.scss'
 
 function Room() {
 
-	const {getPlayer, getRoom, getPlayerListForRoom, leaveRoom, toggleReady, gameStart} = useDataContext();
+	const { getPlayer, getRoom, getPlayerListForRoom, leaveRoom, toggleReady, gameStart } = useDataContext();
 	const currentPlayer = getPlayer();
 	const room = getRoom(currentPlayer.roomId);
 
 	useEffect(() => {
 		const onKeydown = event => {
-			const {target, code} = event;
+			const { target, code } = event;
 
-			if(target !== document.body)
+			if (target !== document.body)
 				return;
 
 			const isMaster = currentPlayer.id === room?.masterId;
 
-			if(code !== 'KeyR')
+			if (code !== 'KeyR')
 				return;
 
-			if(isMaster)
+			if (isMaster)
 				gameStart();
 			else
 				toggleReady();
@@ -39,7 +39,7 @@ function Room() {
 
 	}, [room]);
 
-	if(room == null) {
+	if (room == null) {
 		return (
 			<Card title='Room'>
 				<p className={scss.empty}>Create a room or click on an existing one to join it.</p>

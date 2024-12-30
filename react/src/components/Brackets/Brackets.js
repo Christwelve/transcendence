@@ -1,13 +1,13 @@
 import React from 'react'
-import {useDataContext} from '../DataContext/DataContext'
+import { useDataContext } from '.../context/DataContext'
 import cls from '../../utils/cls'
 import padNumber from '../../utils/padNumber'
 import scss from './Brackets.module.scss'
 
 function Player(props) {
-	const {player, score, stage, won} = props;
+	const { player, score, stage, won } = props;
 
-	const {getPlayerById} = useDataContext();
+	const { getPlayerById } = useDataContext();
 
 	const playerData = getPlayerById(player) ?? {};
 
@@ -24,7 +24,7 @@ function Player(props) {
 }
 
 function Pairs(props) {
-	const {stage, players, scores, winner} = props.pair;
+	const { stage, players, scores, winner } = props.pair;
 	const [player1, player2] = players;
 	const [score1, score2] = scores;
 
@@ -37,7 +37,7 @@ function Pairs(props) {
 }
 
 function Groups(props) {
-	const {groups} = props;
+	const { groups } = props;
 
 	return (
 		<div className={scss.group}>

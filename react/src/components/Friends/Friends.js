@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useDataContext } from '../DataContext/DataContext'
+import { useDataContext } from '../../context/DataContext'
 import Card from '../Card/Card'
 import CardSection from '../Card/CardSection'
 import Icon from '../Icon/Icon'
