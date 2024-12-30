@@ -144,15 +144,38 @@ function Statistics() {
           <div>
             <h3>User Data Overview:</h3>
             {fullUserData ? (
-              <>
-                <p>Name: {fullUserData.username}</p>
-                <p>XP: {fullUserData.wins * 200}</p>
-                <p>WINRATE: {winRate}%</p>
-                <p>WINS: {fullUserData.wins}</p>
-                <p>LOSSES: {fullUserData.losses}</p>
-                <p>Total goals scored: {totalGoalsScored || 0}</p>
-                <p>Total goals received: {totalGoalsReceived || 0}</p>
-              </>
+              <table>
+                <tbody>
+                  <tr>
+                    <td>Name:</td>
+                    <td>{fullUserData.username}</td>
+                  </tr>
+                  <tr>
+                    <td>XP:</td>
+                    <td>{fullUserData.wins * 200}</td>
+                  </tr>
+                  <tr>
+                    <td>WINRATE:</td>
+                    <td>{winRate}%</td>
+                  </tr>
+                  <tr>
+                    <td>WINS:</td>
+                    <td>{fullUserData.wins}</td>
+                  </tr>
+                  <tr>
+                    <td>LOSSES:</td>
+                    <td>{fullUserData.losses}</td>
+                  </tr>
+                  <tr>
+                    <td>Total goals scored:</td>
+                    <td>{totalGoalsScored || 0}</td>
+                  </tr>
+                  <tr>
+                    <td>Total goals received:</td>
+                    <td>{totalGoalsReceived || 0}</td>
+                  </tr>
+                </tbody>
+              </table>
             ) : (
               <p>Loading full user data...</p>
             )}
