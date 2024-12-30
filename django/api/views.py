@@ -23,8 +23,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 @api_view(['POST'])
-@throttle_classes([AnonRateThrottle]) # rate-limiting for anons
+@throttle_classes([AnonRateThrottle])  # rate-limiting for anons
 # @throttle_classes([UserRateThrottle]) # or should we add it for authenticated users?
 def setup_2fa(request):
     try:
@@ -36,8 +37,10 @@ def setup_2fa(request):
 
         user = get_object_or_404(User, username=username)
 
-        existing_device = TOTPDevice.objects.filter(user=user, confirmed=False).first()
-        confirmed_device = TOTPDevice.objects.filter(user=user, confirmed=True).first()
+        existing_device = TOTPDevice.objects.filter(
+            user=user, confirmed=False).first()
+        confirmed_device = TOTPDevice.objects.filter(
+            user=user, confirmed=True).first()
 
         if confirmed_device:
             device = confirmed_device
@@ -45,8 +48,8 @@ def setup_2fa(request):
             device = existing_device
         else:
             # Create a new TOTP device
-            device = TOTPDevice.objects.create(user=user, name=username, confirmed=False)
-
+            device = TOTPDevice.objects.create(
+                user=user, name=username, confirmed=False)
 
         try:
             # Generate a QR code for the TOTP device
@@ -57,7 +60,8 @@ def setup_2fa(request):
 
             # Convert QR code to an image
             img = io.BytesIO()
-            qr.make_image(fill="black", back_color="white").save(img, format="PNG")
+            qr.make_image(fill="black", back_color="white").save(
+                img, format="PNG")
             img.seek(0)
 
             # Encode QR code as Base64
@@ -66,17 +70,17 @@ def setup_2fa(request):
         except Exception as e:
             logger.error(f"QR Code generation failed: {str(e)}", exc_info=True)
             return Response({"error": "Failed to generate QR code"}, status=500)
-        
+
         # Return the QR code as a response
         return Response({
             "qr_code": f"data:image/png;base64,{qr_code_base64}",
             "manual_entry_key": device.key
-            }, status=200)
+        }, status=200)
 
     except Exception as e:
         logger.error(f"Unexpected error in setup_2fa: {str(e)}", exc_info=True)
         return Response({"error": "An unexpected error occurred"}, status=500)
-        
+
 
 # should we maybe add an isAuthenticated decorator here?
 @api_view(['POST'])
@@ -87,7 +91,7 @@ def enable_2fa(request):
 
         username = request.session['user_data'].get('username', None)
         username = bleachThe(username)
-        
+
         if not username:
             return Response({'error': 'User not logged in or session expired'}, status=401)
 
@@ -97,7 +101,7 @@ def enable_2fa(request):
             return Response({'error': 'No data provided'}, status=400)
 
         data = request.data
-        
+
         is_2fa_enabled_raw = data.get('has_2fa', False)
         is_2fa_enabled = bleachThe(is_2fa_enabled_raw).lower()
 
@@ -107,7 +111,7 @@ def enable_2fa(request):
             is_2fa_enabled = False
         else:
             return Response({'error': 'Invalid value for 2FA status'}, status=400)
-        
+
         user.has_2fa = is_2fa_enabled
         user.save()
 
@@ -117,22 +121,44 @@ def enable_2fa(request):
         return Response({'message': str(e)}, status=500)
 
 
-# @csrf_exempt
 @api_view(['GET'])
+@throttle_classes([AnonRateThrottle])
 def login_with_42(request):
-    authorization_url = (
-        'https://api.intra.42.fr/oauth/authorize?'
-        f'client_id={settings.OAUTH2_PROVIDER["CLIENT_ID"]}'
-        '&response_type=code'
-        '&redirect_uri=http://localhost:8000/api/42/login/callback/'
-        '&scope=public'
-    )
-    return JsonResponse({'authorization_url': authorization_url})
+    try:
+        client_id = settings.OAUTH2_PROVIDER.get("CLIENT_ID")
+        redirect_uri = 'http://localhost:8000/api/42/login/callback/'
+
+        if not client_id:
+            logger.error("Missing CLIENT_ID in settings.")
+            return JsonResponse(
+                {'error': 'Internal server error. Missing configuration.'},
+                status=500
+            )
+
+        authorization_url = (
+            'https://api.intra.42.fr/oauth/authorize?'
+            f'client_id={client_id}'
+            '&response_type=code'
+            f'&redirect_uri={redirect_uri}'
+            '&scope=public'
+        )
+
+        logger.info("Authorization URL generated successfully.")
+        return JsonResponse({'authorization_url': authorization_url}, status=200)
+
+    except Exception as e:
+        logger.exception("Error generating authorization URL for 42 login.")
+        return JsonResponse(
+            {'error': 'Internal server error. Please try again later.'},
+            status=500
+        )
+
 
 @api_view(['GET'])
 def login_with_42_callback(request):
     if request.method == 'GET':
         code = request.GET.get('code')
+        code = bleachThe(code)
         if not code:
             return JsonResponse({'error': 'Missing authorization code'}, status=400)
 
@@ -162,18 +188,16 @@ def login_with_42_callback(request):
             return JsonResponse({'error': 'Failed to fetch user information'}, status=user_info_response.status_code)
 
         user_info_data = user_info_response.json()
-
-        # Extract user details
-        username = user_info_data.get('login')
-        email = user_info_data.get('email')
+        username = bleachThe(user_info_data.get('login'))
+        email = bleachThe(user_info_data.get('email'))
         api_avatar = user_info_data.get('image', {}).get('link', None)
-        password = make_password('')  # Empty password as it is OAuth-based login
+        # Empty password as it is OAuth-based login
+        password = make_password('')
 
         user = User.objects.filter(username=username).first()
-
         if not user:
-            # Create a new user if not exists
-            user_data = {'email': email, 'username': username, 'password': password}
+            user_data = {'email': email,
+                         'username': username, 'password': password}
             serializer = UserSerializer(data=user_data)
             if serializer.is_valid():
                 user = serializer.save()
@@ -183,15 +207,6 @@ def login_with_42_callback(request):
         # Create or retrieve the token for the user
         token, _ = Token.objects.get_or_create(user=user)
 
-        # # Construct the full avatar URL
-        # if user.avatar:
-        #     if str(user.avatar).startswith("http"):
-        #         avatar_url = str(user.avatar)
-        #     else:
-        #         avatar_url = f"http://{request.get_host()}{user.avatar.url}"
-        # else:
-        #     avatar_url = api_avatar if str(api_avatar).startswith("http") else f"http://{request.get_host()}/media/{api_avatar}"
-
         # Construct the full avatar URL
         if user.avatar and user.avatar.url:
             avatar_url = f"http://{request.get_host()}{user.avatar.url}"
@@ -200,12 +215,7 @@ def login_with_42_callback(request):
         else:
             None
 
-
-
-        print("Avatar url:", avatar_url)
-
         request.session.flush()
-        # Store user session data
         request.session['user_data'] = {
             'username': username,
             'email': email,
@@ -213,9 +223,11 @@ def login_with_42_callback(request):
             'token': token.key,
         }
         request.session.modified = True
+
         return redirect(f"http://localhost:3000?logged_in=true")
 
     return redirect(f"http://localhost:3000?logged_in=false")
+
 
 @api_view(['GET'])
 def get_user_data(request):
@@ -223,6 +235,7 @@ def get_user_data(request):
     if not user_data:
         return JsonResponse({'error': 'No user data found', 'session': request.session.get('user_data')}, status=404)
     return JsonResponse(user_data)
+
 
 @api_view(['GET'])
 def validate_token_view(request):
@@ -236,7 +249,6 @@ def validate_token_view(request):
         return Response({'error': str(e)}, status=401)
 
 
-
 @api_view(['POST'])
 def login_view(request):
     if request.method == 'POST':
@@ -245,10 +257,12 @@ def login_view(request):
         user = get_object_or_404(User, username=username)
         if check_password(password, user.password):
             if user.has_2fa:
-                totp_device = TOTPDevice.objects.filter(user=user, confirmed=True).first()
+                totp_device = TOTPDevice.objects.filter(
+                    user=user, confirmed=True).first()
                 if not totp_device:
                     # Retrieve the unconfirmed TOTP device
-                    totp_device = TOTPDevice.objects.filter(user=user, confirmed=False).first()
+                    totp_device = TOTPDevice.objects.filter(
+                        user=user, confirmed=False).first()
                     if not totp_device:
                         return Response({'error': 'No 2FA device found'}, status=status.HTTP_401_UNAUTHORIZED)
                     else:
@@ -259,10 +273,12 @@ def login_view(request):
                     otp_token = request.data.get('otp_token')
                     if not otp_token:  # If no 2FA token is provided, return an error
                         return Response({'error': '2FA token is required'}, status=status.HTTP_401_UNAUTHORIZED)
-                    if not totp_device.verify_token(otp_token):  # Validate the token
+                    # Validate the token
+                    if not totp_device.verify_token(otp_token):
                         return Response({'error': 'Invalid 2FA token'}, status=status.HTTP_401_UNAUTHORIZED)
 
-            token, _ = Token.objects.get_or_create(user=user)  # Efficient token retrieval
+            token, _ = Token.objects.get_or_create(
+                user=user)  # Efficient token retrieval
             serializer = UserSerializer(user)
 
             avatar_url = user.avatar.url if user.avatar else None
@@ -295,7 +311,8 @@ def user_view(request, username=None):
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             users = User.objects.all()
-            serializer = UserSerializer(users, many=True, context={'request': request})
+            serializer = UserSerializer(
+                users, many=True, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
     elif request.method == 'POST':
         userData = request.data.copy()
@@ -306,11 +323,13 @@ def user_view(request, username=None):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 @api_view(['GET'])
 def user_status_view(request):
     try:
         user = request.user
-        is_online = True if request.GET.get('status', None) == 'true' else False
+        is_online = True if request.GET.get(
+            'status', None) == 'true' else False
 
         user.status = is_online
 
@@ -323,6 +342,7 @@ def user_status_view(request):
         return JsonResponse({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return JsonResponse({'success': True}, status=status.HTTP_200_OK)
+
 
 @api_view(['GET', 'POST'])
 def match_view(request):
@@ -338,6 +358,8 @@ def match_view(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # TODO: GET
+
+
 @api_view(['POST'])
 def statistic_view(request):
     if request.method == 'POST':
@@ -350,6 +372,8 @@ def statistic_view(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # TODO: GET
+
+
 @api_view(['POST'])
 def tournament_view(request):
     if request.method == 'POST':
@@ -360,6 +384,7 @@ def tournament_view(request):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['GET'])
 def fetch_friends(request):
@@ -385,18 +410,20 @@ def search_users(request):
 
         username = request.session.get('user_data', {}).get('username', None)
         user = get_object_or_404(User, username=username)
-        users = User.objects.filter(username__icontains=query).exclude(id=user.id)
-        friends = Friend.objects.filter(user=user).values_list('friend__id', flat=True)
+        users = User.objects.filter(
+            username__icontains=query).exclude(id=user.id)
+        friends = Friend.objects.filter(
+            user=user).values_list('friend__id', flat=True)
         users = users.exclude(id__in=friends)
 
         if not users.exists():
             return Response({'detail': 'No User matches the given query.'}, status=200)
 
-        results = [{'id': user.id, 'username': user.username} for user in users]
+        results = [{'id': user.id, 'username': user.username}
+                   for user in users]
         return Response({'users': results}, status=200)
     except Exception as e:
         return Response({'error': str(e)}, status=500)
-
 
 
 @api_view(['POST'])
@@ -418,7 +445,6 @@ def add_friend(request):
         return Response({'message': f'{friend_username} added as a friend!'}, status=201)
     except Exception as e:
         return Response({'error': str(e)}, status=500)
-
 
 
 @api_view(['POST'])
@@ -447,6 +473,7 @@ def remove_friend(request):
 def logout_view(request):
     request.session.flush()
     return Response({"message": "Logged out successfully"})
+
 
 @api_view(['POST'])
 def update_profile(request):
@@ -479,7 +506,7 @@ def update_profile(request):
                 return Response({'error': 'Email cannot be empty'}, status=400)
 
             if User.objects.filter(email=new_email).exists() and new_email != user.email:
-                return Response({'error' : 'Email already in use'}, status=400)
+                return Response({'error': 'Email already in use'}, status=400)
 
             user.email = new_email
 
