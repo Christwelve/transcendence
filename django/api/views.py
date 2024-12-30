@@ -16,43 +16,68 @@ import qrcode
 import io
 import base64
 
+from .sanitizer import bleachThe
+from rest_framework.throttling import AnonRateThrottle
+from rest_framework.decorators import throttle_classes
+import logging
+
+logger = logging.getLogger(__name__)
+
 @api_view(['POST'])
+@throttle_classes([AnonRateThrottle]) # rate-limiting for anons
+# @throttle_classes([UserRateThrottle]) # or should we add it for authenticated users?
 def setup_2fa(request):
-    username = request.data['username']
-    user = get_object_or_404(User, username=username)  # Assuming the user is authenticated
+    try:
+        username = request.data['username']
+        username = bleachThe(username)
+        if not username:
+            logger.warning("Setup 2FA request missing username.")
+            return Response({"error": "Username is required"}, status=400)
 
-    existing_device = TOTPDevice.objects.filter(user=user, confirmed=False).first()
-    confirmed_device = TOTPDevice.objects.filter(user=user, confirmed=True).first()
-    if existing_device or confirmed_device:
+        user = get_object_or_404(User, username=username)
+
+        existing_device = TOTPDevice.objects.filter(user=user, confirmed=False).first()
+        confirmed_device = TOTPDevice.objects.filter(user=user, confirmed=True).first()
+
         if confirmed_device:
-            device = confirmed_device  # Reuse the existing unconfirmed device
-        else:
+            device = confirmed_device
+        elif existing_device:
             device = existing_device
-    else:
-        # Create a new TOTP device
-        device = TOTPDevice.objects.create(user=user, name=username, confirmed=False)
+        else:
+            # Create a new TOTP device
+            device = TOTPDevice.objects.create(user=user, name=username, confirmed=False)
 
-    # Generate a QR code for the TOTP device
-    qr_code_data = device.config_url
-    qr = qrcode.QRCode(version=1, box_size=10, border=5)
-    qr.add_data(qr_code_data)
-    qr.make(fit=True)
 
-    # Convert QR code to an image
-    img = io.BytesIO()
-    qr.make_image(fill="black", back_color="white").save(img, format="PNG")
-    img.seek(0)
+        try:
+            # Generate a QR code for the TOTP device
+            qr_code_data = device.config_url
+            qr = qrcode.QRCode(version=1, box_size=10, border=5)
+            qr.add_data(qr_code_data)
+            qr.make(fit=True)
 
-    # Encode QR code as Base64
-    qr_code_base64 = base64.b64encode(img.getvalue()).decode()
+            # Convert QR code to an image
+            img = io.BytesIO()
+            qr.make_image(fill="black", back_color="white").save(img, format="PNG")
+            img.seek(0)
 
-    # Return the QR code as a response
-    return Response({
-        "qr_code": f"data:image/png;base64,{qr_code_base64}",  # Frontend-friendly QR code
-        "manual_entry_key": device.key  # Manual entry key for users without QR code scanning
-    }, status=200)
+            # Encode QR code as Base64
+            qr_code_base64 = base64.b64encode(img.getvalue()).decode()
 
-# from api.models import User, Friend
+        except Exception as e:
+            logger.error(f"QR Code generation failed: {str(e)}", exc_info=True)
+            return Response({"error": "Failed to generate QR code"}, status=500)
+        
+        # Return the QR code as a response
+        return Response({
+            "qr_code": f"data:image/png;base64,{qr_code_base64}",
+            "manual_entry_key": device.key
+            }, status=200)
+
+    except Exception as e:
+        logger.error(f"Unexpected error in setup_2fa: {str(e)}", exc_info=True)
+        return Response({"error": "An unexpected error occurred"}, status=500)
+        
+
 
 @api_view(['POST'])
 def enable_2fa(request):
