@@ -8,6 +8,7 @@ import FriendSearchModal from '../Modal/FriendSearchModal'
 import scss from './Friends.module.scss'
 import { showModal } from '../../utils/modal'
 import { showToast } from '../Toast/ToastPresenter'
+import Cookies from 'js-cookie'
 
 function Friends() {
 	const { getStateId } = useDataContext();
@@ -36,6 +37,7 @@ function Friends() {
 			const response = await fetchWithCredentials("http://localhost:8000/api/friend/remove/", "POST", {
 				headers: {
 					"Content-Type": "application/json",
+					'Authorization': `Bearer ${Cookies.get('jwtToken')}`,
 				},
 				body: JSON.stringify({ username }),
 			});
@@ -84,7 +86,11 @@ function fetchWithCredentials(path, method, extraOptions = {}) {
 
 async function fetchFriends() {
 	try {
-		const response = await fetchWithCredentials("http://localhost:8000/api/friend/", "GET");
+		const response = await fetchWithCredentials("http://localhost:8000/api/friend/", "GET", {
+									headers: {
+										'Authorization': `Bearer ${Cookies.get('jwtToken')}`,
+									},
+								});
 		const data = await response.json();
 		return data.friends || [];
 	} catch (error) {

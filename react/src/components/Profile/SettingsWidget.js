@@ -1,5 +1,6 @@
 import React, {useState} from 'react'
 import styles from './Profile.module.scss'
+import Cookies from 'js-cookie'
 
 const SettingsWidget = ({ avatar, setAvatar, onClose, twoFactor, setNewUsername}) => {
   const [username, setUsername] = useState("");
@@ -41,6 +42,9 @@ const SettingsWidget = ({ avatar, setAvatar, onClose, twoFactor, setNewUsername}
     fetch("http://localhost:8000/api/user/update/", {
       method: "POST",
       credentials: "include",
+      headers: {
+        'Authorization': `Bearer ${Cookies.get('jwtToken')}`,
+      },
       body: formData,
     })
       .then(async (response) => {

@@ -70,6 +70,7 @@ const AppContent= () => {
       }
 
       Cookies.set('authToken', userData.token);
+      Cookies.set('jwtToken', userData.jwtToken);
       setUserStatus("logged");
       setErrorMessage(null);
       setUser(userData.user);

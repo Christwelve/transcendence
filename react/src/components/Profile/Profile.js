@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import '../genericStyles.css'
 import './Profile.module.scss'
+import Cookies from 'js-cookie'
 
 const Profile = ({ avatar, setAvatar }) => {
   const [username, setUsername] = useState("");
@@ -15,10 +16,13 @@ const Profile = ({ avatar, setAvatar }) => {
     if (email) formData.append("email", email);
     if (newPassword) formData.append("password", newPassword);
     if (avatarFile) formData.append("avatar", avatarFile);
-  
+
     fetch("http://localhost:8000/api/user/update/", {
       method: "POST",
       credentials: "include",
+      headers: {
+        'Authorization': `Bearer ${Cookies.get('jwtToken')}`,
+      },
       body: formData,
     })
       .then((response) => response.json())

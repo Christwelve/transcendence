@@ -12,9 +12,12 @@ from django.utils.timezone import now
 
 from django.conf import settings
 from django_otp.plugins.otp_totp.models import TOTPDevice
+from rest_framework_simplejwt.tokens import RefreshToken
 import qrcode
 import io
 import base64
+import jwt
+from rest_framework.exceptions import PermissionDenied
 
 @api_view(['POST'])
 def setup_2fa(request):
@@ -150,6 +153,16 @@ def login_with_42_callback(request):
 
         # Create or retrieve the token for the user
         token, _ = Token.objects.get_or_create(user=user)
+        payload = {
+                'username': user.username,
+                'email': user.email,
+                # Add other necessary claims here (e.g., username, roles)
+        }
+        jwtToken = jwt.encode(
+                payload,
+                settings.SECRET_KEY,
+                algorithm='HS256'
+        )
 
         # # Construct the full avatar URL
         # if user.avatar:
@@ -179,6 +192,7 @@ def login_with_42_callback(request):
             'email': email,
             'avatar': avatar_url,
             'token': token.key,
+            'jwtToken': jwtToken,
         }
         request.session.modified = True
         return redirect(f"http://localhost:3000?logged_in=true")
@@ -187,6 +201,24 @@ def login_with_42_callback(request):
 
 @api_view(['GET'])
 def get_user_data(request):
+    authorization_header = request.headers.get('Authorization')
+     # Check for the 'Authorization' header
+    if not authorization_header:
+        return JsonResponse({'error': 'Authorization header is missing.'}, status=401)
+
+    # Extract the JWT token from the header
+    token = request.headers['Authorization'].split(' ')[1]
+    try:
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=['HS256']  # Adjust algorithm as needed
+        )
+    except jwt.ExpiredSignatureError:
+        return JsonResponse({'error': 'Token expired.'}, status=401)
+    except jwt.InvalidTokenError:
+        return JsonResponse({'error': 'Invalid token.', 'token': token}, status=401)
+
     user_data = request.session.get('user_data')
     if not user_data:
         return JsonResponse({'error': 'No user data found', 'session': request.session.get('user_data')}, status=404)
@@ -231,6 +263,16 @@ def login_view(request):
                         return Response({'error': 'Invalid 2FA token'}, status=status.HTTP_401_UNAUTHORIZED)
 
             token, _ = Token.objects.get_or_create(user=user)  # Efficient token retrieval
+            payload = {
+                'username': user.username,
+                'email': user.email,
+                # Add other necessary claims here (e.g., username, roles)
+            }
+            jwtToken = jwt.encode(
+                payload,
+                settings.SECRET_KEY,
+                algorithm='HS256'
+            )
             serializer = UserSerializer(user)
 
             avatar_url = user.avatar.url if user.avatar else None
@@ -243,12 +285,14 @@ def login_view(request):
                 'email': user.email,
                 'avatar': avatar_url,
                 'token': token.key,
+                'jwtToken': jwtToken,
             }
             request.session.save()
 
             return Response({
                 'user': serializer.data,
                 'token': token.key,  # Include authToken in response
+                'jwtToken': jwtToken,
                 'user_data': request.session['user_data'],
             }, status=status.HTTP_200_OK)
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
@@ -332,6 +376,24 @@ def tournament_view(request):
 @api_view(['GET'])
 def fetch_friends(request):
     try:
+        authorization_header = request.headers.get('Authorization')
+        # Check for the 'Authorization' header
+        if not authorization_header:
+            return JsonResponse({'error': 'Authorization header is missing.'}, status=401)
+
+        # Extract the JWT token from the header
+        token = request.headers['Authorization'].split(' ')[1]
+        try:
+            payload = jwt.decode(
+                token,
+                settings.SECRET_KEY,
+                algorithms=['HS256']  # Adjust algorithm as needed
+            )
+        except jwt.ExpiredSignatureError:
+            return JsonResponse({'error': 'Token expired.'}, status=401)
+        except jwt.InvalidTokenError:
+            return JsonResponse({'error': 'Invalid token.', 'token': token}, status=401)
+        
         username = request.session.get('user_data', {}).get('username', None)
         user = get_object_or_404(User, username=username)
         if not user:
@@ -347,6 +409,24 @@ def fetch_friends(request):
 @api_view(['GET'])
 def search_users(request):
     try:
+        authorization_header = request.headers.get('Authorization')
+        # Check for the 'Authorization' header
+        if not authorization_header:
+            return JsonResponse({'error': 'Authorization header is missing.'}, status=401)
+
+        # Extract the JWT token from the header
+        token = request.headers['Authorization'].split(' ')[1]
+        try:
+            payload = jwt.decode(
+                token,
+                settings.SECRET_KEY,
+                algorithms=['HS256']  # Adjust algorithm as needed
+            )
+        except jwt.ExpiredSignatureError:
+            return JsonResponse({'error': 'Token expired.'}, status=401)
+        except jwt.InvalidTokenError:
+            return JsonResponse({'error': 'Invalid token.', 'token': token}, status=401)
+
         query = request.GET.get('query', '').strip()
         if not query:
             return Response({'error': 'Query parameter is required'}, status=400)
@@ -370,6 +450,24 @@ def search_users(request):
 @api_view(['POST'])
 def add_friend(request):
     try:
+        authorization_header = request.headers.get('Authorization')
+        # Check for the 'Authorization' header
+        if not authorization_header:
+            return JsonResponse({'error': 'Authorization header is missing.'}, status=401)
+
+        # Extract the JWT token from the header
+        token = request.headers['Authorization'].split(' ')[1]
+        try:
+            payload = jwt.decode(
+                token,
+                settings.SECRET_KEY,
+                algorithms=['HS256']  # Adjust algorithm as needed
+            )
+        except jwt.ExpiredSignatureError:
+            return JsonResponse({'error': 'Token expired.'}, status=401)
+        except jwt.InvalidTokenError:
+            return JsonResponse({'error': 'Invalid token.', 'token': token}, status=401)
+
         username = request.session.get('user_data', {}).get('username', None)
         user = get_object_or_404(User, username=username)
         if not user:
@@ -392,6 +490,24 @@ def add_friend(request):
 @api_view(['POST'])
 def remove_friend(request):
     try:
+        authorization_header = request.headers.get('Authorization')
+        # Check for the 'Authorization' header
+        if not authorization_header:
+            return JsonResponse({'error': 'Authorization header is missing.'}, status=401)
+
+        # Extract the JWT token from the header
+        token = request.headers['Authorization'].split(' ')[1]
+        try:
+            payload = jwt.decode(
+                token,
+                settings.SECRET_KEY,
+                algorithms=['HS256']  # Adjust algorithm as needed
+            )
+        except jwt.ExpiredSignatureError:
+            return JsonResponse({'error': 'Token expired.'}, status=401)
+        except jwt.InvalidTokenError:
+            return JsonResponse({'error': 'Invalid token.', 'token': token}, status=401)
+
         username = request.session.get('user_data', {}).get('username', None)
         user = get_object_or_404(User, username=username)
         if not user:
@@ -419,6 +535,24 @@ def logout_view(request):
 @api_view(['POST'])
 def update_profile(request):
     try:
+        authorization_header = request.headers.get('Authorization')
+        # Check for the 'Authorization' header
+        if not authorization_header:
+            return JsonResponse({'error': 'Authorization header is missing.'}, status=401)
+
+        # Extract the JWT token from the header
+        token = request.headers['Authorization'].split(' ')[1]
+        try:
+            payload = jwt.decode(
+                token,
+                settings.SECRET_KEY,
+                algorithms=['HS256']  # Adjust algorithm as needed
+            )
+        except jwt.ExpiredSignatureError:
+            return JsonResponse({'error': 'Token expired.'}, status=401)
+        except jwt.InvalidTokenError:
+            return JsonResponse({'error': 'Invalid token.', 'token': token}, status=401)
+
         if not request.session.get('user_data'):
             return Response({'error': 'User not logged in or session expired'}, status=401)
 
