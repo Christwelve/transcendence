@@ -53,7 +53,7 @@ function FriendSearchModal(props) {
 				closeModal('added');
 
 		} catch (error) {
-			showToast({ type: "error", title: "Failure", message: "Friend could not be added." });
+			showToast({ type: "error", title: "Error", message: "Friend could not be added." });
 		}
 	};
 

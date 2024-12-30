@@ -7,6 +7,10 @@
 	border-radius: 6px;
 	width: 100%;
 
+	&:not(:last-child) {
+		margin-bottom: 12px;
+	}
+
 	.name {
 		line-height: 1;
 	}

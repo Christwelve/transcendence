@@ -27,6 +27,8 @@ const data = {
 	tournaments: {},
 };
 
+const statistics = {};
+
 const games = {};
 
 // async function fetchMatches() {
@@ -157,64 +159,146 @@ function removePlayerFromRoom(player, room) {
 		updateState();
 	}
 
-	if (room.type === 1) {
-		// TODO: store tournament data
+	if(games[id] != null)
+		createScoreData(room, player);
 
-		room.status = 0;
-		room.counter++;
-
-		endRoom(room);
-		resetRoom(room);
-
-		room.players.forEach(id => {
-			const player = data.players[id];
-
-			if (player == null)
-				return;
-
-			player.state = 1;
-			player.index = -1;
-			player.ready = false;
-		});
-
-		games[id]?.detach();
-
-		delete games[id];
-		delete data.tournaments[id];
-
-		updateState();
-
-	} else {
-		if(players.length === 1 && games[id] != null) {
-			endSingleGame(room, room.counter, true);
-
-			games[id].detach();
-
-			// TODO: store match data
-
-			delete games[id];
-
-			endRoom(room);
-			resetRoom(room);
-
-			room.counter++;
-
-			updateState();
-		}
-
-		if (players.length === 0) {
-
-			delete data.rooms[id];
-
-			updateState();
-		}
-	}
+	if (type === 1)
+		removeFromTournament(room, player);
+	else
+		removeFromSingle(room);
 
 	player.roomId = null;
 	player.ready = false;
 	player.index = -1;
 
 	updateState();
+}
+
+function removeFromTournament(room, player) {
+	if(room.status === 0)
+		return;
+
+	createScoresForPlayers(room);
+	finishedMatchData(room);
+
+	const {id} = room;
+
+	room.status = 0;
+	room.counter++;
+
+	endRoom(room);
+	resetRoom(room);
+
+	games[id]?.detach();
+
+	delete games[id];
+	delete data.tournaments[id];
+
+	updateState();
+
+}
+
+function removeFromSingle(room) {
+	const {id, players} = room;
+
+	if(players.length === 1 && games[id] != null) {
+		endSingleGame(room, room.counter, true);
+
+		games[id].detach();
+
+		delete games[id];
+
+		endRoom(room);
+		resetRoom(room);
+
+		room.counter++;
+
+		updateState();
+	}
+
+	if (players.length === 0) {
+
+		delete data.rooms[id];
+
+		updateState();
+	}
+}
+
+function createStatistic(room) {
+	const { id, type } = room;
+
+	const data = {
+		type,
+		matchIndex: -1,
+		matches: [],
+	};
+
+	statistics[id] = data;
+}
+
+function createMatchData(room) {
+	const { id } = room;
+	const datetimeStart = new Date().toISOString();
+
+	const matchData = {
+		db: {
+			datetimeStart,
+			datetimeEnd: null,
+			tournamentId: null,
+		},
+		scores: [],
+	};
+
+	const matchIndex = ++statistics[id].matchIndex;
+
+	statistics[id].matches[matchIndex] = matchData;
+}
+
+function finishedMatchData(room) {
+	const { id } = room;
+	const {matchIndex, matches} = statistics[id];
+
+	console.log('stats', statistics);
+
+	matches[matchIndex].db.datetimeEnd = new Date().toISOString();
+}
+
+function createScoreData(room, player) {
+	const {tid, index} = player;
+
+	if(index === -1)
+		return;
+
+	const { id, scores } = room;
+	const {scored, received} = scores[index];
+	const time = new Date().toISOString();
+
+	const scoreData = {
+		userId: tid,
+		goalsScored: scored,
+		goalsReceived: received,
+		datetimeLeft: time,
+	};
+
+	const {matchIndex, matches} = statistics[id];
+
+	matches[matchIndex]?.scores?.push(scoreData);
+}
+
+function createScoresForPlayers(room) {
+	const {id, players} = room;
+
+	if(games[id] == null)
+		return;
+
+	players.forEach(id => {
+		const player = data.players[id];
+
+		if (player == null)
+			return;
+
+		createScoreData(room, player);
+	});
 }
 
 function createRoom(player, options) {
@@ -349,6 +433,7 @@ const onTick = tick => {
 };
 
 function endGame(counter, room) {
+	console.log('endGame', counter, room, arguments);
 	if(room.type === 0)
 		endSingleGame(room, counter);
 	else
@@ -357,19 +442,24 @@ function endGame(counter, room) {
 
 async function endSingleGame(room, counter, immediate = false) {
 
+	createScoresForPlayers(room);
+	finishedMatchData(room);
+
 	room.status = 3;
 
 	updateState();
 
-	await storeMatchData(room);
-
-	if(room.counter !== counter || room.players.length < 2)
+	if(room.counter !== counter)
 		return;
+
+	console.log('before wait');
 
 	if(!immediate)
 		await wait(10000);
 
-	if(room.counter !== counter || room.players.length < 2)
+	console.log('after wait');
+
+	if(room.counter !== counter)
 		return;
 
 	endRoom(room);
@@ -380,6 +470,8 @@ async function endSingleGame(room, counter, immediate = false) {
 	resetRoom(room);
 
 	updateState();
+
+	console.log('done');
 }
 
 async function storeMatchData(room) {
@@ -427,6 +519,8 @@ async function storeMatchData(room) {
 async function endTournamentGame(room, counter, leavingPlayerId) {
 	if(room.counter !== counter)
 		return;
+
+	finishedMatchData(room);
 
 	const tournament = data.tournaments[room.id];
 
@@ -520,7 +614,6 @@ async function endTournament(room, tournament, winner, counter) {
 	if(room.counter !== counter)
 		return;
 
-	// TODO: store tournament data
 	await wait(1000);
 
 	if(room.counter !== counter)
@@ -544,6 +637,10 @@ async function endTournament(room, tournament, winner, counter) {
 }
 
 function endRoom(room) {
+
+	// TODO: store statistics
+	console.log('Ending room', JSON.stringify(statistics[room.id], null, 4));
+
 	room.status = 0;
 	room.players.forEach(id => {
 		const player = data.players[id];
@@ -813,8 +910,10 @@ function getCurrentMatch(tournament) {
 
 async function startRoom(room, players, activePlayers, counter) {
 
-	if(room.counter !== counter || room.players.length < 2)
+	if(room.counter !== counter)
 		return;
+
+	createMatchData(room);
 
 	const spectators = players.filter(player => !activePlayers.includes(player));
 
@@ -830,7 +929,7 @@ async function startRoom(room, players, activePlayers, counter) {
 
 	await wait(1000);
 
-	if(room.counter !== counter || room.players.length < 2)
+	if(room.counter !== counter)
 		return;
 
 	game.startGame(io);
@@ -840,7 +939,7 @@ async function startRoom(room, players, activePlayers, counter) {
 
 	await wait(3000);
 
-	if(room.counter !== counter || room.players.length < 2)
+	if(room.counter !== counter)
 		return;
 
 	room.status = 2;
@@ -979,6 +1078,8 @@ io.on('connection', async socket => {
 			return socket.emit('notice', { type: 'error', title: 'Can not start game', message: `Not all players are ready.` });
 
 		room.counter++;
+
+		createStatistic(room);
 
 		if(room.type === 0)
 			startSingleGame(room, players, room.counter);

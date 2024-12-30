@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import ToastPresenter from "../Toast/ToastPresenter";
 import styles from "./Login.module.scss";
 
 
@@ -53,7 +54,7 @@ const Login = ({ changeStatus, userLogin, errorMessage, login_with_42 }) => {
     event.preventDefault();
     const isValid = validateFieldsOnSubmit();
     if (!isValid) return;
-    
+
     const user = createUser();
     userLogin(user, false);
   };
@@ -177,6 +178,7 @@ const Login = ({ changeStatus, userLogin, errorMessage, login_with_42 }) => {
         </div>
       </form>
       {errorMessage && <p className={styles.error}>{errorMessage}</p>}
+      <ToastPresenter />
     </div>
   );
 };

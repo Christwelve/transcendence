@@ -493,7 +493,7 @@ class ServerTick extends Tick {
 				this.sendCollisionToPlayers(io);
 
 				if(this._room.players.length >= 2)
-					endGame(this._room.counter, this._room);
+					endGame(this._room);
 			}
 
 			updateState();

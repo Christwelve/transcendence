@@ -52,7 +52,7 @@ function DataContextProvider(props) {
 		socket.on('state', payload => {
 			const { id, userId, data: incomingData } = payload;
 
-			console.log('payload', id, payload);
+			// console.log('payload', id, payload);
 
 			const data = dataRef.current;
 
