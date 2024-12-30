@@ -474,6 +474,35 @@ async function endSingleGame(room, counter, immediate = false) {
 	console.log('done');
 }
 
+async function saveStatistics(room) {
+	const {id} = room;
+
+	const stats = statistics[id];
+
+	if(stats == null)
+		return;
+
+	delete statistics[id];
+
+	try {
+		const response = await fetch('http://django:8000/api/statistics/', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify(stats),
+		});
+
+		if (!response.ok)
+			throw new Error('Failed to post stats');
+
+		const data = await response.json();
+		console.log('Posted stats:', data);
+	} catch (error) {
+		console.error('Error posting stats:', error);
+	}
+}
+
 async function storeMatchData(room) {
 	const endTime = new Date().toISOString();
 	// TODO: Adjust Tourmanent Id
@@ -520,6 +549,7 @@ async function endTournamentGame(room, counter, leavingPlayerId) {
 	if(room.counter !== counter)
 		return;
 
+	createScoresForPlayers(room);
 	finishedMatchData(room);
 
 	const tournament = data.tournaments[room.id];
@@ -639,6 +669,7 @@ async function endTournament(room, tournament, winner, counter) {
 function endRoom(room) {
 
 	// TODO: store statistics
+	saveStatistics(room);
 	console.log('Ending room', JSON.stringify(statistics[room.id], null, 4));
 
 	room.status = 0;
