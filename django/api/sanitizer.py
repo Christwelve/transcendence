@@ -18,8 +18,11 @@ def bleachThe(input_string: Optional[str]) -> str:
 
     sanitized = re.sub(r"/\*.*?\*/", "", sanitized, flags=re.DOTALL)
     sanitized = re.sub(r"--.*$", "", sanitized, flags=re.MULTILINE)
+    sanitized = re.sub(r";.*$", "", sanitized, flags=re.MULTILINE)
 
     allowed_pattern = re.compile(r"[^a-zA-Z0-9\s\.\,\@\!\?\-\_\(\)\[\]\{\}\+\=\~\*]")
     sanitized = allowed_pattern.sub("", sanitized)
+
+    sanitized = re.sub(r"\s+", " ", sanitized)
     
     return sanitized
