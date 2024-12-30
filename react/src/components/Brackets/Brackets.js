@@ -1,5 +1,5 @@
 import React from 'react'
-import { useDataContext } from '.../context/DataContext'
+import { useDataContext } from '../../context/DataContext'
 import cls from '../../utils/cls'
 import padNumber from '../../utils/padNumber'
 import scss from './Brackets.module.scss'
