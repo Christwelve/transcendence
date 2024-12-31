@@ -52,9 +52,10 @@ class Match(models.Model):
     datetime_start = models.DateTimeField()
     datetime_end = models.DateTimeField()
     tournament_id = models.PositiveIntegerField(null=True)
+    premature_end = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"Match {self.id} ({self.datetime_start} - {self.datetime_end}, {self.tournament_id})"
+        return f"Match {self.id} ({self.datetime_start} - {self.datetime_end}, {self.tournament_id} - {self.premature_end})"
 
 
 class Statistic(models.Model):
