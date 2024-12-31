@@ -4,6 +4,7 @@ import CardSection from '../Card/CardSection'
 import FriendList from '../Friends/FriendList'
 import {showToast} from '../Toast/ToastPresenter'
 import scss from './FriendSearchModal.module.scss'
+import Cookies from 'js-cookie'
 
 function FriendSearchModal(props) {
 	const {data, updateModal, closeModal} = props;
@@ -23,7 +24,11 @@ function FriendSearchModal(props) {
 		}
 
 		try {
-			const response = await fetchWithCredentials(`http://localhost:8000/api/user/search/?query=${searchQuery}`, "GET");
+			const response = await fetchWithCredentials(`http://localhost:8000/api/user/search/?query=${searchQuery}`, "GET", {
+							headers: {
+								'Authorization': `Bearer ${Cookies.get('jwtToken')}`,
+							},
+						});
 			const data = await response.json();
 
 			if (data.detail) {
@@ -45,6 +50,7 @@ function FriendSearchModal(props) {
 			const response = await fetchWithCredentials("http://localhost:8000/api/friend/add/", "POST", {
 				headers: {
 					"Content-Type": "application/json",
+					'Authorization': `Bearer ${Cookies.get('jwtToken')}`,
 				},
 				body: JSON.stringify({ username }),
 			});
