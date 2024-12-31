@@ -22,6 +22,7 @@ reactPort = 3000
 
 def get_scheme(request):
     protocol = 'https:'
+    # protocol = 'http:'
     # protocol = 'https:' if request.is_secure() else 'http:'
     hostname = '10.11.2.25'
     # hostname = request.get_host().split(':')[0]
@@ -100,7 +101,7 @@ def enable_2fa(request):
 # @csrf_exempt
 @api_view(['GET'])
 def login_with_42(request):
-    global djangoPort
+    # global djangoPort
     protocol, hostname = get_scheme(request)
 
     authorization_url = (
@@ -108,7 +109,8 @@ def login_with_42(request):
         f'client_id={settings.OAUTH2_PROVIDER["CLIENT_ID"]}'
         '&response_type=code'
         # '&redirect_uri=http://localhost:8000/api/42/login/callback/'
-        f'&redirect_uri={protocol}//{hostname}:{djangoPort}/api/42/login/callback/'
+        # f'&redirect_uri={protocol}//{hostname}:{djangoPort}/api/42/login/callback/'
+        f'&redirect_uri={protocol}//{hostname}/api/42/login/callback/'
         '&scope=public'
     )
     # logger.debug("Auth_url: %s", authorization_url)
@@ -116,8 +118,8 @@ def login_with_42(request):
 
 @api_view(['GET'])
 def login_with_42_callback(request):
-    global djangoPort
-    global reactPort
+    # global djangoPort
+    # global reactPort
     protocol, hostname = get_scheme(request)
 
     if request.method == 'GET':
@@ -132,7 +134,8 @@ def login_with_42_callback(request):
             'client_secret': settings.OAUTH2_PROVIDER['CLIENT_SECRET'],
             'code': code,
             # 'redirect_uri': 'http://localhost:8000/api/42/login/callback/',
-            'redirect_uri': f"{protocol}//{hostname}:{djangoPort}/api/42/login/callback/",
+            # 'redirect_uri': f"{protocol}//{hostname}:{djangoPort}/api/42/login/callback/",
+            'redirect_uri': f"{protocol}//{hostname}/api/42/login/callback/",
         }
 
         # Post request to get the access token
@@ -184,7 +187,8 @@ def login_with_42_callback(request):
 
         # Construct the full avatar URL
         if user.avatar and user.avatar.url:
-            avatar_url = f"{protocol}//{hostname}:{djangoPort}{user.avatar.url}"
+            avatar_url = f"{protocol}//{hostname}{user.avatar.url}"
+            # avatar_url = f"{protocol}//{hostname}:{djangoPort}{user.avatar.url}"
         elif api_avatar and str(api_avatar).startswith("http"):
             avatar_url = api_avatar
         else:
@@ -203,10 +207,12 @@ def login_with_42_callback(request):
             'token': token.key,
         }
         request.session.modified = True
-        return redirect(f"{protocol}//{hostname}:{reactPort}?logged_in=true")
+        return redirect(f"{protocol}//{hostname}?logged_in=true")
+        # return redirect(f"{protocol}//{hostname}:{reactPort}?logged_in=true")
         # return redirect(f"http://localhost:3000?logged_in=true")
 
-    return redirect(f"{protocol}//{hostname}:{reactPort}?logged_in=false")
+    return redirect(f"{protocol}//{hostname}?logged_in=false")
+    # return redirect(f"{protocol}//{hostname}:{reactPort}?logged_in=false")
     # return redirect(f"http://localhost:3000?logged_in=false")
 
 @api_view(['GET'])
@@ -231,7 +237,7 @@ def validate_token_view(request):
 
 @api_view(['POST'])
 def login_view(request):
-    global djangoPort
+    # global djangoPort
     protocol, hostname = get_scheme(request)
 
     if request.method == 'POST':
@@ -263,7 +269,8 @@ def login_view(request):
             avatar_url = user.avatar.url if user.avatar else None
 
             if avatar_url and not avatar_url.startswith("http"):
-                avatar_url = f"{protocol}//{hostname}:{djangoPort}{avatar_url}"
+                avatar_url = f"{protocol}//{hostname}{avatar_url}"
+                # avatar_url = f"{protocol}//{hostname}:{djangoPort}{avatar_url}"
 
             request.session['user_data'] = {
                 'username': user.username,
@@ -445,7 +452,7 @@ def logout_view(request):
 
 @api_view(['POST'])
 def update_profile(request):
-    global djangoPort
+    # global djangoPort
     protocol, hostname = get_scheme(request)
 
     try:
@@ -493,7 +500,8 @@ def update_profile(request):
         # Construct the full avatar URL
         avatar_url = user.avatar.url if user.avatar else None
         if avatar_url and not avatar_url.startswith("http"):
-            avatar_url = f"{protocol}//{hostname}:{djangoPort}{avatar_url}"
+            # avatar_url = f"{protocol}//{hostname}:{djangoPort}{avatar_url}"
+            avatar_url = f"{protocol}//{hostname}{avatar_url}"
 
         return Response({
             'message': 'User updated successfully!',

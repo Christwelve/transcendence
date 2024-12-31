@@ -3,7 +3,24 @@ networks:
     driver: bridge
 
 services:
+  nginx:
+    container_name: nginx
+    networks:
+      - transcendence
+    image: nginx:latest
+    ports:
+      - "443:443" # HTTPS port
+      - "80:80" # HTTP port
+    volumes:
+      - ${PWD}/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ${PWD}/nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      - react
+      - django
+      - nodejs
+
   nodejs:
+    container_name: nodejs
     networks:
       - transcendence
     build:
@@ -15,10 +32,9 @@ services:
       - ${PWD}/shared:/shared
       - ${PWD}/certs:/certs:ro
       - nodejs_data:/code/nodejs/node_modules
-      # - ./nodejs/node_modules:/code/nodejs/node_modules
-      # - /code/nodejs/node_modul
 
   django:
+    container_name: django
     networks:
       - transcendence
     build:
@@ -34,12 +50,13 @@ services:
       - postgres
 
   react:
+    container_name: react
     networks:
       - transcendence
     build:
       context: ./react
-    ports:
-      - "3000:3000"
+    # ports:
+    #   - "3000:3000"
     volumes:
       - ${PWD}/react:/app
       - ${PWD}/shared:/shared
@@ -51,6 +68,7 @@ services:
       - django
 
   postgres:
+    container_name: postgres
     image: postgres:16.0
     networks:
       - transcendence
@@ -62,6 +80,7 @@ services:
       - .env
 
   pgadmin:
+    container_name: pgadmin
     networks:
       - transcendence
     build:

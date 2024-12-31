@@ -10,26 +10,28 @@ import fs from 'fs';
 
 const app = express();
 
-const options = {
-	key: fs.readFileSync('/code/nodejs/certs/key.pem'),
-	cert: fs.readFileSync('/code/nodejs/certs/cert.pem')
-};
+// const options = {
+// 	key: fs.readFileSync('/code/nodejs/certs/key.pem'),
+// 	cert: fs.readFileSync('/code/nodejs/certs/cert.pem')
+// };
 
-console.log("key: ", options.key);
-console.log("cert: ", options.cert);
+// console.log("key: ", options.key);
+// console.log("cert: ", options.cert);
 
 
 // Create an HTTPS server
-const server = https.createServer(options, app);
+// const server = https.createServer(options, app);
 
-// const server = http.createServer(app);
+// Create an HTTP server
+const server = http.createServer(app);
 
 const io = new WebSocketServer(server, {
 	serveClient: false,
 	cors: {
 		// origin: 'http://localhost:3000',
 		// origin: 'http://10.11.2.25:3000',
-		origin: 'https://10.11.2.25:3000',
+		// origin: 'https://10.11.2.25:3000',
+		origin: 'https://10.11.2.25',
 		methods: ['GET', 'POST'],
 		credentials: true
 	}
@@ -51,7 +53,7 @@ const games = {};
 
 // async function fetchMatches() {
 // 	try {
-// 		const response = await fetch('https://django:8000/api/matches/', {
+// 		const response = await fetch('http://django:8000/api/matches/', {
 // 			method: 'GET',
 // 			headers: {
 // 				'Content-Type': 'application/json',
@@ -71,7 +73,7 @@ const games = {};
 
 // async function fetchStatistics() {
 // 	try {
-// 		const response = await fetch('https://django:8000/api/statistics/', {
+// 		const response = await fetch('http://django:8000/api/statistics/', {
 // 			method: 'GET',
 // 			headers: {
 // 				'Content-Type': 'application/json',
@@ -91,7 +93,7 @@ const games = {};
 
 async function postMatch(matchData) {
 	try {
-		const response = await fetch('https://django:8000/api/matches/', {
+		const response = await fetch('http://django:8000/api/matches/', {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
@@ -114,7 +116,7 @@ async function postMatch(matchData) {
 async function postStatistic(statisticData) {
 	try {
 
-		const response = await fetch('https://django:8000/api/statistics/', {
+		const response = await fetch('http://django:8000/api/statistics/', {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
@@ -138,7 +140,7 @@ async function postStatistic(statisticData) {
 setInterval(sendInstructions.bind(null, io.emit.bind(io, 'instruction')), 0);
 
 server.listen(port, () => {
-	console.log(`Nodejs listening at https://localhost:${port}`);
+	console.log(`Node.js server listening at http://localhost:${port}, proxied through nginx`);
 });
 
 function getPlayerFromSocket(socket) {
@@ -509,7 +511,7 @@ async function initConnection(socket) {
 			'Cookie': cookieHeader
 		},
 	};
-	const response = await fetch('https://django:8000/api/user/validate/', options);
+	const response = await fetch('http://django:8000/api/user/validate/', options);
 
 	if (!response.ok) {
 
@@ -547,7 +549,7 @@ function setPlayerStatus(socket, status) {
 		},
 	};
 
-	fetch(`https://django:8000/api/user/status/?status=${status}`, options);
+	fetch(`http://django:8000/api/user/status/?status=${status}`, options);
 }
 
 io.on('connection', async socket => {

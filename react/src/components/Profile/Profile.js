@@ -18,7 +18,8 @@ const Profile = ({ avatar, setAvatar }) => {
     if (newPassword) formData.append("password", newPassword);
     if (avatarFile) formData.append("avatar", avatarFile);
 
-    fetch(`${protocol}//${hostname}:${djangoPort}/api/user/update/`, {
+    // fetch(`${protocol}//${hostname}:${djangoPort}/api/user/update/`, {
+    fetch(`${protocol}//${hostname}/api/user/update/`, {
       method: "POST",
       credentials: "include",
       body: formData,

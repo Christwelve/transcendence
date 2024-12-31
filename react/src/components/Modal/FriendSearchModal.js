@@ -24,7 +24,8 @@ function FriendSearchModal(props) {
 		}
 
 		try {
-			const response = await fetchWithCredentials(`${protocol}//${hostname}:${djangoPort}/api/user/search/?query=${searchQuery}`, "GET");
+			// const response = await fetchWithCredentials(`${protocol}//${hostname}:${djangoPort}/api/user/search/?query=${searchQuery}`, "GET");
+			const response = await fetchWithCredentials(`${protocol}//${hostname}/api/user/search/?query=${searchQuery}`, "GET");
 			const data = await response.json();
 
 			if (data.detail) {
@@ -46,7 +47,8 @@ function FriendSearchModal(props) {
 		console.log(username);
 
 		try {
-			const response = await fetchWithCredentials(`${protocol}//${hostname}:${djangoPort}/api/friend/add/`, "POST", {
+			// const response = await fetchWithCredentials(`${protocol}//${hostname}:${djangoPort}/api/friend/add/`, "POST", {
+			const response = await fetchWithCredentials(`${protocol}//${hostname}/api/friend/add/`, "POST", {
 				headers: {
 					"Content-Type": "application/json",
 				},

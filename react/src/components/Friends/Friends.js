@@ -35,7 +35,8 @@ function Friends() {
 
 	const removeFriend = async username => {
 		try {
-			const response = await fetchWithCredentials(`${protocol}//${hostname}:${djangoPort}/api/friend/remove/`, "POST", {
+			// const response = await fetchWithCredentials(`${protocol}//${hostname}:${djangoPort}/api/friend/remove/`, "POST", {
+			const response = await fetchWithCredentials(`${protocol}//${hostname}/api/friend/remove/`, "POST", {
 				headers: {
 					"Content-Type": "application/json",
 				},
@@ -86,7 +87,8 @@ function fetchWithCredentials(path, method, extraOptions = {}) {
 
 async function fetchFriends() {
 	try {
-		const response = await fetchWithCredentials(`${protocol}//${hostname}:${djangoPort}/api/friend/`, "GET");
+		// const response = await fetchWithCredentials(`${protocol}//${hostname}:${djangoPort}/api/friend/`, "GET");
+		const response = await fetchWithCredentials(`${protocol}//${hostname}/api/friend/`, "GET");
 		const data = await response.json();
 		return data.friends || [];
 	} catch (error) {

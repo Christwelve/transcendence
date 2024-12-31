@@ -16,7 +16,8 @@ const SettingsWidget = ({ avatar, setAvatar, onClose, twoFactor, setNewUsername 
     const formData = new FormData();
     const has_2fa = !is2FAEnabled;
     formData.append("has_2fa", has_2fa);
-    fetch(`${protocol}//${hostname}:${djangoPort}/api/2fa/enable/`, {
+    // fetch(`${protocol}//${hostname}:${djangoPort}/api/2fa/enable/`, {
+    fetch(`${protocol}//${hostname}/api/2fa/enable/`, {
       method: "POST",
       credentials: "include",
       body: formData,
@@ -40,7 +41,8 @@ const SettingsWidget = ({ avatar, setAvatar, onClose, twoFactor, setNewUsername 
     if (newPassword) formData.append("password", newPassword);
     if (avatarFile) formData.append("avatar", avatarFile);
 
-    fetch(`${protocol}//${hostname}:${djangoPort}/api/user/update/`, {
+    // fetch(`${protocol}//${hostname}:${djangoPort}/api/user/update/`, {
+    fetch(`${protocol}//${hostname}/api/user/update/`, {
       method: "POST",
       credentials: "include",
       body: formData,

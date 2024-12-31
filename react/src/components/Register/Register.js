@@ -74,7 +74,8 @@ const Register = ({ changeStatus }) => {
 
   const addUserToDatabase = async (formData) => {
     try {
-      const response = await fetch(`${protocol}//${hostname}:${djangoPort}/api/users/`, {
+      // const response = await fetch(`${protocol}//${hostname}:${djangoPort}/api/users/`, {
+      const response = await fetch(`${protocol}//${hostname}/api/users/`, {
         method: "POST",
         body: formData,
       });

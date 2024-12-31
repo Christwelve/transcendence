@@ -12,7 +12,8 @@ const Header = ({ changeStatus, avatar, setAvatar, username, setUsername, set2fa
   const [twoFactor, setTwoFactor] = useState(false);
 
   const updateDropdownData = async () => {
-    fetch(`${protocol}//${hostname}:${djangoPort}/api/users/${username}`)
+    // fetch(`${protocol}//${hostname}:${djangoPort}/api/users/${username}`)
+    fetch(`${protocol}//${hostname}/api/users/${username}`)
       .then((response) => response.json())
       .then((data) => {
         if (data.has_2fa) {
@@ -24,7 +25,8 @@ const Header = ({ changeStatus, avatar, setAvatar, username, setUsername, set2fa
   };
 
   const logout = async () => {
-    const response = await fetch(`${protocol}//${hostname}:${djangoPort}/api/logout/`, {
+    // const response = await fetch(`${protocol}//${hostname}:${djangoPort}/api/logout/`, {
+    const response = await fetch(`${protocol}//${hostname}/api/logout/`, {
       method: "POST",
     });
 

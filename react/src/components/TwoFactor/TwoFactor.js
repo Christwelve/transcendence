@@ -24,7 +24,8 @@ const TwoFactor = ({ changeStatus, userLogin, errorMessage, user }) => {
     console.log("User:", user.username);
     const formData = new FormData();
     formData.append("username", user.username);
-    const response = await fetch(`${protocol}//${hostname}:${djangoPort}/api/2fa/generate/`, {
+    // const response = await fetch(`${protocol}//${hostname}:${djangoPort}/api/2fa/generate/`, {
+    const response = await fetch(`${protocol}//${hostname}/api/2fa/generate/`, {
       method: "POST",
       body: formData,
     });

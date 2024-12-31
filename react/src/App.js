@@ -58,7 +58,7 @@ function App() {
 
   const userLogin = async (user, authenticated) => {
     if (authenticated) {
-      const response = await fetch(`${protocol}//${hostname}:${djangoPort}/api/login/`, {
+      const response = await fetch(`${protocol}//${hostname}/api/login/`, {
         method: "POST",
         credentials: 'include',
         body: user,
@@ -81,7 +81,7 @@ function App() {
           if (avatarUrl.startsWith('http')) {
             setAvatar(avatarUrl);
           } else {
-            setAvatar(`${protocol}//${hostname}:${djangoPort}${avatarUrl}`);
+            setAvatar(`${protocol}//${hostname}${avatarUrl}`);
           }
         } else {
           setAvatar(`https://robohash.org/${userData.username}?200x200`);
@@ -96,7 +96,7 @@ function App() {
       }
     } else {
       try {
-        const response = await fetch(`${protocol}//${hostname}:${djangoPort}/api/login/`, {
+        const response = await fetch(`${protocol}//${hostname}/api/login/`, {
           method: "POST",
           credentials: 'include',
           body: user,
@@ -120,7 +120,7 @@ function App() {
             if (avatarUrl.startsWith('http')) {
               setAvatar(avatarUrl);
             } else {
-              setAvatar(`${protocol}//${hostname}:${djangoPort}${avatarUrl}`);
+              setAvatar(`${protocol}//${hostname}${avatarUrl}`);
             }
           } else {
             setAvatar(`https://robohash.org/${userData.username}?200x200`);
@@ -143,12 +143,13 @@ function App() {
 
   const login_with_42 = async () => {
     try {
-      const response = await fetch(`${protocol}//${hostname}:${djangoPort}/api/auth/42/login/`, {
+      const response = await fetch(`${protocol}//${hostname}/api/auth/42/login/`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
         },
       });
+      console.log(`${protocol}//${hostname}/api/auth/42/login/`);
 
       if (!response.ok) {
         console.error("Failed to get authorization URL:", response.statusText);
@@ -168,7 +169,7 @@ function App() {
 
   const fetchUserData = async () => {
     try {
-      const response = await fetch(`${protocol}//${hostname}:${djangoPort}/api/user/data/`, {
+      const response = await fetch(`${protocol}//${hostname}/api/user/data/`, {
         method: "GET",
         credentials: "include", // Include cookies for session-based data
       });
@@ -192,7 +193,7 @@ function App() {
         if (avatarUrl.startsWith('http')) {
           setAvatar(avatarUrl); // Absolute URL, use directly
         } else {
-          setAvatar(`${protocol}//${hostname}:${djangoPort}${avatarUrl}`);
+          setAvatar(`${protocol}//${hostname}${avatarUrl}`);
         }
       } else {
         setAvatar(`https://robohash.org/${user.username}?200x200`);
