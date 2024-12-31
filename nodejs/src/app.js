@@ -484,6 +484,8 @@ async function saveStatistics(room) {
 
 	const stats = statistics[id];
 
+	console.log('stats:', JSON.stringify(stats, null, 4));
+
 	if(stats == null)
 		return;
 
@@ -677,7 +679,6 @@ async function endTournament(room, tournament, winner, counter) {
 function endRoom(room) {
 
 	saveStatistics(room);
-	console.log('Ending room', JSON.stringify(statistics[room.id], null, 4));
 
 	room.status = 0;
 	room.players.forEach(id => {
@@ -1005,6 +1006,9 @@ io.on('connection', async socket => {
 	socket.on('room.create', options => {
 		const player = getPlayerFromSocket(socket);
 
+		if (player == null)
+			return;
+
 		const currentRoom = getRoomFromPlayer(player);
 
 		removePlayerFromRoom(player, currentRoom);
@@ -1076,6 +1080,10 @@ io.on('connection', async socket => {
 
 	socket.on('room.leave', () => {
 		const player = getPlayerFromSocket(socket);
+
+		if (player == null)
+			return;
+
 		const room = getRoomFromPlayer(player);
 
 		if (room == null)
@@ -1091,6 +1099,9 @@ io.on('connection', async socket => {
 	socket.on('player.ready', () => {
 		const player = getPlayerFromSocket(socket);
 
+		if(player == null)
+			return;
+
 		if (player.state !== 1)
 			return;
 		if (player.roomId == null)
@@ -1103,6 +1114,10 @@ io.on('connection', async socket => {
 
 	socket.on('game.start', () => {
 		const player = getPlayerFromSocket(socket);
+
+		if (player == null)
+			return;
+
 		const room = getRoomFromPlayer(player);
 
 		if (room == null)
@@ -1135,6 +1150,10 @@ io.on('connection', async socket => {
 
 	socket.on('game.tick', (tickClient) => {
 		const player = getPlayerFromSocket(socket);
+
+		if (player == null)
+			return;
+
 		const room = getRoomFromPlayer(player);
 
 		if (room == null)
@@ -1158,6 +1177,10 @@ io.on('connection', async socket => {
 
 	socket.on('player.event', event => {
 		const player = getPlayerFromSocket(socket);
+
+		if (player == null)
+			return;
+
 		const room = getRoomFromPlayer(player);
 
 		if (room == null)

@@ -197,14 +197,14 @@ def login_with_42_callback(request):
         }
         request.session.modified = True
 
-        response = HttpResponseRedirect(f"http://localhost:3000?logged_in=true")
+        response = HttpResponseRedirect(f"http://localhost:3000")
 
         response.set_cookie('authToken', token.key)
         response.set_cookie('jwtToken', jwtToken)
 
         return response
 
-    return redirect(f"http://localhost:3000?logged_in=false")
+    return redirect(f"http://localhost:3000")
 
 @api_view(['GET'])
 def get_user_data(request):
@@ -344,8 +344,67 @@ def user_status_view(request):
     return JsonResponse({'success': True}, status=status.HTTP_200_OK)
 
 # TODO: GET
-@api_view(['POST'])
+@api_view(['GET', 'POST'])
 def statistic_view(request):
+    if request.method == 'GET':
+
+        user_id = request.GET.get('userId', None)
+
+        if user_id == None:
+            return Response({'error': 'User ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = get_object_or_404(User, id=user_id)
+
+        statistics = Statistic.objects.filter(user=user).select_related('match__tournament', 'user')
+
+        # Group statistics by match
+        match_stats = {}
+        for stat in statistics:
+            match = stat.match
+            match_id = match.id
+
+            if match_id not in match_stats:
+                match_stats[match_id] = {
+                    'matchId': match_id,
+                    'started': match.datetime_start,
+                    'ended': match.datetime_end,
+                    'prematureEnd': match.premature_end,
+                    'tournamentId': match.tournament.id if match.tournament else None,
+                    'scores': []
+                }
+
+            match_stats[match_id]['scores'].append({
+                'username': user.username,
+                'scored': stat.goals_scored,
+                'received': stat.goals_received
+            })
+
+        # Group matches by tournament
+        result = []
+        tournament_matches = {}
+
+        for match_data in match_stats.values():
+            tournament_id = match_data['tournamentId']
+
+            if tournament_id not in tournament_matches:
+                tournament_matches[tournament_id] = []
+
+            tournament_matches[tournament_id].append({
+                'matchId': match_data['matchId'],
+                'started': match_data['started'],
+                'ended': match_data['ended'],
+                'prematureEnd': match_data['prematureEnd'],
+                'scores': match_data['scores']
+            })
+
+        # Format the result in the desired structure
+        for tournament_id, matches in tournament_matches.items():
+            result.append({
+                'tournamentId': tournament_id,
+                'matches': matches
+            })
+        return JsonResponse(result, status=status.HTTP_200_OK, safe=False)
+
     if request.method == 'POST':
 
         gameType = request.data.get('type', None)
