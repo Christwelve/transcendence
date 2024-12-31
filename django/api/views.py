@@ -201,24 +201,6 @@ def login_with_42_callback(request):
 
 @api_view(['GET'])
 def get_user_data(request):
-    authorization_header = request.headers.get('Authorization')
-     # Check for the 'Authorization' header
-    if not authorization_header:
-        return JsonResponse({'error': 'Authorization header is missing.'}, status=401)
-
-    # Extract the JWT token from the header
-    token = request.headers['Authorization'].split(' ')[1]
-    try:
-        payload = jwt.decode(
-            token,
-            settings.SECRET_KEY,
-            algorithms=['HS256']  # Adjust algorithm as needed
-        )
-    except jwt.ExpiredSignatureError:
-        return JsonResponse({'error': 'Token expired.'}, status=401)
-    except jwt.InvalidTokenError:
-        return JsonResponse({'error': 'Invalid token.', 'token': token}, status=401)
-
     user_data = request.session.get('user_data')
     if not user_data:
         return JsonResponse({'error': 'No user data found', 'session': request.session.get('user_data')}, status=404)

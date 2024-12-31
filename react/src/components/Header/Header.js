@@ -32,6 +32,12 @@ const Header = ({ changeStatus, avatar, setAvatar, username, setUsername, set2fa
       if (authToken) {
         Cookies.remove("authToken");
       }
+
+      const jwtToken = Cookies.get("jwtToken");
+      if (jwtToken) {
+        Cookies.remove("jwtToken");
+      }
+
       Cookies.remove("login");
       const url = new URL(window.location);
       url.searchParams.delete("logged_in");
