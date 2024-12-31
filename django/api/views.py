@@ -7,7 +7,7 @@ from .models import User, Match, Statistic, Friend, Tournament
 from .serializers import UserSerializer, MatchSerializer, StatisticSerializer, FriendSerializer, TournamentSerializer
 from django.contrib.auth.hashers import make_password, check_password
 from django.shortcuts import get_object_or_404, redirect
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseRedirect
 from django.utils.timezone import now
 
 from django.conf import settings
@@ -196,7 +196,13 @@ def login_with_42_callback(request):
             'jwtToken': jwtToken,
         }
         request.session.modified = True
-        return redirect(f"http://localhost:3000?logged_in=true")
+
+        response = HttpResponseRedirect(f"http://localhost:3000?logged_in=true")
+
+        response.set_cookie('authToken', token.key)
+        response.set_cookie('jwtToken', jwtToken)
+
+        return response
 
     return redirect(f"http://localhost:3000?logged_in=false")
 
