@@ -15,7 +15,7 @@ target/
 __pycache__/
 
 # Environments
-.env
+.env*
 .venv
 env/
 venv/
@@ -31,3 +31,6 @@ yarn-error.log
 # OS files
 .DS_Store
 Thumbs.db
+
+# media
+django/media

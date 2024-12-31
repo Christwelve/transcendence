@@ -7,7 +7,7 @@ from .models import User, Match, Statistic, Friend, Tournament
 from .serializers import UserSerializer, MatchSerializer, StatisticSerializer, FriendSerializer, TournamentSerializer
 from django.contrib.auth.hashers import make_password, check_password
 from django.shortcuts import get_object_or_404, redirect
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseRedirect
 from django.utils.timezone import now
 
 from django.conf import settings
@@ -16,6 +16,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 import qrcode
 import io
 import base64
+import json
 import jwt
 from rest_framework.exceptions import PermissionDenied
 
@@ -195,7 +196,13 @@ def login_with_42_callback(request):
             'jwtToken': jwtToken,
         }
         request.session.modified = True
-        return redirect(f"http://localhost:3000?logged_in=true")
+
+        response = HttpResponseRedirect(f"http://localhost:3000?logged_in=true")
+
+        response.set_cookie('authToken', token.key)
+        response.set_cookie('jwtToken', jwtToken)
+
+        return response
 
     return redirect(f"http://localhost:3000?logged_in=false")
 
@@ -336,37 +343,43 @@ def user_status_view(request):
 
     return JsonResponse({'success': True}, status=status.HTTP_200_OK)
 
-@api_view(['GET', 'POST'])
-def match_view(request):
-    if request.method == 'GET':
-        serializer = MatchSerializer(matches, many=True)
-        return Response(serializer.data)
-
-    elif request.method == 'POST':
-        serializer = MatchSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 # TODO: GET
 @api_view(['POST'])
 def statistic_view(request):
     if request.method == 'POST':
 
-        serializer = StatisticSerializer(data=request.data, many=True)
+        gameType = request.data.get('type', None)
+
+        if gameType == None:
+            return Response({'error': 'Type is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        matches = request.data.get('matches', [])
+
+        if gameType == 1:
+            instance = Tournament.objects.create()
+            tournamentId = instance.id
+
+            for matchData in matches:
+                matchData['db']['tournamentId'] = tournamentId
+
+        matchData = [data['db'] for data in matches]
+
+        serializer = MatchSerializer(data=matchData, many=True)
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            instances = serializer.save()
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            for index, instance in enumerate(instances):
+                scores = matches[index]['scores']
+                matchId = instance.id
 
-# TODO: GET
-@api_view(['POST'])
-def tournament_view(request):
-    if request.method == 'POST':
+                for score in scores:
+                    score['matchId'] = matchId
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = TournamentSerializer(data={})
+        scores = [score for matchData in matches for score in matchData['scores']]
+
+        serializer = StatisticSerializer(data=scores, many=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)

@@ -38,9 +38,9 @@ function RoomCreateModal(props) {
 				<CardSection title='Players'>
 					{getPlayerMaxSelect(type, playersMax, updateModal)}
 				</CardSection>
-				<CardSection title='AI'>
+				{/* <CardSection title='AI'>
 					<SegmentedControl labels={['Disabled', 'Enabled']} values={[false, true]} property='ai' selected={ai} onChange={updateModal} />
-				</CardSection>
+				</CardSection> */}
 			</div>
 		</Modal>
 	);

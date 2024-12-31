@@ -71,50 +71,50 @@ const games = {};
 // 	}
 // }
 
-async function postMatch(matchData) {
-	try {
-		const response = await fetch('http://django:8000/api/matches/', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify(matchData),
-		});
+// async function postMatch(matchData) {
+// 	try {
+// 		const response = await fetch('http://django:8000/api/matches/', {
+// 			method: 'POST',
+// 			headers: {
+// 				'Content-Type': 'application/json',
+// 			},
+// 			body: JSON.stringify(matchData),
+// 		});
 
-		if (!response.ok) {
-			throw new Error('Failed to post match data');
-		}
+// 		if (!response.ok) {
+// 			throw new Error('Failed to post match data');
+// 		}
 
-		const data = await response.json();
-		console.log('Posted match data:', data);
-		return data.id;
-	} catch (error) {
-		console.error('Error posting match data:', error);
-	}
-}
+// 		const data = await response.json();
+// 		console.log('Posted match data:', data);
+// 		return data.id;
+// 	} catch (error) {
+// 		console.error('Error posting match data:', error);
+// 	}
+// }
 
-async function postStatistic(statisticData) {
-	try {
+// async function postStatistic(statisticData) {
+// 	try {
 
-		const response = await fetch('http://django:8000/api/statistics/', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify(statisticData),
-		});
+// 		const response = await fetch('http://django:8000/api/statistics/', {
+// 			method: 'POST',
+// 			headers: {
+// 				'Content-Type': 'application/json',
+// 			},
+// 			body: JSON.stringify(statisticData),
+// 		});
 
-		if (!response.ok) {
-			throw new Error('Failed to post statistics');
-		}
+// 		if (!response.ok) {
+// 			throw new Error('Failed to post statistics');
+// 		}
 
-		const data = await response.json();
-		console.log('Posted statistics data:', data);
-		return data;
-	} catch (error) {
-		console.error('Error posting statistics data:', error);
-	}
-}
+// 		const data = await response.json();
+// 		console.log('Posted statistics data:', data);
+// 		return data;
+// 	} catch (error) {
+// 		console.error('Error posting statistics data:', error);
+// 	}
+// }
 
 server.listen(port, () => {
 	console.log(`Nodejs listening at http://localhost:${port}`);
@@ -162,10 +162,10 @@ function removePlayerFromRoom(player, room) {
 	if(games[id] != null)
 		createScoreData(room, player);
 
-	if (type === 1)
-		removeFromTournament(room, player);
-	else
+	if (type === 0)
 		removeFromSingle(room);
+	else
+		removeFromTournament(room);
 
 	player.roomId = null;
 	player.ready = false;
@@ -174,12 +174,31 @@ function removePlayerFromRoom(player, room) {
 	updateState();
 }
 
-function removeFromTournament(room, player) {
+function removeFromSingle(room) {
+	const {id, players} = room;
+
+	if(players.length === 1 && games[id] != null) {
+		endSingleGame(room, room.counter, true);
+
+		room.counter++;
+
+		updateState();
+	}
+
+	if (players.length === 0) {
+
+		delete data.rooms[id];
+
+		updateState();
+	}
+}
+
+function removeFromTournament(room) {
 	if(room.status === 0)
 		return;
 
 	createScoresForPlayers(room);
-	finishedMatchData(room);
+	finishedMatchData(room, true);
 
 	const {id} = room;
 
@@ -198,38 +217,13 @@ function removeFromTournament(room, player) {
 
 }
 
-function removeFromSingle(room) {
-	const {id, players} = room;
-
-	if(players.length === 1 && games[id] != null) {
-		endSingleGame(room, room.counter, true);
-
-		games[id].detach();
-
-		delete games[id];
-
-		endRoom(room);
-		resetRoom(room);
-
-		room.counter++;
-
-		updateState();
-	}
-
-	if (players.length === 0) {
-
-		delete data.rooms[id];
-
-		updateState();
-	}
-}
-
 function createStatistic(room) {
 	const { id, type } = room;
 
 	const data = {
 		type,
 		matchIndex: -1,
+		matchIndexFinished: -1,
 		matches: [],
 	};
 
@@ -245,6 +239,7 @@ function createMatchData(room) {
 			datetimeStart,
 			datetimeEnd: null,
 			tournamentId: null,
+			prematureEnd: false,
 		},
 		scores: [],
 	};
@@ -254,22 +249,34 @@ function createMatchData(room) {
 	statistics[id].matches[matchIndex] = matchData;
 }
 
-function finishedMatchData(room) {
+function finishedMatchData(room, prematureEnd = false) {
 	const { id } = room;
-	const {matchIndex, matches} = statistics[id];
+	const {matchIndex, matchIndexFinished, matches} = statistics[id];
+
+	if(matchIndex === -1 || matchIndexFinished === matchIndex)
+		return;
 
 	console.log('stats', statistics);
 
-	matches[matchIndex].db.datetimeEnd = new Date().toISOString();
+	const match = matches[matchIndex];
+
+	match.db.datetimeEnd = new Date().toISOString();
+	match.db.prematureEnd = prematureEnd;
+	statistics[id].matchIndexFinished = matchIndex;
 }
 
 function createScoreData(room, player) {
+	const { id, scores } = room;
+	const {matchIndex, matchIndexFinished, matches} = statistics[id];
+
+	if(matchIndex === -1 || matchIndexFinished === matchIndex)
+		return;
+
 	const {tid, index} = player;
 
 	if(index === -1)
 		return;
 
-	const { id, scores } = room;
 	const {scored, received} = scores[index];
 	const time = new Date().toISOString();
 
@@ -279,8 +286,6 @@ function createScoreData(room, player) {
 		goalsReceived: received,
 		datetimeLeft: time,
 	};
-
-	const {matchIndex, matches} = statistics[id];
 
 	matches[matchIndex]?.scores?.push(scoreData);
 }
@@ -443,7 +448,7 @@ function endGame(counter, room) {
 async function endSingleGame(room, counter, immediate = false) {
 
 	createScoresForPlayers(room);
-	finishedMatchData(room);
+	finishedMatchData(room, immediate);
 
 	room.status = 3;
 
@@ -474,52 +479,85 @@ async function endSingleGame(room, counter, immediate = false) {
 	console.log('done');
 }
 
-async function storeMatchData(room) {
-	const endTime = new Date().toISOString();
-	// TODO: Adjust Tourmanent Id
-	const matchData = {
-		startTime: room.startTime,
-		endTime: endTime,
-		tournamentId: null
-	};
+async function saveStatistics(room) {
+	const {id} = room;
 
-	console.log('Sending match data:', matchData);
+	const stats = statistics[id];
 
-	const matchId = await postMatch(matchData);
+	if(stats == null)
+		return;
 
-	if (matchId) {
-		// STATISTIC DATA
-		// TODO: handle logged out player (maybe store preliminary stats while game is running)
-		const statisticData = room.activePlayers.reduce((acc, playerId, i) => {
+	delete statistics[id];
 
-			if (playerId == null)
-				return acc;
+	if(stats.matchIndex === -1)
+		return;
 
-			const player = data.players[playerId];
-			const score = room.scores[i];
+	try {
+		const response = await fetch('http://django:8000/api/statistics/', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify(stats),
+		});
 
-			const obj = {
-				userId: player.tid,
-				goalsScored: score.scored,
-				goalsReceived: score.received,
-				datetimeLeft: endTime,
-				matchId
-			};
+		if (!response.ok)
+			throw new Error('Failed to post stats');
 
-			return [...acc, obj];
-		}, []);
-
-		console.log('Sending statistic data:', statisticData);
-		await postStatistic(statisticData, matchId);
-	} else {
-		console.error('Match ID is undefined, cannot post statistics.');
+		const data = await response.json();
+		console.log('Posted stats:', data);
+	} catch (error) {
+		console.error('Error posting stats:', error);
 	}
 }
+
+// async function storeMatchData(room) {
+// 	const endTime = new Date().toISOString();
+// 	// TODO: Adjust Tourmanent Id
+// 	const matchData = {
+// 		startTime: room.startTime,
+// 		endTime: endTime,
+// 		tournamentId: null
+// 	};
+
+// 	console.log('Sending match data:', matchData);
+
+// 	const matchId = await postMatch(matchData);
+
+// 	if (matchId) {
+// 		// STATISTIC DATA
+// 		// TODO: handle logged out player (maybe store preliminary stats while game is running)
+// 		const statisticData = room.activePlayers.reduce((acc, playerId, i) => {
+
+// 			if (playerId == null)
+// 				return acc;
+
+// 			const player = data.players[playerId];
+// 			const score = room.scores[i];
+
+// 			const obj = {
+// 				userId: player.tid,
+// 				goalsScored: score.scored,
+// 				goalsReceived: score.received,
+// 				datetimeLeft: endTime,
+// 				matchId
+// 			};
+
+// 			return [...acc, obj];
+// 		}, []);
+
+// 		console.log('Sending statistic data:', statisticData);
+// 		await postStatistic(statisticData, matchId);
+// 	} else {
+// 		console.error('Match ID is undefined, cannot post statistics.');
+// 	}
+// }
 
 async function endTournamentGame(room, counter, leavingPlayerId) {
 	if(room.counter !== counter)
 		return;
 
+	createScoresForPlayers(room);
 	finishedMatchData(room);
 
 	const tournament = data.tournaments[room.id];
@@ -638,7 +676,7 @@ async function endTournament(room, tournament, winner, counter) {
 
 function endRoom(room) {
 
-	// TODO: store statistics
+	saveStatistics(room);
 	console.log('Ending room', JSON.stringify(statistics[room.id], null, 4));
 
 	room.status = 0;
@@ -746,40 +784,45 @@ function createPlayer(id, tid, username) {
 }
 
 async function initConnection(socket) {
-	const { cookie: cookieHeader } = socket.handshake.headers
-	const cookies = cookie.parse(cookieHeader);
+	try {
+		const { cookie: cookieHeader } = socket.handshake.headers
+		const cookies = cookie.parse(cookieHeader);
 
-	const options = {
-		method: 'GET',
-		headers: {
-			'Authorization': `Token ${cookies.authToken}`,
-			'Content-Type': 'application/json',
-			'Cookie': cookieHeader
-		},
-	};
-	const response = await fetch('http://django:8000/api/user/validate/', options);
+		const options = {
+			method: 'GET',
+			headers: {
+				'Authorization': `Token ${cookies.authToken}`,
+				'Content-Type': 'application/json',
+				'Cookie': cookieHeader
+			},
+		};
+		const response = await fetch('http://django:8000/api/user/validate/', options);
 
-	if (!response.ok) {
+		if (!response.ok) {
 
-		const body = await response.json();
+			const body = await response.json();
 
-		console.log('verify failed', body);
+			console.log('verify failed', body);
 
-		return socket.disconnect(true);
+			throw new Error('Failed to verify user');
+		}
 
+		const { tid, username } = await response.json();
+
+		const player = createPlayer(socket.id, tid, username);
+
+		data.players[player.id] = player;
+
+		setPlayerStatus(socket, true);
+
+		updateState();
+
+		return player;
+	} catch (error) {
+		console.error('Failed to verify user:', error);
 	}
 
-	const { tid, username } = await response.json();
-
-	const player = createPlayer(socket.id, tid, username);
-
-	data.players[player.id] = player;
-
-	setPlayerStatus(socket, true);
-
-	updateState();
-
-	return player;
+	return null;
 }
 
 function setPlayerStatus(socket, status) {
@@ -952,6 +995,9 @@ io.on('connection', async socket => {
 
 	socket.on('initial', async () => {
 		const player = await initConnection(socket);
+
+		if (player == null)
+			return;
 
 		socket.emit('state', { id: ++stateId, userId: player.id, data });
 	});
