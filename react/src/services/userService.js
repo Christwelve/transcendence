@@ -6,6 +6,9 @@ export const fetchUserData = async () => {
   const response = await fetch(`${API_BASE_URL}/user/data/`, {
     method: "GET",
     credentials: "include", // Include cookies for session-based data
+    headers: {
+      'Authorization': `Bearer ${Cookies.get('jwtToken')}`,
+    },
   });
 
   if (!response.ok) {
@@ -13,14 +16,14 @@ export const fetchUserData = async () => {
     try {
       const errorData = await response.json();
       if (errorData.error) {
-        errMsg = errorData.error; 
+        errMsg = errorData.error;
       }
     } catch (parseError) {
       console.error("Failed to parse error JSON:", parseError);
     }
 
     const err = new Error(errMsg);
-    err.status = response.status; 
+    err.status = response.status;
     throw err;
   }
 
@@ -28,6 +31,11 @@ export const fetchUserData = async () => {
   const authToken = Cookies.get('authToken');
   if (!authToken && user.token) {
     Cookies.set('authToken', user.token);
+  }
+
+  const jwtToken = Cookies.get('jwtToken');
+  if (!jwtToken && user.jwtToken) {
+    Cookies.set('jwtToken', user.jwtToken);
   }
 
   return user;
@@ -73,7 +81,7 @@ export const userLogin = async (user, authenticated) => {
 
       if (response.status === 400 || response.status === 404) {
         throw new Error("Wrong credentials!");
-      } 
+      }
       else if (response.status === 401) {
         // This is the scenario where the backend might request 2FA
         // In the original code we were settting userStatus("2fa")
@@ -83,7 +91,7 @@ export const userLogin = async (user, authenticated) => {
       else if (response.status === 200) {
         const userData = await response.json();
         return userData;
-      } 
+      }
       else {
         throw new Error("An unexpected error occurred");
       }

@@ -1,5 +1,6 @@
 import React, {useState} from 'react'
 import styles from './Profile.module.scss'
+import Cookies from 'js-cookie'
 
 const SettingsWidget = ({ avatar, setAvatar, onClose, twoFactor, setNewUsername}) => {
   const [username, setUsername] = useState("");
@@ -41,6 +42,9 @@ const SettingsWidget = ({ avatar, setAvatar, onClose, twoFactor, setNewUsername}
     fetch("http://localhost:8000/api/user/update/", {
       method: "POST",
       credentials: "include",
+      headers: {
+        'Authorization': `Bearer ${Cookies.get('jwtToken')}`,
+      },
       body: formData,
     })
       .then(async (response) => {
@@ -61,7 +65,8 @@ const SettingsWidget = ({ avatar, setAvatar, onClose, twoFactor, setNewUsername}
       .then((data) => {
         if (data.message) {
           alert(data.message);
-          setNewUsername(username);
+          if (username.length > 0)
+            setNewUsername(username);
           if (data.avatar) {
             setAvatar(data.avatar);
             setAvatarPreview(data.avatar);
@@ -103,7 +108,7 @@ const SettingsWidget = ({ avatar, setAvatar, onClose, twoFactor, setNewUsername}
           />
           <span className={styles.fileName}>{fileName}</span>
         </div>
-        <div className={styles.formGroup}>
+        {Cookies.get('login') === 'manual' && <div className={styles.formGroup}>
           <label>Username</label>
           <input
             type="text"
@@ -111,7 +116,7 @@ const SettingsWidget = ({ avatar, setAvatar, onClose, twoFactor, setNewUsername}
             onChange={(e) => setUsername(e.target.value)}
             placeholder="Enter new username"
           />
-        </div>
+        </div>}
         <div className={styles.formGroup}>
           <label>Email</label>
           <input
