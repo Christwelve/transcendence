@@ -285,9 +285,31 @@ function createScoreData(room, player) {
 		goalsScored: scored,
 		goalsReceived: received,
 		datetimeLeft: time,
+		won: false
 	};
 
 	matches[matchIndex]?.scores?.push(scoreData);
+}
+
+function setWinnerData(room, player) {
+
+	if(player == null)
+		return;
+
+	const { id } = room;
+	const {matchIndex, matches} = statistics[id];
+
+	const {scores} = matches[matchIndex] ?? {};
+
+	if(scores == null)
+		return;
+
+	const score = scores.find(score => score.userId === player.tid);
+
+	if(score == null)
+		return;
+
+	score.won = true;
 }
 
 function createScoresForPlayers(room) {
@@ -450,6 +472,16 @@ async function endSingleGame(room, counter, immediate = false) {
 	createScoresForPlayers(room);
 	finishedMatchData(room, immediate);
 
+	const highestScore = room.scores.reduce((acc, score) => Math.max(acc, score.scored), 0);
+
+	const winners = room.activePlayers.filter((playerId, i) => room.scores[i].scored === highestScore);
+
+	if(!immediate) {
+		winners.forEach(playerId => {
+			setWinnerData(room, data.players[playerId]);
+		});
+	}
+
 	room.status = 3;
 
 	updateState();
@@ -578,6 +610,8 @@ async function endTournamentGame(room, counter, leavingPlayerId) {
 	transferScores(room, match);
 
 	const winner = getWinnerForMatch(match, leavingPlayerId);
+
+	setWinnerData(room, data.players[winner]);
 
 	match.winner = winner;
 
