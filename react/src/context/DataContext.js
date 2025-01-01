@@ -52,8 +52,6 @@ function DataContextProvider(props) {
 		socket.on('state', payload => {
 			const { id, userId, data: incomingData } = payload;
 
-			// console.log('payload', id, payload);
-
 			const data = dataRef.current;
 
 			if (id <= data.lastId)
@@ -62,14 +60,34 @@ function DataContextProvider(props) {
 			const newData = { ...data, lastId: id, userId: data.userId || userId, ...incomingData };
 
 			setData(newData);
+
+			enterInitialRoom(socket, newData);
 		});
 
 		socket.on('instruction', instructions => setData(instructions));
 
 		socket.on('notice', showToast);
 
+		socket.on('pushstate', roomId => {
+			window.history.pushState({ room: roomId }, '', roomId == null ? '/' : `/room/${roomId}`);
+		})
+
+		const onPopState = event => {
+			const {state} = event;
+
+			const room = state?.room;
+
+			if(room == null)
+				return socket.emit('room.leave');
+
+			enterInitialRoom(socket, dataRef.current);
+		};
+
+		window.addEventListener('popstate', onPopState);
+
 		return () => {
-			socket.disconnect();
+			socket.disconnect(true);
+			window.removeEventListener('popstate', onPopState);
 		};
 
 	}, []);
@@ -101,6 +119,27 @@ function DataContextProvider(props) {
 		</DataContext.Provider>
 	);
 };
+
+// helper functions
+function enterInitialRoom(socket, data) {
+	const [_, room, id] = window.location.pathname.split('/');
+
+	if(room !== 'room' || id == null)
+		return;
+
+	if(data.userId == null)
+		return;
+
+	const player = data.players[data.userId];
+
+	if(player == null)
+		return;
+
+	if(player.roomId === id)
+		return;
+
+	socket.emit('room.join', id);
+}
 
 // api functions
 function getStateId(data) {
@@ -153,16 +192,16 @@ function createRoom(send, options) {
 	send('room.create', options);
 }
 
-function joinRoom(send, roomId) {
-	send('room.join', { id: roomId });
+function joinRoom(send, roomId, record = false) {
+	send('room.join', roomId, record);
 }
 
 function quickJoinRoom(send) {
 	send('room.join.quick');
 }
 
-function leaveRoom(send) {
-	send('room.leave');
+function leaveRoom(send, record = false) {
+	send('room.leave', record);
 }
 
 function toggleReady(send) {

@@ -1016,16 +1016,19 @@ io.on('connection', async socket => {
 		player.roomId = room.id;
 
 		updateState();
+
+		socket.emit('pushstate', room.id);
 	});
 
-	socket.on('room.join', options => {
-		const { id } = options;
+	socket.on('room.join', (id, record) => {
 		const player = getPlayerFromSocket(socket);
 
 		if (player == null)
 			return;
 
 		const room = data.rooms[id];
+
+		console.log('room', room);
 
 		if (room == null)
 			return socket.emit('notice', { type: 'error', title: 'Can not join room', message: `Room with id ${id} does not exist.` });
@@ -1050,6 +1053,9 @@ io.on('connection', async socket => {
 		room.players.push(player.id);
 
 		updateState();
+
+		if(record)
+			socket.emit('pushstate', room.id);
 	});
 
 	socket.on('room.join.quick', () => {
@@ -1072,9 +1078,11 @@ io.on('connection', async socket => {
 		room.players.push(player.id);
 
 		updateState();
+
+		socket.emit('pushstate', room.id);
 	});
 
-	socket.on('room.leave', () => {
+	socket.on('room.leave', record => {
 		const player = getPlayerFromSocket(socket);
 		const room = getRoomFromPlayer(player);
 
@@ -1086,6 +1094,9 @@ io.on('connection', async socket => {
 		player.state = 0;
 
 		updateState();
+
+		if(record)
+			socket.emit('pushstate', null);
 	});
 
 	socket.on('player.ready', () => {
@@ -1124,6 +1135,9 @@ io.on('connection', async socket => {
 			return socket.emit('notice', { type: 'error', title: 'Can not start game', message: `Not all players are ready.` });
 
 		room.counter++;
+		room.status = 1;
+
+		updateState();
 
 		createStatistic(room);
 

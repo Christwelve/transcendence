@@ -62,7 +62,7 @@ function Room() {
 			</CardSection>
 			<CardSection title='Controls'>
 				<div className={scss.controls}>
-					<div className={scss.leave} title='Leave Room' onClick={leaveRoom}>
+					<div className={scss.leave} title='Leave Room' onClick={leaveRoom.bind(null, true)}>
 						<Icon type='chevron_left' size='18' />
 					</div>
 					{isMaster ? startButton : readyButton}

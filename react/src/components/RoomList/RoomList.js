@@ -64,7 +64,7 @@ function RoomList() {
 				{
 					rooms.length === 0 ?
 						<div className={scss.empty}>No available rooms.</div> :
-						rooms.map(room => <RoomListItem key={room.id} {...room} selected={player.roomId === room.id} onClick={joinRoom.bind(null, room.id)} />)
+						rooms.map(room => <RoomListItem key={room.id} {...room} selected={player.roomId === room.id} onClick={joinRoom.bind(null, room.id, true)} />)
 				}
 			</CardSection>
 		</Card>
