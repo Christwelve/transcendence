@@ -33,4 +33,9 @@ yarn-error.log
 Thumbs.db
 
 django/media/avatars/*
-django/api/migrations/*.py
+
+*/migrations/*.py
+*/migrations/*.pyc
+
+!*/migrations/__init__.py
+
