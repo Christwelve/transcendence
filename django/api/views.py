@@ -374,9 +374,11 @@ def statistic_view(request):
                 }
 
             match_stats[match_id]['scores'].append({
-                'username': user.username,
+                'username': stat.user.username,
                 'scored': stat.goals_scored,
-                'received': stat.goals_received
+                'received': stat.goals_received,
+                'left': stat.datetime_left,
+                # 'won': stat.won,
             })
 
         # Group matches by tournament
