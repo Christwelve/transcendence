@@ -4,9 +4,12 @@ import cookie from 'cookie'
 import { Server as WebSocketServer } from 'socket.io'
 import { createProxy, sendInstructions } from './proxy.js'
 import { ServerTick } from 'shared/tick'
+import dotenv from 'dotenv';
 
 import * as https from 'https';
 import fs from 'fs';
+
+dotenv.config();
 
 const app = express();
 
@@ -25,13 +28,16 @@ const app = express();
 // Create an HTTP server
 const server = http.createServer(app);
 
+const serverIp = process.env.SERVER_IP || 'localhost';
+
 const io = new WebSocketServer(server, {
 	serveClient: false,
 	cors: {
 		// origin: 'http://localhost:3000',
 		// origin: 'http://10.11.2.25:3000',
 		// origin: 'https://10.11.2.25:3000',
-		origin: 'https://10.11.2.25',
+		origin: `https://${serverIp}`,
+		// origin: 'https://10.11.2.25',
 		methods: ['GET', 'POST'],
 		credentials: true
 	}
@@ -140,7 +146,8 @@ async function postStatistic(statisticData) {
 setInterval(sendInstructions.bind(null, io.emit.bind(io, 'instruction')), 0);
 
 server.listen(port, () => {
-	console.log(`Node.js server listening at http://localhost:${port}, proxied through nginx`);
+	console.log(`Node.js server listening at http://${serverIp}:${port}, proxied through nginx`);
+	// console.log(`Node.js server listening at http://localhost:${port}, proxied through nginx`);
 });
 
 function getPlayerFromSocket(socket) {

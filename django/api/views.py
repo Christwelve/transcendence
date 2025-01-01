@@ -15,6 +15,7 @@ from django_otp.plugins.otp_totp.models import TOTPDevice
 import qrcode
 import io
 import base64
+from django.conf import settings
 
 
 djangoPort = 8000
@@ -24,7 +25,8 @@ def get_scheme(request):
     protocol = 'https:'
     # protocol = 'http:'
     # protocol = 'https:' if request.is_secure() else 'http:'
-    hostname = '10.11.2.25'
+    # hostname = '10.11.2.25'
+    hostname = settings.SERVER_IP
     # hostname = request.get_host().split(':')[0]
 
     return (protocol, hostname)

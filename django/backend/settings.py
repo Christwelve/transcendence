@@ -24,6 +24,8 @@ MEDIA_URL = '/media/'
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
+load_dotenv()
+SERVER_IP = os.getenv('SERVER_IP', 'localhost')
 if os.getenv("USE_HTTPS", "False") == "True":
     SECURE_SSL_REDIRECT = True
     CSRF_COOKIE_SECURE = True
@@ -36,7 +38,7 @@ SECRET_KEY = 'django-insecure-hm&9x%9_a1pt==vdw_&dy+0y)_pct&*1&rxc3c%yif2m$4o!zr
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['django', 'localhost', '127.0.0.1', '10.11.2.25']
+ALLOWED_HOSTS = ['django', 'localhost', '127.0.0.1', '10.11.2.25', SERVER_IP]
 
 # Application definition
 
@@ -87,7 +89,8 @@ CORS_ORIGIN_WHITELIST = [
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:4000",
-    "http://10.11.2.25:3000"
+    "http://10.11.2.25:3000",
+    f"http://{SERVER_IP}:3000"
 ]
 
 # Optional: Allow credentials (e.g., cookies, sessions)
