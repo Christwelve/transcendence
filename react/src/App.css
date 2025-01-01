@@ -7,6 +7,7 @@
 
 	--color-primary-rgb: 0, 255, 246;
 	--color-primary: rgb(var(--color-primary-rgb));
+	--color-primary-trans: rgba(0, 255, 246, 0.5);
 
 	--color-white: #fff;
 	--color-white-trans: rgba(255, 255, 255, 0.5);
