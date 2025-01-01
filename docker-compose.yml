@@ -54,7 +54,10 @@ services:
     networks:
       - transcendence
     build:
-      context: ./react
+      context: .
+      dockerfile: ./react/Dockerfile
+    # build:
+    #   context: ./react
     # ports:
     #   - "3000:3000"
     volumes:
