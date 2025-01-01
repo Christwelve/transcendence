@@ -25,8 +25,8 @@ services:
       - transcendence
     build:
       context: ./nodejs
-    ports:
-      - "4000:4000"
+    # ports:
+    #   - "4000:4000"
     volumes:
       - ${PWD}/nodejs:/code/nodejs
       - ${PWD}/shared:/shared

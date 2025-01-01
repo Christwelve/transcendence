@@ -1,15 +1,9 @@
 import React, { createContext, useContext, useState, useReducer, useEffect, useRef } from 'react'
 import io from 'socket.io-client'
 import { showToast } from '../Toast/ToastPresenter'
-import { protocol, hostname, nodePort } from '../../utils/scheme'
-// import Cookies from 'js-cookie'
+import { hostname } from '../../utils/scheme'
 
-const SOCKET_SERVER_URL = `wss://${hostname}/ws/`;
-console.log("SOCKET URL: ", SOCKET_SERVER_URL);
-// const SOCKET_SERVER_URL = `wss://${hostname}:${nodePort}`;
-// const SOCKET_SERVER_URL = `${protocol}://${hostname}:${nodePort}`;
-// const SOCKET_SERVER_URL = `http://${hostname}:${nodePort}`;
-// const SOCKET_SERVER_URL = `${protocol}//${hostname}:${nodePort}`;
+console.log("REACT_APP_SOCKET_SERVER_URL: ", process.env.REACT_APP_SOCKET_SERVER_URL);
 
 
 const DataContext = createContext();
@@ -40,7 +34,9 @@ function DataContextProvider(props) {
 	dataRef.current = data;
 
 	useEffect(() => {
-		const socket = io(SOCKET_SERVER_URL, { withCredentials: true });
+		const socket = io(process.env.REACT_APP_SOCKET_SERVER_URL, {
+			withCredentials: true,
+		});
 
 		socketRef.current = socket;
 
