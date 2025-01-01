@@ -8,6 +8,7 @@ export const UserProvider = ({ children }) => {
   const [avatar, setAvatar] = useState(null);
   const [user, setUser] = useState(null);
   const [username, setUsername] = useState("");
+  const [loading, setLoading] = useState(true);
 
   const value = {
     userStatus,
@@ -20,6 +21,8 @@ export const UserProvider = ({ children }) => {
     setUser,
     username,
     setUsername,
+    loading,
+    setLoading,
   };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

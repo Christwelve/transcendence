@@ -29,6 +29,8 @@ const AppContent= () => {
     setUser,
     username,
     setUsername,
+    loading,
+    setLoading,
   } = useUserContext();
 
   useEffect(() => {
@@ -44,6 +46,8 @@ const AppContent= () => {
   useEffect(() => {
     if (Cookies.get('login')) {
       fetchUserData(); // Call the function to fetch user data
+    } else {
+      setLoading(false);
     }
   }, []);
 
@@ -153,8 +157,14 @@ const AppContent= () => {
       } else {
         setErrorMessage(error.message || "An unexpected error occurred");
       }
+    } finally {
+      setLoading(false); // Stop loading
     }
   };
+
+  if (loading) {
+    return <div className="loading-screen">Loading...</div>; // Replace with a spinner or skeleton screen
+  }
 
   return (
     <>
