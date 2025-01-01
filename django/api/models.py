@@ -73,6 +73,7 @@ class Statistic(models.Model):
     goals_scored = models.PositiveSmallIntegerField(default=0)
     goals_received = models.PositiveSmallIntegerField(default=0)
     datetime_left = models.DateTimeField()
+    won = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Statistic {self.id}: Match {self.match}, User {self.user_id}"

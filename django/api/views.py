@@ -343,7 +343,6 @@ def user_status_view(request):
 
     return JsonResponse({'success': True}, status=status.HTTP_200_OK)
 
-# TODO: GET
 @api_view(['GET', 'POST'])
 def statistic_view(request):
     if request.method == 'GET':
@@ -376,7 +375,9 @@ def statistic_view(request):
             match_stats[match_id]['scores'].append({
                 'username': user.username,
                 'scored': stat.goals_scored,
-                'received': stat.goals_received
+                'received': stat.goals_received,
+                'datetimeLeft': stat.datetime_left,
+                'won': stat.won
             })
 
         # Group matches by tournament
@@ -436,7 +437,14 @@ def statistic_view(request):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        scores = [score for matchData in matches for score in matchData['scores']]
+        scores = [
+            {
+                **score,
+                'datetimeLeft': score.get('datetimeLeft'),
+                'won': score.get('won', False)
+            }
+            for matchData in matches for score in matchData['scores']
+        ]
 
         serializer = StatisticSerializer(data=scores, many=True)
         if serializer.is_valid():

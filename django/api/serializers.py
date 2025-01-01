@@ -37,10 +37,11 @@ class StatisticSerializer(serializers.ModelSerializer):
     goalsScored = serializers.IntegerField(source='goals_scored', min_value=0)
     goalsReceived = serializers.IntegerField(source='goals_received', min_value=0)
     datetimeLeft = serializers.DateTimeField(source='datetime_left')
+    won = serializers.BooleanField(default=False)
 
     class Meta:
         model = Statistic
-        fields = ['id', 'goalsScored', 'goalsReceived', 'datetimeLeft', 'matchId', 'userId']
+        fields = ['id', 'goalsScored', 'goalsReceived', 'datetimeLeft', 'won', 'matchId', 'userId']
 
     def create(self, validated_data):
         # Handle match and user relationships
