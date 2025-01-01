@@ -39,8 +39,8 @@ services:
       - transcendence
     build:
       context: ./django
-    ports:
-      - "8000:8000"
+    # ports:
+    #   - "8000:8000"
     volumes:
       - ${PWD}/django:/app
       - ${PWD}/django/certs:/certs:ro

@@ -34,4 +34,3 @@ Thumbs.db
 
 # Certificates
 *.pem
-django/old_certs
