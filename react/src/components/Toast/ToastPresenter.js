@@ -9,6 +9,11 @@ let showToast = null;
 
 function ToastPresenter() {
 
+	const [update, setUpdate] = useState(0);
+	const updateRef = useRef(null);
+
+	updateRef.current = update;
+
 	showToast = options => {
 		const {type, title, message} = options;
 
@@ -27,8 +32,11 @@ function ToastPresenter() {
 		toasts.splice(5);
 		toasts.push(toast);
 
+		setUpdate(updateRef.current + 1);
+
 		setTimeout(() => {
 			toasts = toasts.filter(t => t !== toast);
+			setUpdate(updateRef.current + 1);
 		}, 3000);
 	};
 

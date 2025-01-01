@@ -356,8 +356,16 @@ function Game(props) {
 
 	const { getPlayer, getPlayerById, getRoom } = useDataContext();
 
-	const player = getPlayer();
-	const room = getRoom(player.roomId);
+	useEffect(() => {
+
+		window.addEventListener('keydown', onKeyAction);
+		window.addEventListener('keyup', onKeyAction);
+
+		return () => {
+			window.removeEventListener('keydown', onKeyAction);
+			window.removeEventListener('keyup', onKeyAction);
+		};
+	}, []);
 
 	const paddleRefs = [
 		useRef(null),
@@ -371,11 +379,19 @@ function Game(props) {
 
 	const timeRef = useRef(null);
 
+	const player = getPlayer();
+	const room = getRoom(player?.roomId);
+
+	if(room == null)
+		return null;
+
 	const scorerIndex = goalScored ? goalScored.scorer : null;
-	const scorerName = goalScored ? getPlayerById(room.activePlayers[scorerIndex])?.name : null;
+	const scorer = getPlayerById((room?.activePlayers ?? [])[scorerIndex]);
+	const scorerName = goalScored ? scorer?.name : null;
 	const scorerColorClass = scss[`c${scorerIndex + 1}`];
 	const targetIndex = goalScored ? goalScored.target : null;
-	const targetName = goalScored ? getPlayerById(room.activePlayers[targetIndex])?.name : null;
+	const target = getPlayerById((room?.activePlayers ?? [])[targetIndex]);
+	const targetName = goalScored ? target?.name : null;
 	const targetColorClass = scss[`c${targetIndex + 1}`];
 
 	const messageFumbled = (
@@ -396,17 +412,6 @@ function Game(props) {
 	const cuboids = getCuboids(room.activePlayers, paddleRefs, ballRef);
 
 	const scores = getScoreDisplay(room, getPlayerById, !!winners);
-
-	useEffect(() => {
-
-		window.addEventListener('keydown', onKeyAction);
-		window.addEventListener('keyup', onKeyAction);
-
-		return () => {
-			window.removeEventListener('keydown', onKeyAction);
-			window.removeEventListener('keyup', onKeyAction);
-		};
-	}, []);
 
 	return (
 		<div className={scss.wrapper}>
