@@ -12,6 +12,8 @@ const Register = ({ changeStatus }) => {
   const [usernameError, setUsernameError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [avatarError, setAvatarError] = useState("");
+  const [usernameValid, setUsernameValid] = useState(false);
+  const [passwordValid, setPasswordValid] = useState(false);
 
   const _onEmailChange = (event) => {
     setEmail(event.target.value);
@@ -19,8 +21,22 @@ const Register = ({ changeStatus }) => {
   };
 
   const _onUsernameChange = (event) => {
-    setUsername(event.target.value);
-    setUsernameError("");
+    const value = event.target.value;
+    setUsername(value);
+
+    const regex = /^[a-zA-Z0-9_\-]+$/;
+    if (value === "") {
+      setUsernameError("Username is required.");
+      setUsernameValid(false);
+    } else if (!regex.test(value)) {
+      setUsernameError(
+        "Username can only contain letters, numbers, underscores, and hyphens."
+      );
+      setUsernameValid(false);
+    } else {
+      setUsernameError("");
+      setUsernameValid(true);
+    }
   };
 
   const _onPasswordChange = (event) => {
@@ -30,12 +46,15 @@ const Register = ({ changeStatus }) => {
     const regex = /^(?=.*[a-zA-Z])(?=.*\d)[A-Za-z\d]{8,20}$/;
     if (value === "") {
       setPasswordError("Password is required.");
+      setPasswordValid(false);
     } else if (!regex.test(value)) {
       setPasswordError(
         "Your password must be 8-20 characters long, contain letters and numbers, and must not contain spaces, special characters, or emoji."
       );
+      setPasswordValid(false);
     } else {
       setPasswordError("");
+      setPasswordValid(true);
     }
   };
 
@@ -67,6 +86,10 @@ const Register = ({ changeStatus }) => {
 
     if (!username) {
       setUsernameError("Username is required.");
+      valid = false;
+    }
+
+    if (!usernameValid || !passwordValid) {
       valid = false;
     }
 
