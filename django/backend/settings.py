@@ -38,7 +38,7 @@ if os.getenv("USE_HTTPS", "False") == "True":
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['django', 'localhost', '127.0.0.1', '10.11.2.25', SERVER_IP]
 
