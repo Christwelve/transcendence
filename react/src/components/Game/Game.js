@@ -178,8 +178,9 @@ function TickHandler(props) {
 
 	useListener('ball.collision', (tickServer, verifiedBallData) => {
 		const tick = tickRef.current;
+		const room = roomRef.current;
 
-		tick.reconcileBall(tickServer, verifiedBallData);
+		tick.reconcileBall(tickServer, room, verifiedBallData);
 	});
 
 	useListener('round.start', (countdown, direction) => {
