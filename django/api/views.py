@@ -3,6 +3,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.authtoken.models import Token
+from rest_framework.exceptions import AuthenticationFailed
 from .models import User, Match, Statistic, Friend, Tournament
 from .serializers import UserSerializer, MatchSerializer, StatisticSerializer, FriendSerializer, TournamentSerializer
 from django.contrib.auth.hashers import make_password, check_password
