@@ -125,37 +125,15 @@ def enable_2fa(request):
 
 
 @api_view(['GET'])
-@throttle_classes([AnonRateThrottle])
-def login_with_42(request): # request is unused here?
-    try:
-        client_id = settings.OAUTH2_PROVIDER.get("CLIENT_ID")
-        redirect_uri = 'http://localhost:8000/api/42/login/callback/'
-
-        if not client_id:
-            logger.error("Missing CLIENT_ID in settings.")
-            return JsonResponse(
-                {'error': 'Internal server error. Missing configuration.'},
-                status=500
-            )
-
-        authorization_url = (
-            'https://api.intra.42.fr/oauth/authorize?'
-            f'client_id={client_id}'
-            '&response_type=code'
-            f'&redirect_uri={redirect_uri}'
-            '&scope=public'
-        )
-
-        logger.info("Authorization URL generated successfully.")
-        return JsonResponse({'authorization_url': authorization_url}, status=200)
-
-    except Exception:
-        logger.exception("Error generating authorization URL for 42 login.")
-        return JsonResponse(
-            {'error': 'Internal server error. Please try again later.'},
-            status=500
-        )
-
+def login_with_42(request):
+    authorization_url = (
+        'https://api.intra.42.fr/oauth/authorize?'
+        f'client_id={settings.OAUTH2_PROVIDER["CLIENT_ID"]}'
+        '&response_type=code'
+        '&redirect_uri=http://localhost:8000/api/42/login/callback/'
+        '&scope=public'
+    )
+    return JsonResponse({'authorization_url': authorization_url})
 
 @api_view(['GET'])
 def login_with_42_callback(request):
@@ -254,7 +232,7 @@ def get_user_data(request):
     # Extract the JWT token from the header
     token = request.headers['Authorization'].split(' ')[1]
     try:
-        payload = jwt.decode( # why do we need this (i dont see where it accesed?)
+        payload = jwt.decode( # why do we need this (i dont see where it s accesed?)
             token,
             settings.SECRET_KEY,
             algorithms=['HS256']  # Adjust algorithm as needed
