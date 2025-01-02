@@ -10,7 +10,8 @@ import { showModal } from '../../utils/modal'
 import { showToast } from '../Toast/ToastPresenter'
 import Cookies from 'js-cookie'
 
-function Friends() {
+function Friends(props) {
+	const {selected} = props;
 	const { getStateId } = useDataContext();
 
 	const [friends, setFriends] = useState([]);
@@ -19,7 +20,7 @@ function Friends() {
 
 	const updateFriendsList = async () => {
 		const friends = await fetchFriends();
-		const restructured = friends.map(({ id, friend }) => ({ id, ...friend }));
+		const restructured = friends.map(({friend}) => friend);
 		setFriends(restructured);
 	};
 
@@ -66,8 +67,8 @@ function Friends() {
 
 	return (
 		<Card title='Friends' classes={scss.friends} action={titleAction}>
-			{getFriendsComponent(friendsOnline, "Online", removeFriend)}
-			{getFriendsComponent(friendsOffline, "Offline", removeFriend)}
+			{getFriendsComponent(friendsOnline, "Online", selected, removeFriend)}
+			{getFriendsComponent(friendsOffline, "Offline", selected, removeFriend)}
 			{friends.length === 0 && <div className={scss.mof}>No friends.. :(</div>}
 		</Card>
 	)
@@ -87,10 +88,10 @@ function fetchWithCredentials(path, method, extraOptions = {}) {
 async function fetchFriends() {
 	try {
 		const response = await fetchWithCredentials("http://localhost:8000/api/friend/", "GET", {
-									headers: {
-										'Authorization': `Bearer ${Cookies.get('jwtToken')}`,
-									},
-								});
+			headers: {
+				'Authorization': `Bearer ${Cookies.get('jwtToken')}`,
+			},
+		});
 		const data = await response.json();
 		return data.friends || [];
 	} catch (error) {
@@ -99,13 +100,13 @@ async function fetchFriends() {
 	}
 }
 
-function getFriendsComponent(friends, title, removeFriend) {
+function getFriendsComponent(friends, title, selected, removeFriend) {
 	if (friends.length === 0)
 		return null;
 
 	return (
 		<CardSection title={title} classes={scss.list}>
-			<FriendList friends={friends} removeFriend={removeFriend} />
+			<FriendList friends={friends} selected={selected} removeFriend={removeFriend} />
 		</CardSection>
 	);;
 }
