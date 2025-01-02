@@ -285,9 +285,23 @@ function createScoreData(room, player) {
 		goalsScored: scored,
 		goalsReceived: received,
 		datetimeLeft: time,
+		won: false
 	};
 
 	matches[matchIndex]?.scores?.push(scoreData);
+}
+
+function setWinners(room, highestScore) {
+	const { id } = room;
+	const {matchIndex, matches} = statistics[id];
+	const {scores} = matches[matchIndex] ?? {};
+
+	if(scores == null)
+		return;
+
+	const winners = scores.filter(score => score.goalsScored === highestScore);
+
+	winners.forEach(score => score.won = true);
 }
 
 function createScoresForPlayers(room) {
@@ -450,6 +464,11 @@ async function endSingleGame(room, counter, immediate = false) {
 	createScoresForPlayers(room);
 	finishedMatchData(room, immediate);
 
+	const highestScore = room.scores.reduce((acc, score) => Math.max(acc, score.scored), 0);
+
+	if(!immediate)
+		setWinners(room, highestScore);
+
 	room.status = 3;
 
 	updateState();
@@ -576,6 +595,12 @@ async function endTournamentGame(room, counter, leavingPlayerId) {
 	transferScores(room, match);
 
 	const winner = getWinnerForMatch(match, leavingPlayerId);
+
+	const {matchIndex, matches} = statistics[room.id];
+	const {scores} = matches[matchIndex];
+	const player = data.players[winner];
+
+	scores.forEach(score => score.won = score.userId === player.tid);
 
 	match.winner = winner;
 
@@ -1005,6 +1030,9 @@ io.on('connection', async socket => {
 	socket.on('room.create', options => {
 		const player = getPlayerFromSocket(socket);
 
+		if (player == null)
+			return;
+
 		const currentRoom = getRoomFromPlayer(player);
 
 		removePlayerFromRoom(player, currentRoom);
@@ -1102,6 +1130,9 @@ io.on('connection', async socket => {
 	socket.on('player.ready', () => {
 		const player = getPlayerFromSocket(socket);
 
+		if(player == null)
+			return;
+
 		if (player.state !== 1)
 			return;
 		if (player.roomId == null)
@@ -1114,6 +1145,10 @@ io.on('connection', async socket => {
 
 	socket.on('game.start', () => {
 		const player = getPlayerFromSocket(socket);
+
+		if (player == null)
+			return;
+
 		const room = getRoomFromPlayer(player);
 
 		if (room == null)
@@ -1149,6 +1184,10 @@ io.on('connection', async socket => {
 
 	socket.on('game.tick', (tickClient) => {
 		const player = getPlayerFromSocket(socket);
+
+		if (player == null)
+			return;
+
 		const room = getRoomFromPlayer(player);
 
 		if (room == null)
@@ -1172,6 +1211,10 @@ io.on('connection', async socket => {
 
 	socket.on('player.event', event => {
 		const player = getPlayerFromSocket(socket);
+
+		if (player == null)
+			return;
+
 		const room = getRoomFromPlayer(player);
 
 		if (room == null)
