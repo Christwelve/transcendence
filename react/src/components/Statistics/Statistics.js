@@ -70,7 +70,7 @@ function Match(props) {
 					<Duration start={started} end={ended} />
 				</div>
 			</div>
-			<div className={cls(scss.players, scss.body)}>
+			<div className={cls(scss.players, scss.body, prematureEnd && scss.premature)}>
 				{
 					scores.map((player, i) => (
 						<Player key={i} {...player} matchEnd={ended} />
@@ -208,7 +208,7 @@ function formatDuration(duration) {
 }
 
 function getWinsAndLosses(data, tid) {
-	const matches = data.flatMap(entry => entry.matches);
+	const matches = data.flatMap(entry => entry.matches).filter(match => !match.prematureEnd);
 	const scores = matches.flatMap(match => match.scores);
 	const playerScores = scores.filter(score => score.tid === tid);
 

@@ -46,7 +46,6 @@ const Profile = ({ avatar, setAvatar }) => {
 
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
-    console.log(file)
     setAvatarFile(file);
     const reader = new FileReader();
     reader.onloadend = () => setAvatarPreview(reader.result);

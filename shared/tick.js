@@ -1,5 +1,5 @@
 import sizes from 'shared/sizes'
-import {getBoundingBoxes, resolveCollision} from 'shared/cuboids'
+import { getBoundingBoxes, resolveCollision } from 'shared/cuboids'
 
 const TICK_SPEED = 60;
 const TICK_DEFAULT_OFFSET = 5;
@@ -32,16 +32,16 @@ class Tick {
 	}
 
 	_assertDetached() {
-		if(this._detached)
+		if (this._detached)
 			throw Error('Tick is detached.');
 	}
 
 	_calculateNewBallDirection(playerIndex) {
-		if(playerIndex == null)
+		if (playerIndex == null)
 			return;
 
 		const halfPi = Math.PI / 2;
-		const rotations = [halfPi, -halfPi, 0,  Math.PI];
+		const rotations = [halfPi, -halfPi, 0, Math.PI];
 
 		const halfSize = sizes.boardSize / 2;
 		const multiplier = (playerIndex % 2 === 0 ? -1 : 1);
@@ -95,7 +95,7 @@ class Tick {
 		this._ballData[2] = dx;
 		this._ballData[3] = dz;
 
-		console.log('kickoff', this._direction, this._ballData);
+		// console.log('kickoff', this._direction, this._ballData);
 	}
 
 	stopBall() {
@@ -120,16 +120,16 @@ class Tick {
 
 		this._positions[playerIndex] += value;
 
-		if(this._positions[playerIndex] > limit)
+		if (this._positions[playerIndex] > limit)
 			this._positions[playerIndex] = limit;
-		else if(this._positions[playerIndex] < -limit)
+		else if (this._positions[playerIndex] < -limit)
 			this._positions[playerIndex] = -limit;
 	}
 
 	moveBall(activePlayers) {
 		this._assertDetached();
 
-		if(activePlayers == null)
+		if (activePlayers == null)
 			return;
 
 		const [x, z, dx, dz] = this._ballData;
@@ -142,16 +142,16 @@ class Tick {
 
 		const [boundingBoxesOther, boundingBoxBall] = getBoundingBoxes(activePlayers, this._positions, this._ballData);
 
-		for(const boundingBox of boundingBoxesOther) {
+		for (const boundingBox of boundingBoxesOther) {
 
 			const hit = resolveCollision(this._ballData, boundingBoxBall, boundingBox);
 
-			if(!hit)
+			if (!hit)
 				continue;
 
 			this._calculateNewBallDirection(boundingBox.playerIndex);
 
-			if(boundingBox.playerIndex != null)
+			if (boundingBox.playerIndex != null)
 				this._ballData[4] = boundingBox.playerIndex;
 
 			return true;
@@ -262,7 +262,7 @@ class ClientTick extends Tick {
 		this._history.forEach(entry => {
 			const type = entry[2];
 
-			if(type !== 'input')
+			if (type !== 'input')
 				return;
 
 			const input = entry[3];
@@ -273,7 +273,7 @@ class ClientTick extends Tick {
 		const reconciledPosition = this._positions[playerIndex];
 		const difference = Math.abs(reconciledPosition - currentPosition);
 
-		if(difference > 2)
+		if (difference > 2)
 			return;
 
 		this._positions[playerIndex] = currentPosition;
@@ -310,7 +310,7 @@ class ClientTick extends Tick {
 	extractQueueEntries(type) {
 		this._assertDetached();
 
-		if(this._queue.length === 0)
+		if (this._queue.length === 0)
 			return [];
 
 		const entries = this._queue.filter(entry => type === entry.type && entry.applyAt <= this._tick);
@@ -332,12 +332,12 @@ class ClientTick extends Tick {
 
 		this._setBallData(verifiedBallData);
 
-		for(let i = 0; i < fastForwardAmount; i++)
+		for (let i = 0; i < fastForwardAmount; i++)
 			this.moveBall(room.activePlayers);
 
 		const keep = this._ballData.every((value, i) => Math.abs(value - ballDataBefore[i]) <= 0.1);
 
-		if(keep)
+		if (keep)
 			this._setBallData(ballDataBefore);
 	}
 
@@ -395,7 +395,7 @@ class ServerTick extends Tick {
 	calculateOffsetDelta(tickClient) {
 		const difference = tickClient - this._tick;
 
-		if(difference < 1 || difference > 2)
+		if (difference < 1 || difference > 2)
 			return -(difference - 2);
 
 		return 0;
@@ -444,14 +444,14 @@ class ServerTick extends Tick {
 		const [x, z] = this._ballData;
 		const scorer = this._ballData[4];
 
-		if(z < -limit)
-			return {scorer, target: 0};
-		else if(z > limit)
-			return {scorer, target: 1};
-		else if(x < -limit)
-			return {scorer, target: 2};
-		else if(x > limit)
-			return {scorer, target: 3};
+		if (z < -limit)
+			return { scorer, target: 0 };
+		else if (z > limit)
+			return { scorer, target: 1 };
+		else if (x < -limit)
+			return { scorer, target: 2 };
+		else if (x > limit)
+			return { scorer, target: 3 };
 
 		return null;
 	}
@@ -459,11 +459,11 @@ class ServerTick extends Tick {
 	sendGoalToPlayers(io, updateState, endGame) {
 		const goal = this.getGoal();
 
-		if(goal == null || this._goal)
+		if (goal == null || this._goal)
 			return;
 
 		this._goal = true;
-		if(goal.scorer !== -1)
+		if (goal.scorer !== -1)
 			this._room.scores[goal.scorer].scored++;
 		this._room.scores[goal.target].received++;
 		this.stopBall();
@@ -486,13 +486,13 @@ class ServerTick extends Tick {
 		setTimeout(() => {
 			this._goal = false;
 
-			if(this._room.running)
+			if (this._room.running)
 				this.roundStart(0, direction);
 			else {
 				this._ballData = [0, 0, 0, 0, -1];
 				this.sendCollisionToPlayers(io);
 
-				if(this._room.players.length >= 2)
+				if (this._room.players.length >= 2)
 					endGame(this._room);
 			}
 
@@ -518,12 +518,12 @@ function tick(timeThen) {
 	instances.forEach(instance => {
 		instance._tickNextAmount++;
 
-		while(instance._tickNextAmount > 0) {
+		while (instance._tickNextAmount > 0) {
 			instance._callback(instance);
 
-			if(instance._countdown > 0)
+			if (instance._countdown > 0)
 				instance._countdown--;
-			else if(instance._starting)
+			else if (instance._starting)
 				instance.kickoff();
 
 			instance._tick++;
@@ -546,7 +546,7 @@ function randVector(activePlayers, target) {
 		index % 2 === 0 ? -1 : 1,
 	];
 
-	if(index >= 2)
+	if (index >= 2)
 		v.reverse();
 
 	return normalizeVector(v);

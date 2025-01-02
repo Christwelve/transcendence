@@ -58,91 +58,6 @@ const statistics = {};
 
 const games = {};
 
-// async function fetchMatches() {
-// 	try {
-// 		const response = await fetch('http://django:8000/api/matches/', {
-// 			method: 'GET',
-// 			headers: {
-// 				'Content-Type': 'application/json',
-// 			},
-// 		});
-
-// 		if (!response.ok) {
-// 			throw new Error('Failed to fetch matches');
-// 		}
-// 		const data = await response.json();
-// 		console.log('Fetched matches:', data);
-// 		return data;
-// 	} catch (error) {
-// 		console.error('Error fetching matches:', error);
-// 	}
-// }
-
-// async function fetchStatistics() {
-// 	try {
-// 		const response = await fetch('http://django:8000/api/statistics/', {
-// 			method: 'GET',
-// 			headers: {
-// 				'Content-Type': 'application/json',
-// 			},
-// 		});
-
-// 		if (!response.ok) {
-// 			throw new Error('Failed to fetch statistics');
-// 		}
-// 		const data = await response.json();
-// 		console.log('Fetched statistics:', data);
-// 		return data;
-// 	} catch (error) {
-// 		console.error('Error fetching statistics:', error);
-// 	}
-// }
-
-// async function postMatch(matchData) {
-// 	try {
-// 		const response = await fetch('http://django:8000/api/matches/', {
-// 			method: 'POST',
-// 			headers: {
-// 				'Content-Type': 'application/json',
-// 			},
-// 			body: JSON.stringify(matchData),
-// 		});
-
-// 		if (!response.ok) {
-// 			throw new Error('Failed to post match data');
-// 		}
-
-// 		const data = await response.json();
-// 		console.log('Posted match data:', data);
-// 		return data.id;
-// 	} catch (error) {
-// 		console.error('Error posting match data:', error);
-// 	}
-// }
-
-// async function postStatistic(statisticData) {
-// 	try {
-
-// 		const response = await fetch('http://django:8000/api/statistics/', {
-// 			method: 'POST',
-// 			headers: {
-// 				'Content-Type': 'application/json',
-// 			},
-// 			body: JSON.stringify(statisticData),
-// 		});
-
-// 		if (!response.ok) {
-// 			throw new Error('Failed to post statistics');
-// 		}
-
-// 		const data = await response.json();
-// 		console.log('Posted statistics data:', data);
-// 		return data;
-// 	} catch (error) {
-// 		console.error('Error posting statistics data:', error);
-// 	}
-// }
-
 server.listen(port, () => {
 	console.log(`Node.js server listening at http://${serverIp}:${port}, proxied through nginx`);
 	// console.log(`Node.js server listening at http://localhost:${port}, proxied through nginx`);
@@ -381,7 +296,7 @@ function createRoom(player, options) {
 // TODO: 60*60
 function resetRoom(room) {
 	room.scores = [...Array(4)].map(() => ({ scored: 0, received: 0 }));
-	room.timer = 60 * 10;
+	room.timer = 60 * 3;
 }
 
 function createTournament(room, players) {
@@ -557,48 +472,6 @@ async function saveStatistics(room) {
 		console.error('Error posting stats:', error);
 	}
 }
-
-// async function storeMatchData(room) {
-// 	const endTime = new Date().toISOString();
-// 	// TODO: Adjust Tourmanent Id
-// 	const matchData = {
-// 		startTime: room.startTime,
-// 		endTime: endTime,
-// 		tournamentId: null
-// 	};
-
-// 	console.log('Sending match data:', matchData);
-
-// 	const matchId = await postMatch(matchData);
-
-// 	if (matchId) {
-// 		// STATISTIC DATA
-// 		// TODO: handle logged out player (maybe store preliminary stats while game is running)
-// 		const statisticData = room.activePlayers.reduce((acc, playerId, i) => {
-
-// 			if (playerId == null)
-// 				return acc;
-
-// 			const player = data.players[playerId];
-// 			const score = room.scores[i];
-
-// 			const obj = {
-// 				userId: player.tid,
-// 				goalsScored: score.scored,
-// 				goalsReceived: score.received,
-// 				datetimeLeft: endTime,
-// 				matchId
-// 			};
-
-// 			return [...acc, obj];
-// 		}, []);
-
-// 		console.log('Sending statistic data:', statisticData);
-// 		await postStatistic(statisticData, matchId);
-// 	} else {
-// 		console.error('Match ID is undefined, cannot post statistics.');
-// 	}
-// }
 
 async function endTournamentGame(room, counter, leavingPlayerId) {
 	if(room.counter !== counter)

@@ -128,7 +128,7 @@ const AppContent = () => {
         Cookies.set('authToken', userResponse.token);
       }
 
-      console.log("Avatar URL received:", userResponse.avatar);
+      // console.log("Avatar URL received:", userResponse.avatar);
       if (userResponse.avatar) {
         const avatarUrl = userResponse.avatar;
         if (avatarUrl.startsWith('http')) {

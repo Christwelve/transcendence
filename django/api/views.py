@@ -419,7 +419,8 @@ def statistic_view(request):
 
         user = get_object_or_404(User, id=user_id)
 
-        statistics = Statistic.objects.filter(user=user).select_related('match__tournament', 'user')
+        user_matches = Match.objects.filter(statistic__user=user).distinct()
+        statistics = Statistic.objects.filter(match__in=user_matches).select_related('match__tournament', 'user')
 
         # Group statistics by match
         match_stats = {}
@@ -480,7 +481,10 @@ def statistic_view(request):
                 'matches': matches
             })
 
-        result.sort(key=lambda x: x['matches'][0]['started'])
+        for tournament in result:
+            tournament['matches'].sort(key=lambda x: x['started'], reverse=True)
+
+        result.sort(key=lambda x: x['matches'][0]['started'], reverse=True)
 
         return JsonResponse(result, status=status.HTTP_200_OK, safe=False)
 

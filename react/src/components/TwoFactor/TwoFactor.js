@@ -13,7 +13,7 @@ const TwoFactor = ({ changeStatus, userLogin, errorMessage, user }) => {
   useEffect(() => {
     if (hasFetched.current) return; // Prevent duplicate execution
     hasFetched.current = true;
-    console.log("TwoFactor");
+    // console.log("TwoFactor");
 
     generateQRCode();
 
@@ -21,7 +21,7 @@ const TwoFactor = ({ changeStatus, userLogin, errorMessage, user }) => {
   }, []);
 
   const generateQRCode = async () => {
-    console.log("User:", user.username);
+    // console.log("User:", user.username);
     const formData = new FormData();
     formData.append("username", user.username);
     // const response = await fetch(`${protocol}//${hostname}:${djangoPort}/api/2fa/generate/`, {
@@ -32,7 +32,7 @@ const TwoFactor = ({ changeStatus, userLogin, errorMessage, user }) => {
 
     if (response.ok) {
       const data = await response.json();
-      console.log("Data", data);
+      // console.log("Data", data);
       const imageUrl = data.qr_code;
 
       setQrCode(imageUrl);

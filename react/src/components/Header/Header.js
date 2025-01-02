@@ -110,7 +110,6 @@ const Header = ({ changeStatus, avatar, setAvatar, username, setUsername, set2fa
             twoFactor={twoFactor}
             setNewUsername={setUsername}
             setAvatar={(newAvatar) => {
-              console.log("setAvatar in Header.js:", setAvatar);
               setAvatar(newAvatar);
               setIsSettingsOpen(false);
             }}
