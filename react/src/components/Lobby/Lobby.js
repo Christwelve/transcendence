@@ -19,6 +19,8 @@ function Lobby() {
 	useMemo(() => getStatistics(player.tid, setPlayerStats), [player.tid]);
 	useMemo(() => getStatistics(selectedFriend, setFriendStats), [selectedFriend]);
 
+	console.log('playerStats', playerStats);
+
 	return (
 		<div className={scss.lobby}>
 			<div className={scss.top}>

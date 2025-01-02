@@ -206,17 +206,21 @@ function TickHandler(props) {
 		setTimeout(() => {
 			setGoalScored(null);
 
-			const room = roomRef.current;
+			setTimeout(() => {
 
-			if(room.running)
-				setTimeout(() => tick.roundStart(0, direction), 500);
-			else {
-				const maxScore = room.scores.reduce((acc, {scored}) => Math.max(acc, scored), 0);
+				const room = roomRef.current;
 
-				const winners = room.activePlayers.filter((_, i) => room.scores[i].scored === maxScore).filter(player => player);
+				if(room.running)
+					tick.roundStart(0, direction);
+				else {
+					const maxScore = room.scores.reduce((acc, {scored}) => Math.max(acc, scored), 0);
 
-				setWinners(winners);
-			}
+					const winners = room.activePlayers.filter((_, i) => room.scores[i].scored === maxScore).filter(player => player);
+
+					setWinners(winners);
+				}
+
+			}, 500);
 
 		}, 2500);
 	});

@@ -23,12 +23,16 @@ function DataContextProvider(props) {
 	};
 
 	const [data, setData] = useState(dataDefault);
+	const [initialized, setInitialized] = useState(false);
 
 	const socketRef = useRef(null);
 	const send = socketRef.current?.emit?.bind(socketRef.current);
 
 	const dataRef = useRef(null);
 	dataRef.current = data;
+
+	const initializedRef = useRef(null);
+	initializedRef.current = initialized;
 
 	useEffect(() => {
 		const socket = io(SOCKET_SERVER_URL, { withCredentials: true });
@@ -61,7 +65,8 @@ function DataContextProvider(props) {
 
 			setData(newData);
 
-			enterInitialRoom(socket, newData);
+			if(!initializedRef.current)
+				setInitialized(true);
 		});
 
 		socket.on('instruction', instructions => setData(instructions));
@@ -70,7 +75,7 @@ function DataContextProvider(props) {
 
 		socket.on('pushstate', roomId => {
 			window.history.pushState({ room: roomId }, '', roomId == null ? '/' : `/room/${roomId}`);
-		})
+		});
 
 		const onPopState = event => {
 			const {state} = event;
@@ -91,6 +96,11 @@ function DataContextProvider(props) {
 		};
 
 	}, []);
+
+	useEffect(() => {
+		if(initialized)
+			enterInitialRoom(socketRef.current, dataRef.current);
+	}, [initialized]);
 
 	const fns = {
 		getStateId: getStateId.bind(null, data),
