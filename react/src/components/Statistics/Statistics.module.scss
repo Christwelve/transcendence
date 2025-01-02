@@ -35,6 +35,7 @@
 			margin: 0 12px;
 			background-color: var(--color-gray-dark);
 			border-radius: 3px;
+			overflow: hidden;
 
 			.progress {
 				background-color: var(--color-primary);
@@ -130,6 +131,10 @@
 			margin-left: 12px;
 			margin-right: 1px;
 		}
+	}
+
+	.premature {
+		color: var(--color-gray-light);
 	}
 
 	.players {
