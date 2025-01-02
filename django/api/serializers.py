@@ -14,12 +14,13 @@ class UserSerializer(serializers.ModelSerializer):
 
 class MatchSerializer(serializers.ModelSerializer):
     tournamentId = serializers.IntegerField(source='tournament_id', min_value=0, allow_null=True)
-    startTime = serializers.DateTimeField(source='datetime_start')
-    endTime = serializers.DateTimeField(source='datetime_end')
+    datetimeStart = serializers.DateTimeField(source='datetime_start')
+    datetimeEnd = serializers.DateTimeField(source='datetime_end')
+    prematureEnd = serializers.BooleanField(source='premature_end')
 
     class Meta:
         model = Match
-        fields = ['id', 'startTime', 'endTime', 'tournamentId']
+        fields = ['id', 'datetimeStart', 'datetimeEnd', 'tournamentId', 'prematureEnd']
 
 class StatisticSerializer(serializers.ModelSerializer):
     matchId = serializers.IntegerField(source='match_id', min_value=0)

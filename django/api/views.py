@@ -7,7 +7,7 @@ from .models import User, Match, Statistic, Friend, Tournament
 from .serializers import UserSerializer, MatchSerializer, StatisticSerializer, FriendSerializer, TournamentSerializer
 from django.contrib.auth.hashers import make_password, check_password
 from django.shortcuts import get_object_or_404, redirect
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseRedirect
 from django.utils.timezone import now
 
 from django.conf import settings
@@ -248,7 +248,6 @@ def login_with_42_callback(request):
 @api_view(['GET'])
 def get_user_data(request):
     authorization_header = request.headers.get('Authorization')
-    # Check for the 'Authorization' header
     if not authorization_header:
         return JsonResponse({'error': 'Authorization header is missing.'}, status=401)
 
@@ -434,19 +433,6 @@ def statistic_view(request):
         scores = [score for matchData in matches for score in matchData['scores']]
 
         serializer = StatisticSerializer(data=scores, many=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['POST'])
-def tournament_view(request):
-    if request.method == 'POST':
-        data = {key: bleachThe(value) if isinstance(
-            value, str) else value for key, value in request.data.items()}
-        serializer = TournamentSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
