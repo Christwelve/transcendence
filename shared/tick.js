@@ -134,8 +134,8 @@ class Tick {
 
 		const [x, z, dx, dz] = this._ballData;
 
-		const px = x + dx * 1.15;
-		const pz = z + dz * 1.15;
+		const px = x + dx;
+		const pz = z + dz;
 
 		this._ballData[0] = px;
 		this._ballData[1] = pz;

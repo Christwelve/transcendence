@@ -68,7 +68,7 @@ function getPlayerFromSocket(socket) {
 }
 
 function getRoomFromPlayer(player) {
-	if(player == null)
+	if (player == null)
 		return null;
 
 	return data.rooms[player.roomId];
@@ -102,7 +102,7 @@ function removePlayerFromRoom(player, room) {
 		updateState();
 	}
 
-	if(games[id] != null)
+	if (games[id] != null)
 		createScoreData(room, player);
 
 	if (type === 0)
@@ -118,9 +118,9 @@ function removePlayerFromRoom(player, room) {
 }
 
 function removeFromSingle(room) {
-	const {id, players} = room;
+	const { id, players } = room;
 
-	if(players.length === 1 && games[id] != null) {
+	if (players.length === 1 && games[id] != null) {
 		endSingleGame(room, room.counter, true);
 
 		room.counter++;
@@ -137,13 +137,13 @@ function removeFromSingle(room) {
 }
 
 function removeFromTournament(room) {
-	if(room.status === 0)
+	if (room.status === 0)
 		return;
 
 	createScoresForPlayers(room);
 	finishedMatchData(room, true);
 
-	const {id} = room;
+	const { id } = room;
 
 	room.status = 0;
 	room.counter++;
@@ -194,9 +194,9 @@ function createMatchData(room) {
 
 function finishedMatchData(room, prematureEnd = false) {
 	const { id } = room;
-	const {matchIndex, matchIndexFinished, matches} = statistics[id];
+	const { matchIndex, matchIndexFinished, matches } = statistics[id];
 
-	if(matchIndex === -1 || matchIndexFinished === matchIndex)
+	if (matchIndex === -1 || matchIndexFinished === matchIndex)
 		return;
 
 	console.log('stats', statistics);
@@ -210,17 +210,17 @@ function finishedMatchData(room, prematureEnd = false) {
 
 function createScoreData(room, player) {
 	const { id, scores } = room;
-	const {matchIndex, matchIndexFinished, matches} = statistics[id];
+	const { matchIndex, matchIndexFinished, matches } = statistics[id];
 
-	if(matchIndex === -1 || matchIndexFinished === matchIndex)
+	if (matchIndex === -1 || matchIndexFinished === matchIndex)
 		return;
 
-	const {tid, index} = player;
+	const { tid, index } = player;
 
-	if(index === -1)
+	if (index === -1)
 		return;
 
-	const {scored, received} = scores[index];
+	const { scored, received } = scores[index];
 	const time = new Date().toISOString();
 
 	const scoreData = {
@@ -236,10 +236,10 @@ function createScoreData(room, player) {
 
 function setWinners(room, highestScore) {
 	const { id } = room;
-	const {matchIndex, matches} = statistics[id];
-	const {scores} = matches[matchIndex] ?? {};
+	const { matchIndex, matches } = statistics[id];
+	const { scores } = matches[matchIndex] ?? {};
 
-	if(scores == null)
+	if (scores == null)
 		return;
 
 	const winners = scores.filter(score => score.goalsScored === highestScore);
@@ -248,9 +248,9 @@ function setWinners(room, highestScore) {
 }
 
 function createScoresForPlayers(room) {
-	const {id, players} = room;
+	const { id, players } = room;
 
-	if(games[id] == null)
+	if (games[id] == null)
 		return;
 
 	players.forEach(id => {
@@ -293,10 +293,10 @@ function createRoom(player, options) {
 
 	return room;
 }
-// TODO: 60*60
+
 function resetRoom(room) {
 	room.scores = [...Array(4)].map(() => ({ scored: 0, received: 0 }));
-	room.timer = 60 * 3;
+	room.timer = 60 * 60;
 }
 
 function createTournament(room, players) {
@@ -321,7 +321,7 @@ function createBrackets(players) {
 
 	const brackets = [];
 
-	while(true) {
+	while (true) {
 		const bracket = createBracket(count);
 
 		brackets.push(bracket);
@@ -387,7 +387,7 @@ const onTick = tick => {
 		game?.sendCollisionToPlayers(io);
 	}
 
-	if(room.running && room.timer === 0) {
+	if (room.running && room.timer === 0) {
 		room.running = false;
 
 		updateState();
@@ -396,7 +396,7 @@ const onTick = tick => {
 
 function endGame(counter, room) {
 	console.log('endGame', counter, room, arguments);
-	if(room.type === 0)
+	if (room.type === 0)
 		endSingleGame(room, counter);
 	else
 		endTournamentGame(room, counter);
@@ -409,24 +409,24 @@ async function endSingleGame(room, counter, immediate = false) {
 
 	const highestScore = room.scores.reduce((acc, score) => Math.max(acc, score.scored), 0);
 
-	if(!immediate)
+	if (!immediate)
 		setWinners(room, highestScore);
 
 	room.status = 3;
 
 	updateState();
 
-	if(room.counter !== counter)
+	if (room.counter !== counter)
 		return;
 
 	console.log('before wait');
 
-	if(!immediate)
+	if (!immediate)
 		await wait(10000);
 
 	console.log('after wait');
 
-	if(room.counter !== counter)
+	if (room.counter !== counter)
 		return;
 
 	endRoom(room);
@@ -442,16 +442,16 @@ async function endSingleGame(room, counter, immediate = false) {
 }
 
 async function saveStatistics(room) {
-	const {id} = room;
+	const { id } = room;
 
 	const stats = statistics[id];
 
-	if(stats == null)
+	if (stats == null)
 		return;
 
 	delete statistics[id];
 
-	if(stats.matchIndex === -1)
+	if (stats.matchIndex === -1)
 		return;
 
 	try {
@@ -474,7 +474,7 @@ async function saveStatistics(room) {
 }
 
 async function endTournamentGame(room, counter, leavingPlayerId) {
-	if(room.counter !== counter)
+	if (room.counter !== counter)
 		return;
 
 	createScoresForPlayers(room);
@@ -482,13 +482,13 @@ async function endTournamentGame(room, counter, leavingPlayerId) {
 
 	const tournament = data.tournaments[room.id];
 
-	if(tournament == null)
+	if (tournament == null)
 		return;
 
-	if(leavingPlayerId == null)
+	if (leavingPlayerId == null)
 		await wait(7000);
 
-	if(room.counter !== counter)
+	if (room.counter !== counter)
 		return;
 
 	const match = getCurrentMatch(tournament);
@@ -497,8 +497,8 @@ async function endTournamentGame(room, counter, leavingPlayerId) {
 
 	const winner = getWinnerForMatch(match, leavingPlayerId);
 
-	const {matchIndex, matches} = statistics[room.id];
-	const {scores} = matches[matchIndex];
+	const { matchIndex, matches } = statistics[room.id];
+	const { scores } = matches[matchIndex];
 	const player = data.players[winner];
 
 	scores.forEach(score => score.won = score.userId === player.tid);
@@ -524,7 +524,7 @@ async function endTournamentGame(room, counter, leavingPlayerId) {
 
 	await wait(2000);
 
-	if(room.counter !== counter)
+	if (room.counter !== counter)
 		return;
 
 	match.stage = 2;
@@ -533,7 +533,7 @@ async function endTournamentGame(room, counter, leavingPlayerId) {
 
 	updateState();
 
-	if(isTurnamentOver(tournament))
+	if (isTurnamentOver(tournament))
 		return endTournament(room, tournament, winner, counter);
 
 	nextMatch(tournament);
@@ -544,27 +544,27 @@ async function endTournamentGame(room, counter, leavingPlayerId) {
 }
 
 function isTurnamentOver(tournament) {
-	const {brackets, bracketIndex, matchIndex} = tournament;
+	const { brackets, bracketIndex, matchIndex } = tournament;
 
-	if(bracketIndex !== brackets.length - 1)
+	if (bracketIndex !== brackets.length - 1)
 		return false;
 
 	const bracket = brackets[bracketIndex];
 
-	if(matchIndex !== bracket.length - 1)
+	if (matchIndex !== bracket.length - 1)
 		return false;
 
 	return true;
 }
 
 function advancePlayer(tournament, playerId) {
-	const {bracketIndex, matchIndex, brackets} = tournament;
+	const { bracketIndex, matchIndex, brackets } = tournament;
 
 	const nextBracketIndex = bracketIndex + 1;
 	const nextMatchIndex = Math.floor(matchIndex / 2);
 	const nextPlayerIndex = matchIndex % 2;
 
-	if(nextBracketIndex === brackets.length)
+	if (nextBracketIndex === brackets.length)
 		return;
 
 	const bracket = brackets[nextBracketIndex];
@@ -575,12 +575,12 @@ function advancePlayer(tournament, playerId) {
 
 async function endTournament(room, tournament, winner, counter) {
 
-	if(room.counter !== counter)
+	if (room.counter !== counter)
 		return;
 
 	await wait(1000);
 
-	if(room.counter !== counter)
+	if (room.counter !== counter)
 		return;
 
 	room.status = 3;
@@ -590,7 +590,7 @@ async function endTournament(room, tournament, winner, counter) {
 
 	await wait(10000);
 
-	if(room.counter !== counter)
+	if (room.counter !== counter)
 		return;
 
 	endRoom(room);
@@ -624,7 +624,7 @@ function transferScores(room, match) {
 	players.forEach((playerId, i) => {
 		const playerIndex = room.activePlayers.indexOf(playerId);
 
-		if(playerIndex === -1)
+		if (playerIndex === -1)
 			return;
 
 		scores[i] = room.scores[playerIndex]
@@ -641,9 +641,9 @@ function getWinnerIndex(match, leavingPlayerId) {
 	if (leavingPlayerId != null)
 		return +!match.players.indexOf(leavingPlayerId);
 
-	const [{scored: score1}, {scored: score2}] = match.scores;
+	const [{ scored: score1 }, { scored: score2 }] = match.scores;
 
-	if(score1 === score2)
+	if (score1 === score2)
 		return Math.floor(Math.random() * 2);
 
 	if (score1 > score2)
@@ -669,7 +669,7 @@ function updateBall(tick) {
 function updatePlayers(tick) {
 	const entries = tick.getQueueEntries();
 
-	if(entries.length === 0)
+	if (entries.length === 0)
 		return;
 
 	entries.forEach(entry => {
@@ -787,14 +787,14 @@ function startTournament(room, players, counter) {
 }
 
 async function startTournamentGame(room, counter) {
-	if(room.counter !== counter)
+	if (room.counter !== counter)
 		return;
 
 	const tournament = data.tournaments[room.id];
 
 	await wait(3000);
 
-	if(room.counter !== counter)
+	if (room.counter !== counter)
 		return;
 
 	startMatch(tournament);
@@ -803,10 +803,10 @@ async function startTournamentGame(room, counter) {
 	const onlyOnePlayer = match.players[1] == null;
 
 	console.log('tournament', tournament);
-	console.log('match'	, match);
+	console.log('match', match);
 	console.log('onlyOnePlayer', onlyOnePlayer);
 
-	if(onlyOnePlayer) {
+	if (onlyOnePlayer) {
 		const player = match.players[0];
 
 		console.log('player', player);
@@ -828,7 +828,7 @@ async function startTournamentGame(room, counter) {
 
 	await wait(5000);
 
-	if(room.counter !== counter)
+	if (room.counter !== counter)
 		return;
 
 	tournament.announceNext = false;
@@ -840,7 +840,7 @@ async function startTournamentGame(room, counter) {
 }
 
 function getActiveTourmanentPlayers(tournament) {
-	const {brackets, bracketIndex, matchIndex} = tournament;
+	const { brackets, bracketIndex, matchIndex } = tournament;
 
 	const bracket = brackets[bracketIndex];
 	const match = bracket[matchIndex];
@@ -857,10 +857,10 @@ function startMatch(tournament) {
 }
 
 function nextMatch(tournament) {
-	const {bracketIndex, matchIndex, brackets} = tournament;
+	const { bracketIndex, matchIndex, brackets } = tournament;
 	const bracket = brackets[bracketIndex];
 
-	if(matchIndex === bracket.length - 1) {
+	if (matchIndex === bracket.length - 1) {
 		tournament.bracketIndex++;
 		tournament.matchIndex = 0;
 	} else
@@ -868,10 +868,10 @@ function nextMatch(tournament) {
 }
 
 function getCurrentMatch(tournament) {
-	if(tournament == null)
-		return {stage: 2};
+	if (tournament == null)
+		return { stage: 2 };
 
-	const {bracketIndex, matchIndex, brackets} = tournament;
+	const { bracketIndex, matchIndex, brackets } = tournament;
 	const bracket = brackets[bracketIndex];
 
 	return bracket[matchIndex];
@@ -879,7 +879,7 @@ function getCurrentMatch(tournament) {
 
 async function startRoom(room, players, activePlayers, counter) {
 
-	if(room.counter !== counter)
+	if (room.counter !== counter)
 		return;
 
 	createMatchData(room);
@@ -898,7 +898,7 @@ async function startRoom(room, players, activePlayers, counter) {
 
 	await wait(1000);
 
-	if(room.counter !== counter)
+	if (room.counter !== counter)
 		return;
 
 	game.startGame(io);
@@ -908,7 +908,7 @@ async function startRoom(room, players, activePlayers, counter) {
 
 	await wait(3000);
 
-	if(room.counter !== counter)
+	if (room.counter !== counter)
 		return;
 
 	room.status = 2;
@@ -983,7 +983,7 @@ io.on('connection', async socket => {
 
 		updateState();
 
-		if(record)
+		if (record)
 			socket.emit('pushstate', room.id);
 	});
 
@@ -1024,14 +1024,14 @@ io.on('connection', async socket => {
 
 		updateState();
 
-		if(record)
+		if (record)
 			socket.emit('pushstate', null);
 	});
 
 	socket.on('player.ready', () => {
 		const player = getPlayerFromSocket(socket);
 
-		if(player == null)
+		if (player == null)
 			return;
 
 		if (player.state !== 1)
@@ -1077,7 +1077,7 @@ io.on('connection', async socket => {
 
 		createStatistic(room);
 
-		if(room.type === 0)
+		if (room.type === 0)
 			startSingleGame(room, players, room.counter);
 		else
 			startTournament(room, players, room.counter);

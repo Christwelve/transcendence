@@ -58,8 +58,9 @@ function CameraLookAt(props) {
 		const distance = sizes.boardSize * 1.5;
 		const axis = playerIndex > 1 ? 'x' : 'z';
 		const position = playerIndex === -1 ? 0 : distance * multiplier;
+		const height = playerIndex === -1 ? sizes.boardSize * 1.5 : sizes.boardSize / 1.5;
 
-		camera.position.set(0, sizes.boardSize / 1.5, 0);
+		camera.position.set(0, height, 0);
 		camera.position[axis] = position;
 
 		const targetPosition = [0, 0, 0];
@@ -73,7 +74,7 @@ function CameraLookAt(props) {
 function TickHandler(props) {
 	const { paddleRefs, ballRef, goalRef, timeRef, countdownState, setGoalScored, setWinners } = props;
 
-	const {getPlayer, getRoom, useListener, requestServerTick, requestTickAdjust, sendPlayerEvent} = useDataContext();
+	const { getPlayer, getRoom, useListener, requestServerTick, requestTickAdjust, sendPlayerEvent } = useDataContext();
 
 	const tickRef = useRef(null);
 	const roomRef = useRef(null);
@@ -96,7 +97,7 @@ function TickHandler(props) {
 		const seconds = Math.ceil(room.timer / 60);
 		const minutes = Math.floor(seconds / 60);
 
-		if(timeRef.current)
+		if (timeRef.current)
 			timeRef.current.textContent = room.timer ? `${padNumber(minutes, 2)}:${padNumber(seconds % 60, 2)}` : '';
 
 		if (room.running && room.timer > 0)
@@ -126,7 +127,7 @@ function TickHandler(props) {
 
 		const time = state.clock.getElapsedTime();
 
-		if(last != null && time - last > 1000)
+		if (last != null && time - last > 1000)
 			requestServerTick();
 
 		renderPaddles(tick, paddleRefs);
@@ -210,10 +211,10 @@ function TickHandler(props) {
 
 				const room = roomRef.current;
 
-				if(room.running)
+				if (room.running)
 					tick.roundStart(0, direction);
 				else {
-					const maxScore = room.scores.reduce((acc, {scored}) => Math.max(acc, scored), 0);
+					const maxScore = room.scores.reduce((acc, { scored }) => Math.max(acc, scored), 0);
 
 					const winners = room.activePlayers.filter((_, i) => room.scores[i].scored === maxScore).filter(player => player);
 
@@ -387,7 +388,7 @@ function Game(props) {
 	const player = getPlayer();
 	const room = getRoom(player?.roomId);
 
-	if(room == null)
+	if (room == null)
 		return null;
 
 	const scorerIndex = goalScored ? goalScored.scorer : null;

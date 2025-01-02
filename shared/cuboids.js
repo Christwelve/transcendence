@@ -14,10 +14,10 @@ function getBorders(playerIds) {
 
 	const borders = [
 		// corners
-		{position: [-halfSize, 0, -halfSize], size: cornerSize},
-		{position: [halfSize, 0, -halfSize], size: cornerSize},
-		{position: [halfSize, 0, halfSize], size: cornerSize},
-		{position: [-halfSize, 0, halfSize], size: cornerSize},
+		{ position: [-halfSize, 0, -halfSize], size: cornerSize },
+		{ position: [halfSize, 0, -halfSize], size: cornerSize },
+		{ position: [halfSize, 0, halfSize], size: cornerSize },
+		{ position: [-halfSize, 0, halfSize], size: cornerSize },
 
 		...getBorderParts('top', playerIds[0]),
 		...getBorderParts('bottom', playerIds[1]),
@@ -31,13 +31,13 @@ function getBorders(playerIds) {
 function getBorderParts(side, open) {
 	const sideIndex = ['top', 'bottom', 'left', 'right'].indexOf(side);
 
-	if(sideIndex === -1)
+	if (sideIndex === -1)
 		return [];
 
 	return open ?
 		[
-			getBorderPart(sideIndex, 0),
-			getBorderPart(sideIndex, 1),
+			// getBorderPart(sideIndex, 0),
+			// getBorderPart(sideIndex, 1),
 		] :
 		[
 			getBorderPart(sideIndex),
@@ -48,7 +48,7 @@ function getBorderPart(sideIndex, partIndex = null) {
 	const position = getBorderPartPosition(sideIndex, partIndex);
 	const size = getBorderPartSize(sideIndex, partIndex);
 
-	return {position, size};
+	return { position, size };
 }
 
 function getBorderPartPosition(sideIndex, partIndex) {
@@ -58,7 +58,7 @@ function getBorderPartPosition(sideIndex, partIndex) {
 	const z = halfSize * multiplierZ;
 	const position = [x, 0, z];
 
-	if(sideIndex > 1)
+	if (sideIndex > 1)
 		position.reverse();
 
 	return position;
@@ -69,7 +69,7 @@ function getBorderPartSize(sideIndex, partIndex) {
 
 	const size = [borderLength, sizes.borderSize / 2, sizes.borderSize];
 
-	if(sideIndex > 1)
+	if (sideIndex > 1)
 		size.reverse();
 
 	return size;
@@ -78,20 +78,20 @@ function getBorderPartSize(sideIndex, partIndex) {
 function getPaddles(playerIds, paddleRefs = []) {
 	const paddles = [];
 
-	if(playerIds[0])
-		paddles.push({position: [0, 0, -halfSize], size: paddleSizeVertical, color: colors[1], axis: 'x', playerIndex: 0, ref: paddleRefs[0]});
-	if(playerIds[1])
-		paddles.push({position: [0, 0, halfSize], size: paddleSizeVertical, color: colors[2], axis: 'x', playerIndex: 1, ref: paddleRefs[1]});
-	if(playerIds[2])
-		paddles.push({position: [-halfSize, 0, 0], size: paddleSizeHorizontal, color: colors[3], axis: 'z', playerIndex: 2, ref: paddleRefs[2]});
-	if(playerIds[3])
-		paddles.push({position: [halfSize, 0, 0], size: paddleSizeHorizontal, color: colors[4], axis: 'z', playerIndex: 3, ref: paddleRefs[3]});
+	if (playerIds[0])
+		paddles.push({ position: [0, 0, -halfSize], size: paddleSizeVertical, color: colors[1], axis: 'x', playerIndex: 0, ref: paddleRefs[0] });
+	if (playerIds[1])
+		paddles.push({ position: [0, 0, halfSize], size: paddleSizeVertical, color: colors[2], axis: 'x', playerIndex: 1, ref: paddleRefs[1] });
+	if (playerIds[2])
+		paddles.push({ position: [-halfSize, 0, 0], size: paddleSizeHorizontal, color: colors[3], axis: 'z', playerIndex: 2, ref: paddleRefs[2] });
+	if (playerIds[3])
+		paddles.push({ position: [halfSize, 0, 0], size: paddleSizeHorizontal, color: colors[4], axis: 'z', playerIndex: 3, ref: paddleRefs[3] });
 
 	return paddles;
 }
 
 function getBall(ballRef) {
-	const ball = {position: [0, 0, 0], size: cornerSize, ref: ballRef};
+	const ball = { position: [0, 0, 0], size: cornerSize, ref: ballRef };
 
 	return ball;
 }
@@ -117,7 +117,7 @@ function getBoundingBoxes(playerIds, playerPositions, ballData) {
 function resolveCollision(ballData, ballBox, otherBox) {
 	const overlap = calculateBoundingBoxOverlap(ballBox, otherBox);
 
-	if(overlap == null)
+	if (overlap == null)
 		return false;
 
 	const overlapSize = {
@@ -127,8 +127,8 @@ function resolveCollision(ballData, ballBox, otherBox) {
 
 	const resolutionAxis = overlapSize.x <= overlapSize.z ? 'x' : 'z';
 
-	const resolution = {x: 0, z: 0};
-	if(ballBox.min[resolutionAxis] < otherBox.min[resolutionAxis])
+	const resolution = { x: 0, z: 0 };
+	if (ballBox.min[resolutionAxis] < otherBox.min[resolutionAxis])
 		resolution[resolutionAxis] = -overlapSize[resolutionAxis];
 	else
 		resolution[resolutionAxis] = overlapSize[resolutionAxis];
@@ -144,7 +144,7 @@ function resolveCollision(ballData, ballBox, otherBox) {
 
 // helper functions
 function calculateBoundingBoxOverlap(box1, box2) {
-	if(
+	if (
 		box1.max.x < box2.min.x || box2.max.x < box1.min.x ||
 		box1.max.z < box2.min.z || box2.max.z < box1.min.z
 	)
@@ -175,9 +175,9 @@ function getBoundingBoxesPaddles(playerIds, playerPositions) {
 	const paddles = getPaddles(playerIds);
 
 	const boundingBoxesPaddles = paddles.map(paddle => {
-		const {position, axis} = paddle;
+		const { position, axis } = paddle;
 		const playerIndex = paddle.playerIndex;
-		const axisIndex = {x: 0, z: 2}[axis];
+		const axisIndex = { x: 0, z: 2 }[axis];
 		const playerPosition = playerPositions[playerIndex];
 
 		position[axisIndex] = playerPosition;
@@ -206,7 +206,7 @@ function getBoundingBoxBall(ballData) {
 }
 
 function calculateBoundingBox(object) {
-	const {position, size} = object;
+	const { position, size } = object;
 
 	const [px, py, pz] = position;
 	const [sx, sy, sz] = size;
@@ -220,10 +220,10 @@ function calculateBoundingBox(object) {
 	const maxX = px + halfSX;
 	const maxZ = pz + halfSZ;
 
-	const min = {x: minX, z: minZ};
-	const max = {x: maxX, z: maxZ};
+	const min = { x: minX, z: minZ };
+	const max = { x: maxX, z: maxZ };
 
-	return {min, max};
+	return { min, max };
 }
 
 export {

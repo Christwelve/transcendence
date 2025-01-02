@@ -6,7 +6,7 @@ import scss from './Statistics.module.scss'
 import Icon from '../Icon/Icon'
 
 function DateTime(props) {
-	const {iso} = props;
+	const { iso } = props;
 
 	const date = new Date(iso);
 	const time = new Intl.DateTimeFormat('en-US', {
@@ -25,7 +25,7 @@ function DateTime(props) {
 }
 
 function Duration(props) {
-	const {start, end} = props;
+	const { start, end } = props;
 
 	const startDate = new Date(start).getTime();
 	const endDate = new Date(end).getTime();
@@ -37,7 +37,7 @@ function Duration(props) {
 }
 
 function Player(props) {
-	const {username, scored, received, left, won, matchEnd} = props;
+	const { username, scored, received, left, won, matchEnd } = props;
 
 	const endTime = new Date(matchEnd).getTime();
 	const leftTime = new Date(left).getTime();
@@ -57,7 +57,7 @@ function Player(props) {
 }
 
 function Match(props) {
-	const {matchId, started, ended, prematureEnd, scores} = props;
+	const { matchId, started, ended, prematureEnd, scores } = props;
 
 	return (
 		<div className={scss.match} key={matchId}>
@@ -82,7 +82,7 @@ function Match(props) {
 }
 
 function Entry(props) {
-	const {children} = props;
+	const { children } = props;
 
 	return (
 		<div className={scss.entry}>
@@ -99,21 +99,21 @@ function Entry(props) {
 }
 
 function Tournament(props) {
-	const {tournamentId, matches} = props;
+	const { tournamentId, matches } = props;
 
-	const started = matches[0].started;
-	const ended = matches[matches.length - 1].ended;
+	// const started = matches[0].started;
+	// const ended = matches[matches.length - 1].ended;
 
 	return (
 		<div className={scss.tournament}>
 			<div className={scss.header}>
 				<div className={scss.name}>Tournament</div>
-				<div className={scss.time}>
+				{/* <div className={scss.time}>
 					<Icon type='time' size={12} classes={scss.started} />
 					<DateTime iso={started} />
 					<Icon type='play' size={12} classes={scss.played} />
 					<Duration start={started} end={ended} />
-				</div>
+				</div> */}
 			</div>
 			<div className={cls(scss.matches, scss.body)}>
 				{
@@ -130,16 +130,16 @@ function Tournament(props) {
 
 
 function MatchHistory(props) {
-	const {data} = props;
+	const { data } = props;
 
-	if(data.length === 0)
+	if (data.length === 0)
 		return <div className={scss.nomatch}>No matches played yet.</div>;
 
 	return (
 		<div className={scss.history}>
 			<div className={scss.scroll}>
 				{
-					data.map(({tournamentId, matches}, i) => (
+					data.map(({ tournamentId, matches }, i) => (
 						<Entry key={i}>
 							{getComponent(tournamentId, matches)}
 						</Entry>
@@ -152,36 +152,36 @@ function MatchHistory(props) {
 
 
 function Statistics(props) {
-	const {title, data, tid} = props;
+	const { title, data, tid } = props;
 
-	const {wins, losses} = getWinsAndLosses(data, tid);
+	const { wins, losses } = getWinsAndLosses(data, tid);
 	const total = wins + losses;
 
 	return (
 		<Card title={title} classes={scss.statistics}>
 			{
 				tid == null ?
-				<div className={scss.empty}>Select a friend to view their statistics.</div> :
-				<>
-					<CardSection title='Wins/Losses'>
-						<div className={scss.winloss}>
-							<div className={scss.wins}>
-								<div className={scss.label}>Wins</div>
-								<div className={scss.value}>{wins}</div>
+					<div className={scss.empty}>Select a friend to view their statistics.</div> :
+					<>
+						<CardSection title='Wins/Losses'>
+							<div className={scss.winloss}>
+								<div className={scss.wins}>
+									<div className={scss.label}>Wins</div>
+									<div className={scss.value}>{wins}</div>
+								</div>
+								<div className={scss.track}>
+									<div className={scss.progress} style={{ width: `${wins / total * 100}%` }}></div>
+								</div>
+								<div className={scss.losses}>
+									<div className={scss.label}>Losses</div>
+									<div className={scss.value}>{losses}</div>
+								</div>
 							</div>
-							<div className={scss.track}>
-								<div className={scss.progress} style={{width: `${wins / total * 100}%`}}></div>
-							</div>
-							<div className={scss.losses}>
-								<div className={scss.label}>Losses</div>
-								<div className={scss.value}>{losses}</div>
-							</div>
-						</div>
-					</CardSection>
-					<CardSection title='Match History'>
-						<MatchHistory data={data} />
-					</CardSection>
-				</>
+						</CardSection>
+						<CardSection title='Match History'>
+							<MatchHistory data={data} />
+						</CardSection>
+					</>
 			}
 		</Card>
 	);
@@ -190,7 +190,7 @@ function Statistics(props) {
 
 // helper functions
 function getComponent(tournamentId, matches) {
-	if(tournamentId == null)
+	if (tournamentId == null)
 		return <Match {...matches[0]} />;
 
 	return <Tournament tournamentId={tournamentId} matches={matches} />;
@@ -199,7 +199,7 @@ function getComponent(tournamentId, matches) {
 function formatDuration(duration) {
 	const totalSeconds = Math.floor(duration / 1000);
 
-	if(totalSeconds < 60)
+	if (totalSeconds < 60)
 		return `${totalSeconds}s`;
 
 	const minutes = Math.floor(totalSeconds / 60);
@@ -215,7 +215,7 @@ function getWinsAndLosses(data, tid) {
 	const wins = playerScores.reduce((acc, score) => acc + +score.won, 0);
 	const losses = playerScores.length - wins;
 
-	return {wins, losses};
+	return { wins, losses };
 }
 
 
