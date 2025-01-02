@@ -169,6 +169,7 @@ const SettingsWidget = ({ avatar, setAvatar, onClose, twoFactor, setNewUsername 
             id="avatarUpload"
             className={styles.fileInput}
             onChange={handleAvatarChange}
+            accept="image/*"
           />
           <span className={styles.fileName}>{fileName}</span>
         </div>
