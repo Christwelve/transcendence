@@ -1,8 +1,9 @@
-import React, {useState} from 'react'
+import React, { useState } from 'react'
 import styles from './Profile.module.scss'
 import Cookies from 'js-cookie'
+import { showToast } from '../Toast/ToastPresenter';
 
-const SettingsWidget = ({ avatar, setAvatar, onClose, twoFactor, setNewUsername}) => {
+const SettingsWidget = ({ avatar, setAvatar, onClose, twoFactor, setNewUsername }) => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -76,7 +77,7 @@ const SettingsWidget = ({ avatar, setAvatar, onClose, twoFactor, setNewUsername}
         if (data.success) {
           setIs2FAEnabled(has_2fa);
         } else {
-          alert("Failed to enable 2FA.");
+          showToast({ type: 'error', title: 'Error', message: 'Failed to toggle 2FA.' })
         }
       })
       .catch((error) => console.error("Error updating profile:", error));
@@ -86,17 +87,17 @@ const SettingsWidget = ({ avatar, setAvatar, onClose, twoFactor, setNewUsername}
   const handleSaveChanges = () => {
     const formData = new FormData();
     if (username) {
-      if(!usernameValid(username))
+      if (!usernameValid(username))
         return;
       formData.append("username", username);
     }
     if (email) {
-      if(!emailValid(email))
+      if (!emailValid(email))
         return;
       formData.append("email", email);
     }
     if (newPassword) {
-      if(!passwordValid(newPassword))
+      if (!passwordValid(newPassword))
         return;
       formData.append("password", newPassword);
     }
@@ -119,7 +120,7 @@ const SettingsWidget = ({ avatar, setAvatar, onClose, twoFactor, setNewUsername}
               errMsg = errorData.error;
             }
           } catch (parseError) {
-            console.error("Failed to parse JSON error:", parseError);
+            showToast({ type: 'error', title: 'Error', message: 'Failed to update user.' })
           }
           throw new Error(errMsg);
         }
@@ -127,7 +128,7 @@ const SettingsWidget = ({ avatar, setAvatar, onClose, twoFactor, setNewUsername}
       })
       .then((data) => {
         if (data.message) {
-          alert(data.message);
+          showToast({ type: 'success', title: 'Success', message: 'Successfully updated user.' })
           if (username.length > 0)
             setNewUsername(username);
           if (data.avatar) {
@@ -135,11 +136,11 @@ const SettingsWidget = ({ avatar, setAvatar, onClose, twoFactor, setNewUsername}
             setAvatarPreview(data.avatar);
           }
         } else {
-          alert("Failed to update profile.");
+          showToast({ type: 'error', title: 'Error', message: 'Failed to update user.' })
         }
       })
       .catch((error) => {
-        alert(`Failed to update profile: ${error.message}`);
+        showToast({ type: 'error', title: 'Error', message: 'Failed to update user.' })
       });
   };
 
