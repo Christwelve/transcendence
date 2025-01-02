@@ -312,11 +312,13 @@ def login_view(request):
                             return Response({'error': 'Invalid 2FA token'}, status=status.HTTP_401_UNAUTHORIZED)
 
             token, _ = Token.objects.get_or_create(user=user)  # Efficient token retrieval
+            
             payload = {
                 'username': user.username,
                 'email': user.email,
                 # Add other necessary claims here (e.g., username, roles)
             }
+            
             jwtToken = jwt.encode(
                 payload,
                 settings.SECRET_KEY,
@@ -324,30 +326,30 @@ def login_view(request):
             )
             serializer = UserSerializer(user)
 
-                avatar_url = user.avatar.url if user.avatar else None
+            avatar_url = user.avatar.url if user.avatar else None
 
-                if avatar_url and not avatar_url.startswith("http"):
-                    avatar_url = f"http://{request.get_host()}{avatar_url}"
+            if avatar_url and not avatar_url.startswith("http"):
+                avatar_url = f"http://{request.get_host()}{avatar_url}"
 
-                request.session['user_data'] = {
+            request.session['user_data'] = {
                     'username': bleachThe(user.username),
                     'email': bleachThe(user.email),
                     'avatar': avatar_url,
                     'token': token.key,
                     'jwtToken': jwtToken,
             }
-                request.session.save()
+            request.session.save()
 
-                return Response({
-                    'user': serializer.data,
-                    'token': token.key,  # Include authToken in response
+            return Response({
+                'user': serializer.data,
+                'token': token.key,  # Include authToken in response
                 'jwtToken': jwtToken,
-                    'user_data': request.session['user_data'],
+                'user_data': request.session['user_data'],
                 }, status=status.HTTP_200_OK)
-            return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+            
         except Exception as e:
             logger.error(f"Unexpected error during login: {str(e)}", exc_info=True)
-            return Response({'error': 'An unexpected error occurred'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)    
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)    
 
 @api_view(['GET', 'POST'])
 def user_view(request, username=None):
@@ -381,7 +383,7 @@ def user_status_view(request):
 
         user.status = is_online
 
-        if is_online == False:
+        if is_online is False:
             iso_timestamp = now().isoformat()
             user.last_online = iso_timestamp
 
@@ -405,7 +407,7 @@ def match_view(request):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# TODO: GET
+#TODO: GET
 
 
 @api_view(['POST'])
@@ -520,6 +522,7 @@ def add_friend(request):
 
         # Extract the JWT token from the header
         token = request.headers['Authorization'].split(' ')[1]
+
         try:
             payload = jwt.decode(
                 token,
@@ -547,7 +550,6 @@ def add_friend(request):
         return Response({'message': f'{friend_username} added as a friend!'}, status=201)
     except Exception as e:
         return Response({'error': str(e)}, status=500)
-
 
 @api_view(['POST'])
 def remove_friend(request):
