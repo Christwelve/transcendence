@@ -34,8 +34,8 @@ Thumbs.db
 
 django/media/avatars/*
 
-*/migrations/*.py
-*/migrations/*.pyc
+django/api/migrations/*.py
+django/api/migrations/*.pyc
 
-!*/migrations/__init__.py
+!django/api/migrations/__init__.py
 
