@@ -153,7 +153,7 @@ def login_with_42_callback(request):
         }
 
         # Post request to get the access token
-        token_response = requests.post(access_token_url, data=data, timeout=20)
+        token_response = requests.post(access_token_url, data=data)
         if not token_response.ok:
             return JsonResponse({'error': 'Failed to obtain access token'}, status=token_response.status_code)
 
@@ -164,8 +164,7 @@ def login_with_42_callback(request):
 
         user_info_url = 'https://api.intra.42.fr/v2/me'
         headers = {'Authorization': f'Bearer {access_token}'}
-        user_info_response = requests.get(
-            user_info_url, headers=headers, timeout=10)
+        user_info_response = requests.get(user_info_url, headers=headers)
         if not user_info_response.ok:
             return JsonResponse({'error': 'Failed to fetch user information'},
                                 status=user_info_response.status_code)
@@ -219,7 +218,13 @@ def login_with_42_callback(request):
         }
         request.session.modified = True
 
-        return redirect("http://localhost:3000?logged_in=true")
+
+        response = HttpResponseRedirect("http://localhost:3000?logged_in=true")
+
+        response.set_cookie('authToken', token.key)
+        response.set_cookie('jwtToken', jwt_token)
+
+        return response
 
     return redirect("http://localhost:3000?logged_in=false")
 
@@ -233,7 +238,7 @@ def get_user_data(request):
     # Extract the JWT token from the header
     token = request.headers['Authorization'].split(' ')[1]
     try:
-        payload = jwt.decode( # why do we need this (i dont see where it s accesed?)
+        payload = jwt.decode(
             token,
             settings.SECRET_KEY,
             algorithms=['HS256']  # Adjust algorithm as needed
@@ -245,7 +250,8 @@ def get_user_data(request):
 
     user_data = request.session.get('user_data')
     if not user_data:
-       return JsonResponse({'error': 'No user data found', 'session': request.session.get('user_data')}, status=404)
+        return JsonResponse({'error': 'No user data found',
+                        'session': request.session.get('user_data')}, status=404)
     return JsonResponse(user_data)
 
 
@@ -279,10 +285,10 @@ def login_view(request):
                         totp_device = TOTPDevice.objects.filter(
                             user=user, confirmed=False).first()
                         if not totp_device:
-                            return Response({'error': 'No 2FA device found'}, status=status.HTTP_401_UNAUTHORIZED)
-                        else:
-                            totp_device.confirmed = True
-                            totp_device.save()
+                            return Response({'error': 'No 2FA device found'}, 
+                                            status=status.HTTP_401_UNAUTHORIZED)
+                        totp_device.confirmed = True
+                        totp_device.save()
 
                     if totp_device:  # If user has a TOTP device, validate the token
                         otp_token = request.data.get('otp_token')
