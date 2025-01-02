@@ -134,8 +134,8 @@ class Tick {
 
 		const [x, z, dx, dz] = this._ballData;
 
-		const px = x + dx;
-		const pz = z + dz;
+		const px = x + dx * 1.15;
+		const pz = z + dz * 1.15;
 
 		this._ballData[0] = px;
 		this._ballData[1] = pz;
@@ -326,14 +326,14 @@ class ClientTick extends Tick {
 		this._positions[playerIndex] = position;
 	}
 
-	reconcileBall(tickServer, verifiedBallData) {
+	reconcileBall(tickServer, room, verifiedBallData) {
 		const fastForwardAmount = this._tick - tickServer;
 		const ballDataBefore = [...this._ballData];
 
 		this._setBallData(verifiedBallData);
 
 		for(let i = 0; i < fastForwardAmount; i++)
-			this.moveBall();
+			this.moveBall(room.activePlayers);
 
 		const keep = this._ballData.every((value, i) => Math.abs(value - ballDataBefore[i]) <= 0.1);
 

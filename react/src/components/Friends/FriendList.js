@@ -4,11 +4,12 @@ import cls from '../../utils/cls'
 import scss from './FriendList.module.scss'
 
 function FriendList(props) {
-	const {friends, addFriend, removeFriend} = props;
+	const {friends, addFriend, selected, removeFriend} = props;
+	const [selectedFriend, setSelectedFriend = () => {}] = selected ?? [];
 
 	return (
 		friends.map(friend => (
-			<div key={friend.id || friend.username} className={scss.friend}>
+			<div key={friend.tid || friend.username} className={cls(scss.friend, friend.tid === selectedFriend && scss.selected)} onClick={() => setSelectedFriend(friend.tid)}>
 				<div className={scss.info}>
 					<div className={scss.name}>{friend.username}</div>
 					{friend.status != null && <div className={scss.status}>{friend.status ? "Online" : `Last seen ${adjustLastOnline(friend.last_online)}`}</div>}

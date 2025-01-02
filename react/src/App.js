@@ -163,7 +163,7 @@ const AppContent= () => {
       setLoading(false); // Stop loading
     }
   };
-
+  
   if (loading) {
     return <div className="loading-screen">Loading...</div>; // Replace with a spinner or skeleton screen
   }

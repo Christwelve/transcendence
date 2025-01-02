@@ -37,7 +37,14 @@ const lookup = {
 	search: [
 		<circle key="search_0" cx="11" cy="11" r="8"/>,
 		<line key="search_1" x1="21" y1="21" x2="16.65" y2="16.65"/>,
-	]
+	],
+	play: [
+		<polygon key="play_0" points="5 3 19 12 5 21 5 3"/>,
+	],
+	time : [
+		<circle key="time_0" cx="12" cy="12" r="10"/>,
+		<polyline key="time_1" points="12 6 12 12 16 14"/>,
+	],
 };
 
 function Icon(props) {
