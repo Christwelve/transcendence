@@ -17,6 +17,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 import qrcode
 import io
 import base64
+import json
 import jwt
 from rest_framework.exceptions import PermissionDenied
 
@@ -226,8 +227,7 @@ def login_with_42_callback(request):
 
         return response
 
-    return redirect("http://localhost:3000?logged_in=false")
-
+    return redirect(f"http://localhost:3000")
 
 @api_view(['GET'])
 def get_user_data(request):
@@ -250,8 +250,7 @@ def get_user_data(request):
 
     user_data = request.session.get('user_data')
     if not user_data:
-        return JsonResponse({'error': 'No user data found',
-                        'session': request.session.get('user_data')}, status=404)
+        return JsonResponse({'error': 'No user data found', 'session': request.session.get('user_data')}, status=404)
     return JsonResponse(user_data)
 
 
@@ -285,8 +284,7 @@ def login_view(request):
                         totp_device = TOTPDevice.objects.filter(
                             user=user, confirmed=False).first()
                         if not totp_device:
-                            return Response({'error': 'No 2FA device found'}, 
-                                            status=status.HTTP_401_UNAUTHORIZED)
+                            return Response({'error': 'No 2FA device found'}, status=status.HTTP_401_UNAUTHORIZED)
                         totp_device.confirmed = True
                         totp_device.save()
 
@@ -349,8 +347,7 @@ def user_view(request, username=None):
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             users = User.objects.all()
-            serializer = UserSerializer(
-                users, many=True, context={'request': request})
+            serializer = UserSerializer(users, many=True, context={'request': request})
             return Response(serializer.data, status=status.HTTP_200_OK)
     elif request.method == 'POST':
         userData = request.data.copy()
@@ -366,8 +363,7 @@ def user_view(request, username=None):
 def user_status_view(request):
     try:
         user = request.user
-        user_status = request.GET.get('status', '').lower()
-        is_online = user_status == 'true'
+        is_online = True if request.GET.get('status', None) == 'true' else False
 
         user.status = is_online
 
@@ -381,9 +377,82 @@ def user_status_view(request):
 
     return JsonResponse({'success': True}, status=status.HTTP_200_OK)
 
-# TODO: GET
-@api_view(['POST'])
+@api_view(['GET', 'POST'])
 def statistic_view(request):
+    if request.method == 'GET':
+
+        user_id = request.GET.get('userId', None)
+
+        if user_id == None:
+            return Response({'error': 'User ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = get_object_or_404(User, id=user_id)
+
+        statistics = Statistic.objects.filter(user=user).select_related('match__tournament', 'user')
+
+        # Group statistics by match
+        match_stats = {}
+        for stat in statistics:
+            match = stat.match
+            match_id = match.id
+
+            if match_id not in match_stats:
+                match_stats[match_id] = {
+                    'matchId': match_id,
+                    'started': match.datetime_start,
+                    'ended': match.datetime_end,
+                    'prematureEnd': match.premature_end,
+                    'tournamentId': match.tournament.id if match.tournament else None,
+                    'scores': []
+                }
+
+            match_stats[match_id]['scores'].append({
+                'username': stat.user.username,
+                'tid': stat.user.id,
+                'scored': stat.goals_scored,
+                'received': stat.goals_received,
+                'left': stat.datetime_left,
+                'won': stat.won,
+            })
+
+        # Group matches by tournament
+        result = []
+        tournament_matches = {}
+
+        for match_data in match_stats.values():
+            tournament_id = match_data['tournamentId']
+
+            match_obj = {
+                'matchId': match_data['matchId'],
+                'started': match_data['started'],
+                'ended': match_data['ended'],
+                'prematureEnd': match_data['prematureEnd'],
+                'scores': match_data['scores']
+            }
+
+            if tournament_id == None:
+                result.append({
+                    'tournamentId': None,
+                    'matches': [match_obj]
+                })
+                continue
+
+            if tournament_id not in tournament_matches:
+                tournament_matches[tournament_id] = []
+
+            tournament_matches[tournament_id].append(match_obj)
+
+        # Format the result in the desired structure
+        for tournament_id, matches in tournament_matches.items():
+            result.append({
+                'tournamentId': tournament_id,
+                'matches': matches
+            })
+
+        result.sort(key=lambda x: x['matches'][0]['started'])
+
+        return JsonResponse(result, status=status.HTTP_200_OK, safe=False)
+
     if request.method == 'POST':
 
         gameType = request.data.get('type', None)
@@ -415,7 +484,14 @@ def statistic_view(request):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        scores = [score for matchData in matches for score in matchData['scores']]
+        scores = [
+            {
+                **score,
+                'datetimeLeft': score.get('datetimeLeft'),
+                'won': score.get('won', False)
+            }
+            for matchData in matches for score in matchData['scores']
+        ]
 
         serializer = StatisticSerializer(data=scores, many=True)
         if serializer.is_valid():
@@ -446,8 +522,7 @@ def fetch_friends(request):
         except jwt.InvalidTokenError:
             return JsonResponse({'error': 'Invalid token.', 'token': token}, status=401)
 
-        username = bleachThe(request.session.get(
-            'user_data', {}).get('username', None))
+        username = bleachThe(request.session.get('user_data', {}).get('username', None))
         user = get_object_or_404(User, username=username)
         if not user:
             return Response({'error': 'User not found'}, status=404)
@@ -486,17 +561,14 @@ def search_users(request):
 
         username = request.session.get('user_data', {}).get('username', None)
         user = get_object_or_404(User, username=username)
-        users = User.objects.filter(
-            username__icontains=query).exclude(id=user.id)
-        friends = Friend.objects.filter(
-            user=user).values_list('friend__id', flat=True)
+        users = User.objects.filter(username__icontains=query).exclude(id=user.id)
+        friends = Friend.objects.filter(user=user).values_list('friend__id', flat=True)
         users = users.exclude(id__in=friends)
 
         if not users.exists():
             return Response({'detail': 'No User matches the given query.'}, status=200)
 
-        results = [{'id': user.id, 'username': user.username}
-                   for user in users]
+        results = [{'id': user.id, 'username': user.username} for user in users]
         return Response({'users': results}, status=200)
     except Exception as e:
         return Response({'error': str(e)}, status=500)
@@ -524,8 +596,7 @@ def add_friend(request):
         except jwt.InvalidTokenError:
             return JsonResponse({'error': 'Invalid token.', 'token': token}, status=401)
 
-        username = bleachThe(request.session.get(
-            'user_data', {}).get('username', None))
+        username = bleachThe(request.session.get('user_data', {}).get('username', None))
         user = get_object_or_404(User, username=username)
         if not user:
             return Response({'error': 'User not found'}, status=404)
@@ -564,8 +635,7 @@ def remove_friend(request):
         except jwt.InvalidTokenError:
             return JsonResponse({'error': 'Invalid token.', 'token': token}, status=401)
 
-        username = bleachThe(request.session.get(
-            'user_data', {}).get('username', None))
+        username = bleachThe(request.session.get('user_data', {}).get('username', None))
         user = get_object_or_404(User, username=username)
         if not user:
             return Response({'error': 'User not found'}, status=404)
@@ -614,8 +684,7 @@ def update_profile(request):
         if not request.session.get('user_data'):
             return Response({'error': 'User not logged in or session expired'}, status=401)
 
-        old_username = bleachThe(
-            request.session['user_data'].get('username', None))
+        old_username = bleachThe(request.session['user_data'].get('username', None))
         if not old_username:
             return Response({'error': 'User not logged in or session expired'}, status=401)
 
