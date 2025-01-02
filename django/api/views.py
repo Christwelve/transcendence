@@ -71,7 +71,7 @@ def setup_2fa(request):
             qr_code_base64 = base64.b64encode(img.getvalue()).decode()
 
         except Exception as e:
-            logger.error(f"QR Code generation failed: {str(e)}", exc_info=True)
+            logger.error("QR Code generation failed: %s", str(e), exc_info=True)
             return Response({"error": "Failed to generate QR code"}, status=500)
 
         # Return the QR code as a response
@@ -81,7 +81,7 @@ def setup_2fa(request):
         }, status=200)
 
     except Exception as e:
-        logger.error(f"Unexpected error in setup_2fa: {str(e)}", exc_info=True)
+        logger.error("Unexpected error in setup_2fa: %s", str(e), exc_info=True)
         return Response({"error": "An unexpected error occurred"}, status=500)
 
 
@@ -174,7 +174,7 @@ def login_with_42_callback(request):
         }
 
         # Post request to get the access token
-        token_response = requests.post(access_token_url, data=data)
+        token_response = requests.post(access_token_url, data=data, timeout=20)
         if not token_response.ok:
             return JsonResponse({'error': 'Failed to obtain access token'}, status=token_response.status_code)
 
@@ -185,9 +185,11 @@ def login_with_42_callback(request):
 
         user_info_url = 'https://api.intra.42.fr/v2/me'
         headers = {'Authorization': f'Bearer {access_token}'}
-        user_info_response = requests.get(user_info_url, headers=headers)
+        user_info_response = requests.get(
+            user_info_url, headers=headers, timeout=10)
         if not user_info_response.ok:
-            return JsonResponse({'error': 'Failed to fetch user information'}, status=user_info_response.status_code)
+            return JsonResponse({'error': 'Failed to fetch user information'},
+                                status=user_info_response.status_code)
 
         user_info_data = user_info_response.json()
         username = bleachThe(user_info_data.get('login'))
@@ -204,19 +206,20 @@ def login_with_42_callback(request):
             if serializer.is_valid():
                 user = serializer.save()
             else:
-                return JsonResponse({'error': 'User creation failed', 'details': serializer.errors}, status=400)
+                return JsonResponse({'error': 'User creation failed',
+                                    'details': serializer.errors}, status=400)
 
         # Create or retrieve the token for the user
         token, _ = Token.objects.get_or_create(user=user)
         payload = {
-                'username': user.username,
-                'email': user.email,
-                # Add other necessary claims here (e.g., username, roles)
+            'username': user.username,
+            'email': user.email,
+            # Add other necessary claims here (e.g., username, roles)
         }
-        jwtToken = jwt.encode(
-                payload,
-                settings.SECRET_KEY,
-                algorithm='HS256'
+        jwt_token = jwt.encode(
+            payload,
+            settings.SECRET_KEY,
+            algorithm='HS256'
         )
 
         # Construct the full avatar URL
@@ -225,7 +228,7 @@ def login_with_42_callback(request):
         elif api_avatar and str(api_avatar).startswith("http"):
             avatar_url = api_avatar
         else:
-            None
+            avatar_url = None
 
         request.session.flush()
         request.session['user_data'] = {
@@ -233,19 +236,19 @@ def login_with_42_callback(request):
             'email': email,
             'avatar': avatar_url,
             'token': token.key,
-            'jwtToken': jwtToken,
+            'jwtToken': jwt_token,
         }
         request.session.modified = True
 
-        return redirect(f"http://localhost:3000?logged_in=true")
+        return redirect("http://localhost:3000?logged_in=true")
 
-    return redirect(f"http://localhost:3000?logged_in=false")
+    return redirect("http://localhost:3000?logged_in=false")
 
 
 @api_view(['GET'])
 def get_user_data(request):
     authorization_header = request.headers.get('Authorization')
-     # Check for the 'Authorization' header
+    # Check for the 'Authorization' header
     if not authorization_header:
         return JsonResponse({'error': 'Authorization header is missing.'}, status=401)
 
@@ -277,7 +280,7 @@ def validate_token_view(request):
             'username': user.username,
         }, status=200)
     except AuthenticationFailed as e:
-        logger.warning(f"Authentication failed: {str(e)}")
+        logger.warning("Authentication failed: %s", str(e))
         return Response({'error': str(e)}, status=401)
 
 
@@ -288,7 +291,7 @@ def login_view(request):
             username = bleachThe(request.data['username'].strip())
             password = request.data['password'].strip()
             user = get_object_or_404(User, username=username)
-            
+
             if check_password(password, user.password):
                 if user.has_2fa:
                     totp_device = TOTPDevice.objects.filter(
@@ -311,14 +314,15 @@ def login_view(request):
                         if not totp_device.verify_token(otp_token):
                             return Response({'error': 'Invalid 2FA token'}, status=status.HTTP_401_UNAUTHORIZED)
 
-            token, _ = Token.objects.get_or_create(user=user)  # Efficient token retrieval
-            
+            token, _ = Token.objects.get_or_create(
+                user=user)  # Efficient token retrieval
+
             payload = {
                 'username': user.username,
                 'email': user.email,
                 # Add other necessary claims here (e.g., username, roles)
             }
-            
+
             jwtToken = jwt.encode(
                 payload,
                 settings.SECRET_KEY,
@@ -332,11 +336,11 @@ def login_view(request):
                 avatar_url = f"http://{request.get_host()}{avatar_url}"
 
             request.session['user_data'] = {
-                    'username': bleachThe(user.username),
-                    'email': bleachThe(user.email),
-                    'avatar': avatar_url,
-                    'token': token.key,
-                    'jwtToken': jwtToken,
+                'username': bleachThe(user.username),
+                'email': bleachThe(user.email),
+                'avatar': avatar_url,
+                'token': token.key,
+                'jwtToken': jwtToken,
             }
             request.session.save()
 
@@ -345,11 +349,12 @@ def login_view(request):
                 'token': token.key,  # Include authToken in response
                 'jwtToken': jwtToken,
                 'user_data': request.session['user_data'],
-                }, status=status.HTTP_200_OK)
-            
+            }, status=status.HTTP_200_OK)
+
         except Exception as e:
-            logger.error(f"Unexpected error during login: {str(e)}", exc_info=True)
-            return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)    
+            logger.error("Unexpected error during login: %s", str(e), exc_info=True)
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['GET', 'POST'])
 def user_view(request, username=None):
@@ -377,9 +382,8 @@ def user_view(request, username=None):
 def user_status_view(request):
     try:
         user = request.user
-        status = request.GET.get('status', '').lower()
-        is_online = status == 'true'
-
+        user_status = request.GET.get('status', '').lower()
+        is_online = user_status == 'true'
 
         user.status = is_online
 
@@ -393,41 +397,55 @@ def user_status_view(request):
 
     return JsonResponse({'success': True}, status=status.HTTP_200_OK)
 
-
-@api_view(['GET', 'POST'])
-def match_view(request):
-    if request.method == 'GET':
-        serializer = MatchSerializer(matches, many=True)
-        return Response(serializer.data)
-
-    elif request.method == 'POST':
-        serializer = MatchSerializer(data={})
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-#TODO: GET
-
-
+# TODO: GET
 @api_view(['POST'])
 def statistic_view(request):
     if request.method == 'POST':
-        data = [ {key: bleachThe(value) if isinstance(value, str) else value for key, value in item.items()} for item in request.data ]
-        serializer = StatisticSerializer(data=data, many=True)
+
+        gameType = request.data.get('type', None)
+
+        if gameType == None:
+            return Response({'error': 'Type is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        matches = request.data.get('matches', [])
+
+        if gameType == 1:
+            instance = Tournament.objects.create()
+            tournamentId = instance.id
+
+            for matchData in matches:
+                matchData['db']['tournamentId'] = tournamentId
+
+        matchData = [data['db'] for data in matches]
+
+        serializer = MatchSerializer(data=matchData, many=True)
+        if serializer.is_valid():
+            instances = serializer.save()
+
+            for index, instance in enumerate(instances):
+                scores = matches[index]['scores']
+                matchId = instance.id
+
+                for score in scores:
+                    score['matchId'] = matchId
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        scores = [score for matchData in matches for score in matchData['scores']]
+
+        serializer = StatisticSerializer(data=scores, many=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-# TODO: GET
 
 
 @api_view(['POST'])
 def tournament_view(request):
     if request.method == 'POST':
-        data = {key: bleachThe(value) if isinstance(value, str) else value for key, value in request.data.items()}
+        data = {key: bleachThe(value) if isinstance(
+            value, str) else value for key, value in request.data.items()}
         serializer = TournamentSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
@@ -457,7 +475,8 @@ def fetch_friends(request):
         except jwt.InvalidTokenError:
             return JsonResponse({'error': 'Invalid token.', 'token': token}, status=401)
 
-        username = bleachThe(request.session.get('user_data', {}).get('username', None))
+        username = bleachThe(request.session.get(
+            'user_data', {}).get('username', None))
         user = get_object_or_404(User, username=username)
         if not user:
             return Response({'error': 'User not found'}, status=404)
@@ -534,7 +553,8 @@ def add_friend(request):
         except jwt.InvalidTokenError:
             return JsonResponse({'error': 'Invalid token.', 'token': token}, status=401)
 
-        username = bleachThe(request.session.get('user_data', {}).get('username', None))
+        username = bleachThe(request.session.get(
+            'user_data', {}).get('username', None))
         user = get_object_or_404(User, username=username)
         if not user:
             return Response({'error': 'User not found'}, status=404)
@@ -550,6 +570,7 @@ def add_friend(request):
         return Response({'message': f'{friend_username} added as a friend!'}, status=201)
     except Exception as e:
         return Response({'error': str(e)}, status=500)
+
 
 @api_view(['POST'])
 def remove_friend(request):
@@ -572,7 +593,8 @@ def remove_friend(request):
         except jwt.InvalidTokenError:
             return JsonResponse({'error': 'Invalid token.', 'token': token}, status=401)
 
-        username = bleachThe(request.session.get('user_data', {}).get('username', None))
+        username = bleachThe(request.session.get(
+            'user_data', {}).get('username', None))
         user = get_object_or_404(User, username=username)
         if not user:
             return Response({'error': 'User not found'}, status=404)
@@ -621,7 +643,8 @@ def update_profile(request):
         if not request.session.get('user_data'):
             return Response({'error': 'User not logged in or session expired'}, status=401)
 
-        old_username = bleachThe(request.session['user_data'].get('username', None))
+        old_username = bleachThe(
+            request.session['user_data'].get('username', None))
         if not old_username:
             return Response({'error': 'User not logged in or session expired'}, status=401)
 
@@ -658,16 +681,15 @@ def update_profile(request):
 
         user.save()
 
-        # Construct the full avatar URL
         avatar_url = user.avatar.url if user.avatar else None
         if avatar_url and not avatar_url.startswith("http"):
             avatar_url = f"http://{request.get_host()}{avatar_url}"
 
         request.session['user_data'] = {
-                'username': user.username,
-                'email': user.email,
-                'avatar': avatar_url,
-            }
+            'username': user.username,
+            'email': user.email,
+            'avatar': avatar_url,
+        }
 
         return Response({
             'message': 'User updated successfully!',
