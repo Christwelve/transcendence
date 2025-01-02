@@ -1,5 +1,6 @@
 $primary-color: #00fff6;
 $text-color: #ffffff;
+$tongue-color: #ff99cc;
 $background-color: rgba(0, 8, 20, 0.95);
 $button-padding: 10px 20px;
 $button-radius: 5px;
@@ -77,6 +78,12 @@ $button-radius: 5px;
         outline: none;
         box-shadow: 0 0 5px $primary-color;
       }
+    }
+
+    .invalid-feedback {
+      color: $tongue-color;
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
     }
   }
 
@@ -242,4 +249,22 @@ $button-radius: 5px;
       text-shadow: none;
     }
   }
+}
+
+.invalid-feedback {
+  margin-top: 1rem;
+  color: $tongue-color;
+  font-family: 'Roboto', sans-serif;
+  text-shadow:
+    0 0 5px rgba(red($tongue-color), green($tongue-color), blue($tongue-color), 1),
+    0 0 10px rgba(red($tongue-color), green($tongue-color), blue($tongue-color), 0.7),
+    0 0 20px rgba(red($tongue-color), green($tongue-color), blue($tongue-color), 0.4),
+    0 0 40px rgba(red($tongue-color), green($tongue-color), blue($tongue-color), 0.2);
+}
+
+:global(.invalid-feedback) {
+	margin-top: 1.05rem !important;
+  color: $tongue-color !important;
+  font-family: 'Roboto', sans-serif;
+  text-shadow: 0 0 10px $tongue-color;
 }
