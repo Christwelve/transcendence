@@ -2,7 +2,6 @@ import http from 'http'
 import express from 'express'
 import cookie from 'cookie'
 import { Server as WebSocketServer } from 'socket.io'
-import { createProxy, sendInstructions } from './proxy.js'
 import { ServerTick } from 'shared/tick'
 import dotenv from 'dotenv';
 
@@ -53,7 +52,9 @@ const data = {
 	players: {},
 	rooms: {},
 	tournaments: {},
-}
+};
+
+const statistics = {};
 
 const games = {};
 
@@ -97,53 +98,50 @@ const games = {};
 // 	}
 // }
 
-async function postMatch(matchData) {
-	try {
-		const response = await fetch('http://django:8000/api/matches/', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify(matchData),
-		});
+// async function postMatch(matchData) {
+// 	try {
+// 		const response = await fetch('http://django:8000/api/matches/', {
+// 			method: 'POST',
+// 			headers: {
+// 				'Content-Type': 'application/json',
+// 			},
+// 			body: JSON.stringify(matchData),
+// 		});
 
-		if (!response.ok) {
-			throw new Error('Failed to post match data');
-		}
+// 		if (!response.ok) {
+// 			throw new Error('Failed to post match data');
+// 		}
 
-		const data = await response.json();
-		console.log('Posted match data:', data);
-		return data.id;
-	} catch (error) {
-		console.error('Error posting match data:', error);
-	}
-}
+// 		const data = await response.json();
+// 		console.log('Posted match data:', data);
+// 		return data.id;
+// 	} catch (error) {
+// 		console.error('Error posting match data:', error);
+// 	}
+// }
 
-async function postStatistic(statisticData) {
-	try {
+// async function postStatistic(statisticData) {
+// 	try {
 
-		const response = await fetch('http://django:8000/api/statistics/', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify(statisticData),
-		});
+// 		const response = await fetch('http://django:8000/api/statistics/', {
+// 			method: 'POST',
+// 			headers: {
+// 				'Content-Type': 'application/json',
+// 			},
+// 			body: JSON.stringify(statisticData),
+// 		});
 
-		if (!response.ok) {
-			throw new Error('Failed to post statistics');
-		}
+// 		if (!response.ok) {
+// 			throw new Error('Failed to post statistics');
+// 		}
 
-		const data = await response.json();
-		console.log('Posted statistics data:', data);
-		return data;
-	} catch (error) {
-		console.error('Error posting statistics data:', error);
-	}
-}
-
-
-setInterval(sendInstructions.bind(null, io.emit.bind(io, 'instruction')), 0);
+// 		const data = await response.json();
+// 		console.log('Posted statistics data:', data);
+// 		return data;
+// 	} catch (error) {
+// 		console.error('Error posting statistics data:', error);
+// 	}
+// }
 
 server.listen(port, () => {
 	console.log(`Node.js server listening at http://${serverIp}:${port}, proxied through nginx`);
@@ -155,6 +153,9 @@ function getPlayerFromSocket(socket) {
 }
 
 function getRoomFromPlayer(player) {
+	if(player == null)
+		return null;
+
 	return data.rooms[player.roomId];
 }
 
@@ -166,7 +167,7 @@ function removePlayerFromRoom(player, room) {
 	if (room == null)
 		return;
 
-	const { id, players, masterId } = room;
+	const { id, players, masterId, type } = room;
 
 	const playerIndex = players.findIndex(playerId => playerId === player.id);
 	players.splice(playerIndex, 1);
@@ -176,64 +177,175 @@ function removePlayerFromRoom(player, room) {
 	if (activePlayerIndex !== -1)
 		room.activePlayers[activePlayerIndex] = null;
 
-	if (players.length === 0) {
-		games[id]?.detach();
-
-		delete games[id];
-		delete data.rooms[id];
-	}
-	else if (player.id === masterId) {
+	if (players.length > 0 && player.id === masterId) {
 		const newMasterId = players[0];
 
 		data.players[newMasterId].ready = false;
 
 		room.masterId = newMasterId;
+
+		updateState();
 	}
 
-	if (room.type === 1) {
-		const tournament = data.tournaments[room.id];
-		const match = getMatchForPlayer(tournament, player.id);
+	if(games[id] != null)
+		createScoreData(room, player);
 
-		if (match != null && match.stage === 0)
-			endMatch(tournament, match, player.id);
-	}
+	if (type === 0)
+		removeFromSingle(room);
+	else
+		removeFromTournament(room);
 
 	player.roomId = null;
 	player.ready = false;
 	player.index = -1;
+
+	updateState();
 }
 
-function getMatchForPlayer(tournament, playerId) {
-	const { level, brackets } = tournament;
+function removeFromSingle(room) {
+	const {id, players} = room;
 
-	const bracket = brackets[level];
+	if(players.length === 1 && games[id] != null) {
+		endSingleGame(room, room.counter, true);
 
-	const match = bracket.find(match => match.players.includes(playerId));
+		room.counter++;
 
-	return match;
+		updateState();
+	}
+
+	if (players.length === 0) {
+
+		delete data.rooms[id];
+
+		updateState();
+	}
 }
 
-function endMatch(tournament, match, leavingPlayerId) {
-	match.stage = 2;
+function removeFromTournament(room) {
+	if(room.status === 0)
+		return;
 
-	const winnerIndex = getWinnerForMatch(match, leavingPlayerId);
+	createScoresForPlayers(room);
+	finishedMatchData(room, true);
 
-	match.winner = match.players[winnerIndex];
+	const {id} = room;
+
+	room.status = 0;
+	room.counter++;
+
+	endRoom(room);
+	resetRoom(room);
+
+	games[id]?.detach();
+
+	delete games[id];
+	delete data.tournaments[id];
+
+	updateState();
+
 }
 
-function getWinnerForMatch(match, leavingPlayerId) {
-	const winningPlayerIndex = +!match.players.indexOf(leavingPlayerId);
+function createStatistic(room) {
+	const { id, type } = room;
 
-	if (leavingPlayerId != null)
-		return winningPlayerIndex;
+	const data = {
+		type,
+		matchIndex: -1,
+		matchIndexFinished: -1,
+		matches: [],
+	};
 
-	const { scores } = match;
-	const [score1, score2] = scores;
+	statistics[id] = data;
+}
 
-	if (score1 > score2)
-		return 0;
+function createMatchData(room) {
+	const { id } = room;
+	const datetimeStart = new Date().toISOString();
 
-	return 1;
+	const matchData = {
+		db: {
+			datetimeStart,
+			datetimeEnd: null,
+			tournamentId: null,
+			prematureEnd: false,
+		},
+		scores: [],
+	};
+
+	const matchIndex = ++statistics[id].matchIndex;
+
+	statistics[id].matches[matchIndex] = matchData;
+}
+
+function finishedMatchData(room, prematureEnd = false) {
+	const { id } = room;
+	const {matchIndex, matchIndexFinished, matches} = statistics[id];
+
+	if(matchIndex === -1 || matchIndexFinished === matchIndex)
+		return;
+
+	console.log('stats', statistics);
+
+	const match = matches[matchIndex];
+
+	match.db.datetimeEnd = new Date().toISOString();
+	match.db.prematureEnd = prematureEnd;
+	statistics[id].matchIndexFinished = matchIndex;
+}
+
+function createScoreData(room, player) {
+	const { id, scores } = room;
+	const {matchIndex, matchIndexFinished, matches} = statistics[id];
+
+	if(matchIndex === -1 || matchIndexFinished === matchIndex)
+		return;
+
+	const {tid, index} = player;
+
+	if(index === -1)
+		return;
+
+	const {scored, received} = scores[index];
+	const time = new Date().toISOString();
+
+	const scoreData = {
+		userId: tid,
+		goalsScored: scored,
+		goalsReceived: received,
+		datetimeLeft: time,
+		won: false
+	};
+
+	matches[matchIndex]?.scores?.push(scoreData);
+}
+
+function setWinners(room, highestScore) {
+	const { id } = room;
+	const {matchIndex, matches} = statistics[id];
+	const {scores} = matches[matchIndex] ?? {};
+
+	if(scores == null)
+		return;
+
+	const winners = scores.filter(score => score.goalsScored === highestScore);
+
+	winners.forEach(score => score.won = true);
+}
+
+function createScoresForPlayers(room) {
+	const {id, players} = room;
+
+	if(games[id] == null)
+		return;
+
+	players.forEach(id => {
+		const player = data.players[id];
+
+		if (player == null)
+			return;
+
+		createScoreData(room, player);
+	});
 }
 
 function createRoom(player, options) {
@@ -259,6 +371,7 @@ function createRoom(player, options) {
 		scores: null,
 		timer: 0,
 		running: false,
+		counter: 0,
 	};
 
 	resetRoom(room);
@@ -271,96 +384,72 @@ function resetRoom(room) {
 	room.timer = 60 * 10;
 }
 
-function createTournament(room) {
-	const players = [...getPlayersFromRoom(room)].map(player => player.id);
+function createTournament(room, players) {
+	const activePlayers = players.map(player => player.id);
 
-	players.sort(() => Math.random() - 0.5);
+	activePlayers.sort(() => Math.random() - 0.5);
 
 	const tournament = {
 		roomId: room.id,
-		level: -1,
-		match: -1,
-		activePlayers: players,
-		brackets: [],
+		bracketIndex: 0,
+		matchIndex: 0,
+		announceNext: false,
+		activePlayers: activePlayers,
+		brackets: createBrackets(activePlayers),
 	};
-
-	startBracket(tournament);
 
 	return tournament;
 }
 
-function startBracket(tournament) {
-	const bracket = createBracket(tournament);
+function createBrackets(players) {
+	let count = Math.ceil(players.length / 2);
 
-	tournament.brackets.push(bracket);
-	tournament.level++;
-}
+	const brackets = [];
 
-function startMatch(tournament) {
-	const { roomId, level, brackets } = tournament;
+	while(true) {
+		const bracket = createBracket(count);
 
-	const bracket = brackets[level];
+		brackets.push(bracket);
 
-	const match = bracket.find(match => match.stage === 0);
+		if (count === 1)
+			break;
 
-	match.stage = 1;
-
-	data.rooms[roomId].activePlayers = match.players;
-}
-
-function createBracket(tournament) {
-	const players = getActivePlayers(tournament);
-
-	const matches = [];
-
-	while (players.length > 0) {
-		const player1 = extractPlayer(players);
-		const player2 = extractPlayer(players);
-
-		const skipMatch = player1 == null || player2 == null;
-
-		const match = {
-			stage: skipMatch ? 2 : 0,
-			players: [player1, player2],
-			scores: [0, 0],
-		};
-
-		matches.push(match);
+		count = Math.ceil(count / 2);
 	}
 
-	return matches;
+	fillFirstBracket(players, brackets[0]);
+
+	return brackets;
 }
 
-function getActivePlayers(tournament) {
-	const { level, activePlayers, brackets } = tournament;
+function createBracket(count) {
+	const bracket = [];
 
-	if (level === -1)
-		return activePlayers.filter(player => data.players[player.id]);
+	for (let i = 0; i < count; i++) {
+		const match = {
+			stage: 0,
+			players: [null, null],
+			scores: [...Array(2)].map(() => ({ scored: 0, received: 0 })),
+		};
 
-	const bracket = brackets[level];
+		bracket.push(match);
+	}
 
-	return bracket.reduce((acc, match) => {
-		const { players, scores } = match;
-		const [player1, player2] = players;
-		const [score1, score2] = scores;
-
-		if (score1 > score2)
-			return [...acc, player1];
-
-		return [...acc, player2];
-	}, []).filter(player => data.players[player.id]);
+	return bracket;
 }
 
-function extractPlayer(players) {
-	const player = players.shift();
+function fillFirstBracket(players, bracket) {
+	const count = bracket.length;
 
-	if (player == null)
-		return null;
+	players = [...players];
 
-	if (data.players[player] == null)
-		return null;
+	for (let i = 0; i < count; i++) {
+		const match = bracket[i];
+		const player1 = players.shift();
+		const player2 = players.shift();
 
-	return player;
+		match.players = [player1, player2];
+	}
 }
 
 const onTick = tick => {
@@ -369,7 +458,7 @@ const onTick = tick => {
 	updatePlayers(tick);
 	updateBall(tick);
 
-	tick.sendGoalToPlayers(io, updateState, room)
+	tick.sendGoalToPlayers(io, updateState, endGame.bind(null, room.counter));
 
 	if (tick.getTick() % 300 === 0)
 		updateState();
@@ -380,77 +469,318 @@ const onTick = tick => {
 	if (tick.getTick() % 20 === 0) {
 		const roomId = room.id;
 		const game = games[roomId];
-		game.sendCollisionToPlayers(io);
+		game?.sendCollisionToPlayers(io);
 	}
 
-	if (room.timer === 0 && room.running) {
+	if(room.running && room.timer === 0) {
 		room.running = false;
-		room.status = 3;
-
-		setTimeout(async () => {
-			await endGame(room);
-
-			room.status = 0;
-			room.players.forEach(id => {
-				const player = data.players[id];
-
-				if (player == null)
-					return;
-
-				player.state = 1;
-				player.ready = false;
-				player.index = -1;
-			});
-
-			resetRoom(room);
-
-			updateState();
-		}, 10000);
 
 		updateState();
 	}
 };
 
-async function endGame(room) {
-	const endTime = new Date().toISOString();
-	// TODO: Adjust Tourmanent Id
-	const matchData = {
-		startTime: room.startTime,
-		endTime: endTime,
-		tournamentId: null
-	};
+function endGame(counter, room) {
+	console.log('endGame', counter, room, arguments);
+	if(room.type === 0)
+		endSingleGame(room, counter);
+	else
+		endTournamentGame(room, counter);
+}
 
-	console.log('Sending match data:', matchData);
+async function endSingleGame(room, counter, immediate = false) {
 
-	const matchId = await postMatch(matchData);
+	createScoresForPlayers(room);
+	finishedMatchData(room, immediate);
 
-	if (matchId) {
-		// STATISTIC DATA
-		// TODO: handle logged out player (maybe store preliminary stats while game is running)
-		const statisticData = room.activePlayers.reduce((acc, playerId, i) => {
+	const highestScore = room.scores.reduce((acc, score) => Math.max(acc, score.scored), 0);
 
-			if (playerId == null)
-				return acc;
+	if(!immediate)
+		setWinners(room, highestScore);
 
-			const player = data.players[playerId];
-			const score = room.scores[i];
+	room.status = 3;
 
-			const obj = {
-				userId: player.tid,
-				goalsScored: score.scored,
-				goalsReceived: score.received,
-				datetimeLeft: endTime,
-				matchId
-			};
+	updateState();
 
-			return [...acc, obj];
-		}, []);
+	if(room.counter !== counter)
+		return;
 
-		console.log('Sending statistic data:', statisticData);
-		await postStatistic(statisticData, matchId);
-	} else {
-		console.error('Match ID is undefined, cannot post statistics.');
+	console.log('before wait');
+
+	if(!immediate)
+		await wait(10000);
+
+	console.log('after wait');
+
+	if(room.counter !== counter)
+		return;
+
+	endRoom(room);
+
+	games[room.id]?.detach();
+	delete games[room.id];
+
+	resetRoom(room);
+
+	updateState();
+
+	console.log('done');
+}
+
+async function saveStatistics(room) {
+	const {id} = room;
+
+	const stats = statistics[id];
+
+	if(stats == null)
+		return;
+
+	delete statistics[id];
+
+	if(stats.matchIndex === -1)
+		return;
+
+	try {
+		const response = await fetch('http://django:8000/api/statistics/', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify(stats),
+		});
+
+		if (!response.ok)
+			throw new Error('Failed to post stats');
+
+		const data = await response.json();
+		console.log('Posted stats:', data);
+	} catch (error) {
+		console.error('Error posting stats:', error);
 	}
+}
+
+// async function storeMatchData(room) {
+// 	const endTime = new Date().toISOString();
+// 	// TODO: Adjust Tourmanent Id
+// 	const matchData = {
+// 		startTime: room.startTime,
+// 		endTime: endTime,
+// 		tournamentId: null
+// 	};
+
+// 	console.log('Sending match data:', matchData);
+
+// 	const matchId = await postMatch(matchData);
+
+// 	if (matchId) {
+// 		// STATISTIC DATA
+// 		// TODO: handle logged out player (maybe store preliminary stats while game is running)
+// 		const statisticData = room.activePlayers.reduce((acc, playerId, i) => {
+
+// 			if (playerId == null)
+// 				return acc;
+
+// 			const player = data.players[playerId];
+// 			const score = room.scores[i];
+
+// 			const obj = {
+// 				userId: player.tid,
+// 				goalsScored: score.scored,
+// 				goalsReceived: score.received,
+// 				datetimeLeft: endTime,
+// 				matchId
+// 			};
+
+// 			return [...acc, obj];
+// 		}, []);
+
+// 		console.log('Sending statistic data:', statisticData);
+// 		await postStatistic(statisticData, matchId);
+// 	} else {
+// 		console.error('Match ID is undefined, cannot post statistics.');
+// 	}
+// }
+
+async function endTournamentGame(room, counter, leavingPlayerId) {
+	if(room.counter !== counter)
+		return;
+
+	createScoresForPlayers(room);
+	finishedMatchData(room);
+
+	const tournament = data.tournaments[room.id];
+
+	if(tournament == null)
+		return;
+
+	if(leavingPlayerId == null)
+		await wait(7000);
+
+	if(room.counter !== counter)
+		return;
+
+	const match = getCurrentMatch(tournament);
+
+	transferScores(room, match);
+
+	const winner = getWinnerForMatch(match, leavingPlayerId);
+
+	const {matchIndex, matches} = statistics[room.id];
+	const {scores} = matches[matchIndex];
+	const player = data.players[winner];
+
+	scores.forEach(score => score.won = score.userId === player.tid);
+
+	match.winner = winner;
+
+	room.players.forEach(id => {
+		const player = data.players[id];
+
+		if (player == null)
+			return;
+
+		player.state = 3;
+		player.index = -1;
+	});
+
+	games[room.id]?.detach();
+	delete games[room.id];
+
+	resetRoom(room);
+
+	updateState();
+
+	await wait(2000);
+
+	if(room.counter !== counter)
+		return;
+
+	match.stage = 2;
+
+	advancePlayer(tournament, winner);
+
+	updateState();
+
+	if(isTurnamentOver(tournament))
+		return endTournament(room, tournament, winner, counter);
+
+	nextMatch(tournament);
+
+	console.log("STARTING NEW GAME")
+
+	startTournamentGame(room, counter);
+}
+
+function isTurnamentOver(tournament) {
+	const {brackets, bracketIndex, matchIndex} = tournament;
+
+	if(bracketIndex !== brackets.length - 1)
+		return false;
+
+	const bracket = brackets[bracketIndex];
+
+	if(matchIndex !== bracket.length - 1)
+		return false;
+
+	return true;
+}
+
+function advancePlayer(tournament, playerId) {
+	const {bracketIndex, matchIndex, brackets} = tournament;
+
+	const nextBracketIndex = bracketIndex + 1;
+	const nextMatchIndex = Math.floor(matchIndex / 2);
+	const nextPlayerIndex = matchIndex % 2;
+
+	if(nextBracketIndex === brackets.length)
+		return;
+
+	const bracket = brackets[nextBracketIndex];
+	const match = bracket[nextMatchIndex];
+
+	match.players[nextPlayerIndex] = playerId;
+}
+
+async function endTournament(room, tournament, winner, counter) {
+
+	if(room.counter !== counter)
+		return;
+
+	await wait(1000);
+
+	if(room.counter !== counter)
+		return;
+
+	room.status = 3;
+	tournament.winner = winner;
+
+	updateState();
+
+	await wait(10000);
+
+	if(room.counter !== counter)
+		return;
+
+	endRoom(room);
+
+	delete data.tournaments[room.id];
+
+	updateState();
+}
+
+function endRoom(room) {
+
+	saveStatistics(room);
+	console.log('Ending room', JSON.stringify(statistics[room.id], null, 4));
+
+	room.status = 0;
+	room.players.forEach(id => {
+		const player = data.players[id];
+
+		if (player == null)
+			return;
+
+		player.state = 1;
+		player.index = -1;
+		player.ready = false;
+	});
+}
+
+function transferScores(room, match) {
+	const { players, scores } = match;
+
+	players.forEach((playerId, i) => {
+		const playerIndex = room.activePlayers.indexOf(playerId);
+
+		if(playerIndex === -1)
+			return;
+
+		scores[i] = room.scores[playerIndex]
+	});
+}
+
+function getWinnerForMatch(match, leavingPlayerId) {
+	const index = getWinnerIndex(match, leavingPlayerId);
+
+	return match.players[index];
+}
+
+function getWinnerIndex(match, leavingPlayerId) {
+	if (leavingPlayerId != null)
+		return +!match.players.indexOf(leavingPlayerId);
+
+	const [{scored: score1}, {scored: score2}] = match.scores;
+
+	if(score1 === score2)
+		return Math.floor(Math.random() * 2);
+
+	if (score1 > score2)
+		return 0;
+
+	return 1;
+}
+
+function wait(ms) {
+	return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 function updateBall(tick) {
@@ -466,7 +796,7 @@ function updateBall(tick) {
 function updatePlayers(tick) {
 	const entries = tick.getQueueEntries();
 
-	if (entries.length === 0)
+	if(entries.length === 0)
 		return;
 
 	entries.forEach(entry => {
@@ -507,40 +837,45 @@ function createPlayer(id, tid, username) {
 }
 
 async function initConnection(socket) {
-	const { cookie: cookieHeader } = socket.handshake.headers
-	const cookies = cookie.parse(cookieHeader);
+	try {
+		const { cookie: cookieHeader } = socket.handshake.headers
+		const cookies = cookie.parse(cookieHeader);
 
-	const options = {
-		method: 'GET',
-		headers: {
-			'Authorization': `Token ${cookies.authToken}`,
-			'Content-Type': 'application/json',
-			'Cookie': cookieHeader
-		},
-	};
-	const response = await fetch('http://django:8000/api/user/validate/', options);
+		const options = {
+			method: 'GET',
+			headers: {
+				'Authorization': `Token ${cookies.authToken}`,
+				'Content-Type': 'application/json',
+				'Cookie': cookieHeader
+			},
+		};
+		const response = await fetch('http://django:8000/api/user/validate/', options);
 
-	if (!response.ok) {
+		if (!response.ok) {
 
-		const body = await response.json();
+			const body = await response.json();
 
-		console.log('verify failed', body);
+			console.log('verify failed', body);
 
-		return socket.disconnect(true);
+			throw new Error('Failed to verify user');
+		}
 
+		const { tid, username } = await response.json();
+
+		const player = createPlayer(socket.id, tid, username);
+
+		data.players[player.id] = player;
+
+		setPlayerStatus(socket, true);
+
+		updateState();
+
+		return player;
+	} catch (error) {
+		console.error('Failed to verify user:', error);
 	}
 
-	const { tid, username } = await response.json();
-
-	const player = createPlayer(socket.id, tid, username);
-
-	data.players[player.id] = player;
-
-	setPlayerStatus(socket, true);
-
-	updateState();
-
-	return player;
+	return null;
 }
 
 function setPlayerStatus(socket, status) {
@@ -559,16 +894,172 @@ function setPlayerStatus(socket, status) {
 	fetch(`http://django:8000/api/user/status/?status=${status}`, options);
 }
 
+function startSingleGame(room, players, counter) {
+	const activePlayers = players.slice(0, 4).sort(() => Math.random() - 0.5);
+
+	startRoom(room, players, activePlayers, counter);
+}
+
+function startTournament(room, players, counter) {
+	const tournament = createTournament(room, players);
+
+	data.tournaments[room.id] = tournament;
+
+	room.status = 2;
+	players.forEach(player => player.state = 3);
+
+	updateState();
+
+	startTournamentGame(room, counter);
+}
+
+async function startTournamentGame(room, counter) {
+	if(room.counter !== counter)
+		return;
+
+	const tournament = data.tournaments[room.id];
+
+	await wait(3000);
+
+	if(room.counter !== counter)
+		return;
+
+	startMatch(tournament);
+
+	const match = getCurrentMatch(tournament);
+	const onlyOnePlayer = match.players[1] == null;
+
+	console.log('tournament', tournament);
+	console.log('match'	, match);
+	console.log('onlyOnePlayer', onlyOnePlayer);
+
+	if(onlyOnePlayer) {
+		const player = match.players[0];
+
+		console.log('player', player);
+
+		match.stage = 2;
+		match.winner = player;
+
+		advancePlayer(tournament, player);
+
+		nextMatch(tournament);
+		startMatch(tournament);
+
+		updateState();
+	}
+
+	tournament.announceNext = true;
+
+	updateState();
+
+	await wait(5000);
+
+	if(room.counter !== counter)
+		return;
+
+	tournament.announceNext = false;
+
+	const players = getPlayersFromRoom(room);
+	const activePlayers = getActiveTourmanentPlayers(tournament);
+
+	startRoom(room, players, activePlayers, counter);
+}
+
+function getActiveTourmanentPlayers(tournament) {
+	const {brackets, bracketIndex, matchIndex} = tournament;
+
+	const bracket = brackets[bracketIndex];
+	const match = bracket[matchIndex];
+
+	const players = match.players.map(playerId => data.players[playerId]);
+
+	return players;
+}
+
+function startMatch(tournament) {
+	const match = getCurrentMatch(tournament);
+
+	match.stage = 1;
+}
+
+function nextMatch(tournament) {
+	const {bracketIndex, matchIndex, brackets} = tournament;
+	const bracket = brackets[bracketIndex];
+
+	if(matchIndex === bracket.length - 1) {
+		tournament.bracketIndex++;
+		tournament.matchIndex = 0;
+	} else
+		tournament.matchIndex++;
+}
+
+function getCurrentMatch(tournament) {
+	if(tournament == null)
+		return {stage: 2};
+
+	const {bracketIndex, matchIndex, brackets} = tournament;
+	const bracket = brackets[bracketIndex];
+
+	return bracket[matchIndex];
+}
+
+async function startRoom(room, players, activePlayers, counter) {
+
+	if(room.counter !== counter)
+		return;
+
+	createMatchData(room);
+
+	const spectators = players.filter(player => !activePlayers.includes(player));
+
+	const game = new ServerTick(room, activePlayers, spectators, onTick);
+
+	games[room.id] = game;
+
+	players.forEach(player => player.state = 2);
+
+	room.activePlayers = activePlayers.map(player => player.id);
+
+	updateState();
+
+	await wait(1000);
+
+	if(room.counter !== counter)
+		return;
+
+	game.startGame(io);
+	room.startTime = new Date().toISOString();
+
+	updateState();
+
+	await wait(3000);
+
+	if(room.counter !== counter)
+		return;
+
+	room.status = 2;
+	room.running = true;
+
+	updateState();
+}
+
 io.on('connection', async socket => {
 
 	socket.on('initial', async () => {
 		const player = await initConnection(socket);
+
+		if (player == null)
+			return;
 
 		socket.emit('state', { id: ++stateId, userId: player.id, data });
 	});
 
 	socket.on('room.create', options => {
 		const player = getPlayerFromSocket(socket);
+
+		if (player == null)
+			return;
 
 		const currentRoom = getRoomFromPlayer(player);
 
@@ -581,16 +1072,19 @@ io.on('connection', async socket => {
 		player.roomId = room.id;
 
 		updateState();
+
+		socket.emit('pushstate', room.id);
 	});
 
-	socket.on('room.join', options => {
-		const { id } = options;
+	socket.on('room.join', (id, record) => {
 		const player = getPlayerFromSocket(socket);
 
 		if (player == null)
 			return;
 
 		const room = data.rooms[id];
+
+		console.log('room', room);
 
 		if (room == null)
 			return socket.emit('notice', { type: 'error', title: 'Can not join room', message: `Room with id ${id} does not exist.` });
@@ -615,6 +1109,9 @@ io.on('connection', async socket => {
 		room.players.push(player.id);
 
 		updateState();
+
+		if(record)
+			socket.emit('pushstate', room.id);
 	});
 
 	socket.on('room.join.quick', () => {
@@ -637,9 +1134,11 @@ io.on('connection', async socket => {
 		room.players.push(player.id);
 
 		updateState();
+
+		socket.emit('pushstate', room.id);
 	});
 
-	socket.on('room.leave', () => {
+	socket.on('room.leave', record => {
 		const player = getPlayerFromSocket(socket);
 		const room = getRoomFromPlayer(player);
 
@@ -651,10 +1150,16 @@ io.on('connection', async socket => {
 		player.state = 0;
 
 		updateState();
+
+		if(record)
+			socket.emit('pushstate', null);
 	});
 
 	socket.on('player.ready', () => {
 		const player = getPlayerFromSocket(socket);
+
+		if(player == null)
+			return;
 
 		if (player.state !== 1)
 			return;
@@ -668,6 +1173,10 @@ io.on('connection', async socket => {
 
 	socket.on('game.start', () => {
 		const player = getPlayerFromSocket(socket);
+
+		if (player == null)
+			return;
+
 		const room = getRoomFromPlayer(player);
 
 		if (room == null)
@@ -679,9 +1188,7 @@ io.on('connection', async socket => {
 
 		const players = getPlayersFromRoom(room);
 
-		const activePlayers = players.slice(0, 4);
-
-		if (activePlayers.length < 2)
+		if (players.length < 2)
 			return socket.emit('notice', { type: 'error', title: 'Can not start game', message: `Not enough players.` });
 
 		const otherPlayers = players.filter(player => player.id !== room.masterId);
@@ -690,45 +1197,34 @@ io.on('connection', async socket => {
 		if (!allReady)
 			return socket.emit('notice', { type: 'error', title: 'Can not start game', message: `Not all players are ready.` });
 
-		const activePlayerIds = activePlayers.map(player => player.id);
-
+		room.counter++;
 		room.status = 1;
-		room.activePlayers = activePlayerIds;
-
-		players.forEach(player => player.state = 2);
-
-		const game = new ServerTick(room, activePlayers, onTick);
-
-		games[room.id] = game;
-
-		// if(room.type === 1)
-
-
-		setTimeout(() => {
-
-			game.startGame(io);
-			room.startTime = new Date().toISOString();
-
-			setTimeout(() => {
-				room.status = 2;
-				room.running = true;
-
-				updateState();
-			}, 3000);
-
-		}, 1000);
 
 		updateState();
+
+		createStatistic(room);
+
+		if(room.type === 0)
+			startSingleGame(room, players, room.counter);
+		else
+			startTournament(room, players, room.counter);
 	});
 
 	socket.on('game.tick', (tickClient) => {
 		const player = getPlayerFromSocket(socket);
+
+		if (player == null)
+			return;
+
 		const room = getRoomFromPlayer(player);
 
 		if (room == null)
 			return;
 
 		const tick = games[room.id];
+
+		if (tick == null)
+			return;
 
 		if (tickClient == null)
 			return socket.emit('game.tick', 'set', tick.getTick());
@@ -743,12 +1239,19 @@ io.on('connection', async socket => {
 
 	socket.on('player.event', event => {
 		const player = getPlayerFromSocket(socket);
+
+		if (player == null)
+			return;
+
 		const room = getRoomFromPlayer(player);
 
 		if (room == null)
 			return;
 
 		const tick = games[room.id];
+
+		if (tick == null)
+			return;
 
 		if (tick.canQueueEvent(event))
 			return tick.queueEvent(player, event);

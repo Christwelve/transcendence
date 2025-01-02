@@ -5,224 +5,179 @@ import Login from './components/Login/Login'
 import Page from './pages/Page'
 import Cookies from 'js-cookie'
 import TwoFactor from './components/TwoFactor/TwoFactor'
-import DataContextProvider from './components/DataContext/DataContext'
+import DataContextProvider from './context/DataContext'
 import ModalPresenter from './components/Modal/ModalPresenter'
 import ToastPresenter from './components/Toast/ToastPresenter'
+import { UserProvider, useUserContext } from './context/UserContext'
 import { closeModalTop } from './utils/modal'
-import { protocol, hostname, djangoPort } from './utils/scheme'
+import { protocol, hostname } from './utils/scheme'
 
-function App() {
+
+import {
+  fetchUserData as fetchUserDataService,
+  userLogin as userLoginService,
+  loginWith42 as loginWith42Service,
+} from './services/userService';
+
+const AppContent = () => {
+  const {
+    userStatus,
+    setUserStatus,
+    errorMessage,
+    setErrorMessage,
+    avatar,
+    setAvatar,
+    user,
+    setUser,
+    username,
+    setUsername,
+    loading,
+    setLoading,
+  } = useUserContext();
+
+
+
   useEffect(() => {
-
-    const onKeyDown = event => {
-      if (event.code !== 'Escape')
-        return;
-
+    const onKeyDown = (event) => {
+      if (event.code !== 'Escape') return;
       closeModalTop();
-    }
+    };
 
     document.addEventListener('keydown', onKeyDown);
-
     return () => document.removeEventListener('keydown', onKeyDown);
   }, []);
 
   useEffect(() => {
     if (Cookies.get('login')) {
       fetchUserData(); // Call the function to fetch user data
+    } else {
+      setLoading(false);
     }
   }, []);
-
-  const [userStatus, setUserStatus] = useState("login");
-  const [errorMessage, setErrorMessage] = useState(null);
-  const [avatar, setAvatar] = useState(null);
-  const [user, setUser] = useState(null);
-  const [username, setUsername] = useState("");
 
   const changeStatus = (status) => {
     setUserStatus(status);
   };
 
-  // const addUserToDatabase = (user) => {
-  //   if (!database[user.username]) {
-  //     const updatedDatabase = {
-  //       ...database,
-  //       [user.username]: { email: user.email, password: user.password },
-  //     };
-  //     setDatabase(updatedDatabase);
-  //     setUserStatus("login");
-  //     setErrorMessage(null);
-  //   } else {
-  //     setErrorMessage("User already exists");
-  //   }
-  // };
+  const userLogin = async (formData, authenticated) => {
+    try {
+      setErrorMessage(null);
+      const userData = await userLoginService(formData, authenticated);
 
-  const userLogin = async (user, authenticated) => {
-    if (authenticated) {
-      const response = await fetch(`${protocol}//${hostname}/api/login/`, {
-        method: "POST",
-        credentials: 'include',
-        body: user,
-      });
-
-      const userData = await response.json();
-
-      if (!response.ok) {
-        if (response.status === 400 || response.status === 404) {
-          setErrorMessage("Wrong credentials!");
-        } else if (response.status === 401) {
-          setErrorMessage("Unable to authenticate!");
+      Cookies.set('login', 'manual');
+      if (userData.user.avatar) {
+        const avatarUrl = userData.user.avatar;
+        if (avatarUrl.startsWith('http')) {
+          setAvatar(avatarUrl);
         } else {
-          console.error("An unexpected error occurred:", response.statusText);
+          setAvatar(`${protocol}//${hostname}${avatarUrl}`);
         }
       } else {
-        Cookies.set('login', 'manual');
-        if (userData.user.avatar) {
-          const avatarUrl = userData.user.avatar;
-          if (avatarUrl.startsWith('http')) {
-            setAvatar(avatarUrl);
-          } else {
-            setAvatar(`${protocol}//${hostname}${avatarUrl}`);
-          }
-        } else {
-          setAvatar(`https://robohash.org/${userData.username}?200x200`);
-        }
+        setAvatar(`https://robohash.org/${userData.username}?200x200`);
+      }
 
-        //when we change the domain to a secure one we must add { secure: true } as 3rd parameter
-        Cookies.set('authToken', userData.token);
-        setUserStatus("logged");
+      Cookies.set('authToken', userData.token);
+      Cookies.set('jwtToken', userData.jwtToken);
+      setUserStatus("logged");
+      setErrorMessage(null);
+      setUser(userData.user);
+      setUsername(userData.user.username);
+
+    } catch (error) {
+      if (error.message === "Wrong credentials!") {
+        setErrorMessage("Wrong credentials!");
+      } else if (error.message === "2fa") {
+        setUserStatus("2fa");
         setErrorMessage(null);
-        setUser(userData.user);
-        setUsername(userData.user.username);
+
+        const userObject = Object.fromEntries(formData.entries());
+        setUser(userObject);
+        setUsername(userObject.username);
+      } else if (error.message === "Unable to authenticate!") {
+        setErrorMessage("Unable to authenticate!");
+      } else {
+        setErrorMessage("An unexpected error occurred");
+
       }
-    } else {
-      try {
-        const response = await fetch(`${protocol}//${hostname}/api/login/`, {
-          method: "POST",
-          credentials: 'include',
-          body: user,
-        });
-
-        if (response.status === 400 || response.status === 404) {
-          setErrorMessage("Wrong credentials!");
-          return;
-        } else if (response.status === 401) {
-        } else if (response.status === 401) {
-          setUserStatus("2fa");
-          setErrorMessage(null);
-          const userObject = Object.fromEntries(user.entries());
-          setUser(userObject);
-          setUsername(userObject.username);
-        } else if (response.status === 200) {
-          const userData = await response.json();
-          Cookies.set('login', 'manual');
-          if (userData.user.avatar) {
-            const avatarUrl = userData.user.avatar;
-            if (avatarUrl.startsWith('http')) {
-              setAvatar(avatarUrl);
-            } else {
-              setAvatar(`${protocol}//${hostname}${avatarUrl}`);
-            }
-          } else {
-            setAvatar(`https://robohash.org/${userData.username}?200x200`);
-          }
-
-          Cookies.set('authToken', userData.token);
-          setUserStatus("logged");
-          setErrorMessage(null);
-          setUser(userData.user);
-          setUsername(userData.user.username);
-        } else {
-          setErrorMessage("An unexpected error occurred");
-        }
-      } catch (error) {
-        console.error("Network error:", error.message);
-      }
-
     }
   };
 
   const login_with_42 = async () => {
     try {
-      const response = await fetch(`${protocol}//${hostname}/api/auth/42/login/`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      console.log(`${protocol}//${hostname}/api/auth/42/login/`);
-
-      if (!response.ok) {
-        console.error("Failed to get authorization URL:", response.statusText);
-        setErrorMessage("An unexpected error occurred");
-        return;
-      } else {
-        setErrorMessage(null);
-      }
-
-      const data = await response.json();
+      const data = await loginWith42Service();
       Cookies.set('login', '42');
-      window.location.href = data.authorization_url; // Redirect the user
+      window.location.href = data.authorization_url;
     } catch (error) {
-      console.error("Network error:", error.message);
+      setErrorMessage("An unexpected error occurred");
     }
   };
 
+  // throw new Error('poop')
+
   const fetchUserData = async () => {
     try {
-      const response = await fetch(`${protocol}//${hostname}/api/user/data/`, {
-        method: "GET",
-        credentials: "include", // Include cookies for session-based data
-      });
 
-      if (!response.ok) {
-        console.error("Failed to fetch user data:", response.statusText);
-        setErrorMessage("An unexpected error occurred");
-        return;
+      const userResponse = await fetchUserDataService();
+
+      if (!userResponse) {
+        throw new Error("No user data received");
       }
 
-      const user = await response.json();
-      // console.log("User: ", user);
       const authToken = Cookies.get('authToken');
       if (!authToken) {
-        Cookies.set('authToken', user.token);
+        Cookies.set('authToken', userResponse.token);
       }
 
-      console.log("Avatar URL received:", user.avatar);
-      if (user.avatar) {
-        const avatarUrl = user.avatar;
+      console.log("Avatar URL received:", userResponse.avatar);
+      if (userResponse.avatar) {
+        const avatarUrl = userResponse.avatar;
         if (avatarUrl.startsWith('http')) {
-          setAvatar(avatarUrl); // Absolute URL, use directly
+          setAvatar(avatarUrl);
         } else {
           setAvatar(`${protocol}//${hostname}${avatarUrl}`);
         }
       } else {
-        setAvatar(`https://robohash.org/${user.username}?200x200`);
-        console.log("TODO: ADD FILE TO BACKEND AND STORE PATH: ", user.avatar);
+        setAvatar(`https://robohash.org/${userResponse.username}?200x200`);
       }
 
-      setUsername(user.username);
+      if (userResponse.username)
+        setUsername(userResponse.username);
       setUserStatus("logged");
       setErrorMessage(null);
 
     } catch (error) {
-      console.error("Network error:", error.message);
+      if (error.status) {
+        switch (error.status) {
+          case 400:
+            setErrorMessage(error.message);
+            break;
+          case 401:
+            setUserStatus("login");
+            setErrorMessage(error.message);
+            break;
+          case 404:
+            setErrorMessage(error.message);
+            break;
+          default:
+            setErrorMessage(error.message);
+        }
+      } else {
+        setErrorMessage(error.message || "An unexpected error occurred");
+      }
+    } finally {
+      setLoading(false); // Stop loading
     }
   };
-  // return (
-  //   <DataContextProvider>
-  //     <Home changeStatus={changeStatus} avatar={avatar} />
-  //     <ModalPresenter />
-  //     <ToastPresenter />
-  //   </DataContextProvider>
-  // );
+
+  if (loading) {
+    return <div className="loading-screen">Loading...</div>; // Replace with a spinner or skeleton screen
+  }
 
   return (
     <>
       {userStatus === "register" ? (
         <Register
           changeStatus={changeStatus}
-        // addUserToDatabase={addUserToDatabase}
-        // errorMessage={errorMessage}
         />
       ) : userStatus === "login" ? (
         <Login
@@ -240,14 +195,25 @@ function App() {
         />
       ) : (
         <DataContextProvider>
-          <Page changeStatus={changeStatus} avatar={avatar} setAvatar={setAvatar} username={username} setUsername={setUsername} />
+          <Page
+            changeStatus={changeStatus}
+            avatar={avatar}
+            setAvatar={setAvatar}
+            username={username}
+            setUsername={setUsername}
+          />
           <ModalPresenter />
           <ToastPresenter />
-        </DataContextProvider>
-
+        </DataContextProvider >
       )}
     </>
   );
-}
+};
+
+const App = () => (
+  <UserProvider>
+    <AppContent />
+  </UserProvider>
+);
 
 export default App;

@@ -2,8 +2,11 @@ import React, { useRef, useState, useEffect } from 'react'
 import Modal from './Modal'
 import CardSection from '../Card/CardSection'
 import FriendList from '../Friends/FriendList'
+import Cookies from 'js-cookie'
 import scss from './FriendSearchModal.module.scss'
-import { protocol, hostname, djangoPort } from '../../utils/scheme'
+import { showToast } from '../Toast/ToastPresenter'
+import { protocol, hostname } from '../../utils/scheme'
+
 
 
 function FriendSearchModal(props) {
@@ -24,8 +27,11 @@ function FriendSearchModal(props) {
 		}
 
 		try {
-			// const response = await fetchWithCredentials(`${protocol}//${hostname}:${djangoPort}/api/user/search/?query=${searchQuery}`, "GET");
-			const response = await fetchWithCredentials(`${protocol}//${hostname}/api/user/search/?query=${searchQuery}`, "GET");
+			const response = await fetchWithCredentials(`${protocol}//${hostname}/api/user/search/?query=${searchQuery}`, "GET", {
+				headers: {
+					'Authorization': `Bearer ${Cookies.get('jwtToken')}`,
+				},
+			});
 			const data = await response.json();
 
 			if (data.detail) {
@@ -36,7 +42,6 @@ function FriendSearchModal(props) {
 				setUsers(data.users || []);
 			}
 		} catch (error) {
-			console.error("Error searching users:", error);
 			setSearchMessage("An error occurred while searching. Please try again.");
 			setUsers([]);
 		}
@@ -44,13 +49,11 @@ function FriendSearchModal(props) {
 
 	const addFriend = async username => {
 
-		console.log(username);
-
 		try {
-			// const response = await fetchWithCredentials(`${protocol}//${hostname}:${djangoPort}/api/friend/add/`, "POST", {
 			const response = await fetchWithCredentials(`${protocol}//${hostname}/api/friend/add/`, "POST", {
 				headers: {
 					"Content-Type": "application/json",
+					'Authorization': `Bearer ${Cookies.get('jwtToken')}`,
 				},
 				body: JSON.stringify({ username }),
 			});
@@ -59,7 +62,7 @@ function FriendSearchModal(props) {
 				closeModal('added');
 
 		} catch (error) {
-			console.error("Error adding friend:", error);
+			showToast({ type: "error", title: "Error", message: "Friend could not be added." });
 		}
 	};
 

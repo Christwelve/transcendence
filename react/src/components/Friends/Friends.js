@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react'
-import { useDataContext } from '../DataContext/DataContext'
+import { useDataContext } from '../../context/DataContext'
 import Card from '../Card/Card'
 import CardSection from '../Card/CardSection'
 import Icon from '../Icon/Icon'
 import FriendList from './FriendList'
 import FriendSearchModal from '../Modal/FriendSearchModal'
 import scss from './Friends.module.scss'
+import Cookies from 'js-cookie'
 import { showModal } from '../../utils/modal'
 import { showToast } from '../Toast/ToastPresenter'
-import { protocol, hostname, djangoPort } from '../../utils/scheme'
+import { protocol, hostname } from '../../utils/scheme'
 
 
-function Friends() {
+function Friends(props) {
+	const { selected } = props;
 	const { getStateId } = useDataContext();
 
 	const [friends, setFriends] = useState([]);
@@ -20,7 +22,7 @@ function Friends() {
 
 	const updateFriendsList = async () => {
 		const friends = await fetchFriends();
-		const restructured = friends.map(({ id, friend }) => ({ id, ...friend }));
+		const restructured = friends.map(({ friend }) => friend);
 		setFriends(restructured);
 	};
 
@@ -35,10 +37,10 @@ function Friends() {
 
 	const removeFriend = async username => {
 		try {
-			// const response = await fetchWithCredentials(`${protocol}//${hostname}:${djangoPort}/api/friend/remove/`, "POST", {
 			const response = await fetchWithCredentials(`${protocol}//${hostname}/api/friend/remove/`, "POST", {
 				headers: {
 					"Content-Type": "application/json",
+					'Authorization': `Bearer ${Cookies.get('jwtToken')}`,
 				},
 				body: JSON.stringify({ username }),
 			});
@@ -48,7 +50,7 @@ function Friends() {
 			}
 
 		} catch (error) {
-			console.error("Error removing friend:", error);
+			showToast({ type: "error", title: "Error", message: "Friend could not be removed." });
 		}
 	};
 
@@ -67,8 +69,8 @@ function Friends() {
 
 	return (
 		<Card title='Friends' classes={scss.friends} action={titleAction}>
-			{getFriendsComponent(friendsOnline, "Online", removeFriend)}
-			{getFriendsComponent(friendsOffline, "Offline", removeFriend)}
+			{getFriendsComponent(friendsOnline, "Online", selected, removeFriend)}
+			{getFriendsComponent(friendsOffline, "Offline", selected, removeFriend)}
 			{friends.length === 0 && <div className={scss.mof}>No friends.. :(</div>}
 		</Card>
 	)
@@ -87,23 +89,26 @@ function fetchWithCredentials(path, method, extraOptions = {}) {
 
 async function fetchFriends() {
 	try {
-		// const response = await fetchWithCredentials(`${protocol}//${hostname}:${djangoPort}/api/friend/`, "GET");
-		const response = await fetchWithCredentials(`${protocol}//${hostname}/api/friend/`, "GET");
+		const response = await fetchWithCredentials(`${protocol}//${hostname}/api/friend/`, "GET", {
+			headers: {
+				'Authorization': `Bearer ${Cookies.get('jwtToken')}`,
+			},
+		});
 		const data = await response.json();
 		return data.friends || [];
 	} catch (error) {
-		console.error("Error fetching friends:", error);
+		showToast({ type: "error", title: "Error", message: "Could not fetch friends." });
 		return [];
 	}
 }
 
-function getFriendsComponent(friends, title, removeFriend) {
+function getFriendsComponent(friends, title, selected, removeFriend) {
 	if (friends.length === 0)
 		return null;
 
 	return (
 		<CardSection title={title} classes={scss.list}>
-			<FriendList friends={friends} removeFriend={removeFriend} />
+			<FriendList friends={friends} selected={selected} removeFriend={removeFriend} />
 		</CardSection>
 	);;
 }

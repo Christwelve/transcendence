@@ -1,6 +1,9 @@
 import React, { useState } from 'react'
 import styles from './Register.module.scss'
-import { protocol, hostname, djangoPort } from '../../utils/scheme'
+import ToastPresenter, { showToast } from "../Toast/ToastPresenter";
+import { protocol, hostname } from '../../utils/scheme'
+
+
 
 const Register = ({ changeStatus }) => {
   const [email, setEmail] = useState("");
@@ -74,7 +77,6 @@ const Register = ({ changeStatus }) => {
 
   const addUserToDatabase = async (formData) => {
     try {
-      // const response = await fetch(`${protocol}//${hostname}:${djangoPort}/api/users/`, {
       const response = await fetch(`${protocol}//${hostname}/api/users/`, {
         method: "POST",
         body: formData,
@@ -86,14 +88,16 @@ const Register = ({ changeStatus }) => {
           setEmailError(errorData.email ? errorData.email.join(", ") : "");
           setUsernameError(errorData.username ? errorData.username.join(", ") : "");
         } else {
-          console.error("An unexpected error occurred:", response.statusText);
+          showToast({ type: "error", title: "Error", message: `An unexpected error occured: ${response.status} ${response.statusText}` });
+
         }
       } else {
-        console.log("User successfully registered.");
+        showToast({ type: "success", title: "Success", message: "User successfully registered." });
         changeStatus("login");
       }
     } catch (error) {
-      console.error("Network error:", error.message);
+      showToast({ type: "error", title: "Error", message: error.message });
+
     }
   };
 
@@ -206,6 +210,7 @@ const Register = ({ changeStatus }) => {
           </span>
         </div>
       </form>
+      <ToastPresenter />
     </div>
   );
 };

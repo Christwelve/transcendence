@@ -15,7 +15,7 @@ target/
 __pycache__/
 
 # Environments
-.env
+.env*
 .venv
 env/
 venv/
@@ -34,3 +34,10 @@ Thumbs.db
 
 # Certificates
 *.pem
+
+# media
+django/media
+
+# migrations
+django/api/migrations/[0-9]{4}_*.py
+django/api/migrations/__pycache__

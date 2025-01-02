@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import styles from './Profile.module.scss'
-import { protocol, hostname, djangoPort } from '../../utils/scheme'
+import Cookies from 'js-cookie'
+import { protocol, hostname } from '../../utils/scheme'
 
 
 const SettingsWidget = ({ avatar, setAvatar, onClose, twoFactor, setNewUsername }) => {
@@ -11,12 +12,62 @@ const SettingsWidget = ({ avatar, setAvatar, onClose, twoFactor, setNewUsername 
   const [avatarFile, setAvatarFile] = useState(null);
   const [fileName, setFileName] = useState("No file chosen");
   const [is2FAEnabled, setIs2FAEnabled] = useState(twoFactor);
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [usernameError, setUsernameError] = useState("");
+
+  const emailValid = (email) => {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.test(email);
+  };
+
+  const _onEmailChange = (event) => {
+    const email = event.target.value;
+
+    setEmail(email);
+    if (!email || emailValid(email)) {
+      setEmailError("");
+    } else {
+      setEmailError("Invalid email");
+    }
+  }
+
+  const passwordValid = (password) => {
+    const regex = /^(?=.*[a-zA-Z])(?=.*\d)[A-Za-z\d]{8,20}$/;
+    return regex.test(password);
+  };
+
+  const _onPasswordChange = (event) => {
+    const password = event.target.value;
+    setNewPassword(password);
+
+    if (!password || passwordValid(password)) {
+      setPasswordError("");
+    } else {
+      setPasswordError("Your password must be 8-20 characters long, contain letters and numbers, and must not contain spaces, special characters, or emoji.");
+    }
+  }
+
+  const usernameValid = (username) => {
+    const regex = /^[a-zA-Z0-9_\-]+$/;
+    return regex.test(username);
+  };
+
+  const _onUsernameChange = (event) => {
+    const username = event.target.value;
+    setUsername(username);
+
+    if (!username || usernameValid(username)) {
+      setUsernameError("");
+    } else {
+      setUsernameError("Username can only contain letters, numbers, underscores, and hyphens.");
+    }
+  };
 
   const enable2FA = () => {
     const formData = new FormData();
     const has_2fa = !is2FAEnabled;
     formData.append("has_2fa", has_2fa);
-    // fetch(`${protocol}//${hostname}:${djangoPort}/api/2fa/enable/`, {
     fetch(`${protocol}//${hostname}/api/2fa/enable/`, {
       method: "POST",
       credentials: "include",
@@ -36,22 +87,51 @@ const SettingsWidget = ({ avatar, setAvatar, onClose, twoFactor, setNewUsername 
 
   const handleSaveChanges = () => {
     const formData = new FormData();
-    if (username) formData.append("username", username);
-    if (email) formData.append("email", email);
-    if (newPassword) formData.append("password", newPassword);
+    if (username) {
+      if (!usernameValid(username))
+        return;
+      formData.append("username", username);
+    }
+    if (email) {
+      if (!emailValid(email))
+        return;
+      formData.append("email", email);
+    }
+    if (newPassword) {
+      if (!passwordValid(newPassword))
+        return;
+      formData.append("password", newPassword);
+    }
     if (avatarFile) formData.append("avatar", avatarFile);
 
-    // fetch(`${protocol}//${hostname}:${djangoPort}/api/user/update/`, {
     fetch(`${protocol}//${hostname}/api/user/update/`, {
       method: "POST",
       credentials: "include",
+      headers: {
+        'Authorization': `Bearer ${Cookies.get('jwtToken')}`,
+      },
       body: formData,
     })
-      .then((response) => response.json())
+      .then(async (response) => {
+        if (!response.ok) {
+          let errMsg = "An unexpected error occurred";
+          try {
+            const errorData = await response.json();
+            if (errorData.error) {
+              errMsg = errorData.error;
+            }
+          } catch (parseError) {
+            console.error("Failed to parse JSON error:", parseError);
+          }
+          throw new Error(errMsg);
+        }
+        return response.json();
+      })
       .then((data) => {
         if (data.message) {
           alert(data.message);
-          setNewUsername(username);
+          if (username.length > 0)
+            setNewUsername(username);
           if (data.avatar) {
             setAvatar(data.avatar);
             setAvatarPreview(data.avatar);
@@ -60,7 +140,9 @@ const SettingsWidget = ({ avatar, setAvatar, onClose, twoFactor, setNewUsername 
           alert("Failed to update profile.");
         }
       })
-      .catch((error) => console.error("Error updating profile:", error));
+      .catch((error) => {
+        alert(`Failed to update profile: ${error.message}`);
+      });
   };
 
   const handleAvatarChange = (e) => {
@@ -91,34 +173,40 @@ const SettingsWidget = ({ avatar, setAvatar, onClose, twoFactor, setNewUsername 
           />
           <span className={styles.fileName}>{fileName}</span>
         </div>
-        <div className={styles.formGroup}>
+        {Cookies.get('login') === 'manual' && <div className={styles.formGroup}>
           <label>Username</label>
           <input
             type="text"
             value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            onChange={_onUsernameChange}
+            className={`${styles["form-control"]} ${usernameError ? "is-invalid" : ""}`}
             placeholder="Enter new username"
           />
-        </div>
+          {usernameError && <div className="invalid-feedback">{usernameError}</div>}
+        </div>}
         <div className={styles.formGroup}>
           <label>Email</label>
           <input
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={_onEmailChange}
+            className={`${styles["form-control"]} ${emailError ? "is-invalid" : ""}`}
             placeholder="Enter new email"
           />
+          {emailError && <div className="invalid-feedback">{emailError}</div>}
         </div>
         <div className={styles.formGroup}>
           <label>Password</label>
           <input
             type="password"
             value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
+            onChange={_onPasswordChange}
+            className={`${styles["form-control"]} ${passwordError ? "is-invalid" : ""}`}
             placeholder="Enter new password"
           />
+          {passwordError && <div className="invalid-feedback">{passwordError}</div>}
         </div>
-        <div className={styles.toggleGroup}>
+        {Cookies.get('login') === 'manual' && <div className={styles.toggleGroup}>
           <label>Enable 2FA</label>
           <div className={styles.toggleContainer}>
             {/* Slider */}
@@ -141,7 +229,7 @@ const SettingsWidget = ({ avatar, setAvatar, onClose, twoFactor, setNewUsername 
               {is2FAEnabled ? "🔒" : "🔓"}
             </div>
           </div>
-        </div>
+        </div>}
         <div className={styles.actions}>
           <button className={styles.saveButton} onClick={handleSaveChanges}>
             Save

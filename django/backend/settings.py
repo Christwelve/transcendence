@@ -14,6 +14,8 @@ import os
 from dotenv import load_dotenv
 from pathlib import Path
 
+load_dotenv()
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -33,7 +35,7 @@ if os.getenv("USE_HTTPS", "False") == "True":
     SECURE_HSTS_SECONDS = 0  # Set to non-zero for production
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-hm&9x%9_a1pt==vdw_&dy+0y)_pct&*1&rxc3c%yif2m$4o!zr'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
@@ -90,7 +92,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:4000",
     "http://10.11.2.25:3000",
-    f"http://{SERVER_IP}:3000"
+    f"http://{SERVER_IP}:3000",
 ]
 
 # Optional: Allow credentials (e.g., cookies, sessions)
@@ -189,8 +191,6 @@ PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.Argon2PasswordHasher",
     "django.contrib.auth.hashers.ScryptPasswordHasher",
 ]
-
-load_dotenv()
 
 OAUTH2_PROVIDER = {
     'BASE_DOMAIN': 'https://api.intra.42.fr',

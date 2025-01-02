@@ -56,8 +56,6 @@ function closeModalTop() {
 	const ids = [...modals.keys()];
 	const count = ids.length;
 
-	console.log(ids, count);
-
 	if (count === 0)
 		return;
 

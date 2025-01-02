@@ -134,8 +134,8 @@ class Tick {
 
 		const [x, z, dx, dz] = this._ballData;
 
-		const px = x + dx;
-		const pz = z + dz;
+		const px = x + dx * 1.15;
+		const pz = z + dz * 1.15;
 
 		this._ballData[0] = px;
 		this._ballData[1] = pz;
@@ -326,14 +326,14 @@ class ClientTick extends Tick {
 		this._positions[playerIndex] = position;
 	}
 
-	reconcileBall(tickServer, verifiedBallData) {
+	reconcileBall(tickServer, room, verifiedBallData) {
 		const fastForwardAmount = this._tick - tickServer;
 		const ballDataBefore = [...this._ballData];
 
 		this._setBallData(verifiedBallData);
 
 		for(let i = 0; i < fastForwardAmount; i++)
-			this.moveBall();
+			this.moveBall(room.activePlayers);
 
 		const keep = this._ballData.every((value, i) => Math.abs(value - ballDataBefore[i]) <= 0.1);
 
@@ -347,15 +347,20 @@ class ClientTick extends Tick {
 }
 
 class ServerTick extends Tick {
-	constructor(room, players, callback) {
+	constructor(room, players, spectators, callback) {
 		super(callback);
 
 		this._room = room;
 		this._players = players;
+		this._spectators = spectators;
 		this._verifiedEventIds = [0, 0, 0, 0];
 		this._goal = false;
 
 		this._players.forEach((player, i) => player.index = i);
+	}
+
+	_getUsers() {
+		return [...this._players, ...this._spectators];
 	}
 
 	_getUpdateObject(playerIndex) {
@@ -403,7 +408,9 @@ class ServerTick extends Tick {
 	}
 
 	sendUpdateToPlayers(io) {
-		this._players.forEach(player => {
+		const users = this._getUsers();
+
+		users.forEach(player => {
 			const update = this._getUpdateObject(player.index);
 
 			io.sockets.sockets.get(player.id)?.emit('game.update', update);
@@ -411,7 +418,9 @@ class ServerTick extends Tick {
 	}
 
 	sendCollisionToPlayers(io) {
-		this._players.forEach(player => {
+		const users = this._getUsers();
+
+		users.forEach(player => {
 			io.sockets.sockets.get(player.id)?.emit('ball.collision', this._tick, this._ballData);
 		});
 	}
@@ -419,11 +428,12 @@ class ServerTick extends Tick {
 	startGame(io) {
 		const countdown = 3 * TICK_SPEED;
 		const direction = randVector(this._room.activePlayers);
-		// const direction = [0, 0];
 
 		this.roundStart(countdown, direction);
 
-		this._players.forEach(player => {
+		const users = this._getUsers();
+
+		users.forEach(player => {
 			io.sockets.sockets.get(player.id)?.emit('round.start', countdown, direction);
 		});
 	}
@@ -446,7 +456,7 @@ class ServerTick extends Tick {
 		return null;
 	}
 
-	sendGoalToPlayers(io, updateState, room) {
+	sendGoalToPlayers(io, updateState, endGame) {
 		const goal = this.getGoal();
 
 		if(goal == null || this._goal)
@@ -465,7 +475,9 @@ class ServerTick extends Tick {
 			direction,
 		};
 
-		this._players.forEach(player => {
+		const users = this._getUsers();
+
+		users.forEach(player => {
 			io.sockets.sockets.get(player.id)?.emit('goal', payload);
 		});
 
@@ -474,11 +486,14 @@ class ServerTick extends Tick {
 		setTimeout(() => {
 			this._goal = false;
 
-			if(room.running)
+			if(this._room.running)
 				this.roundStart(0, direction);
 			else {
 				this._ballData = [0, 0, 0, 0, -1];
 				this.sendCollisionToPlayers(io);
+
+				if(this._room.players.length >= 2)
+					endGame(this._room);
 			}
 
 			updateState();
